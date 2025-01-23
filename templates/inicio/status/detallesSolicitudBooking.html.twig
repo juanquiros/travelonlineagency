@@ -1,0 +1,34 @@
+{% if booking %}
+
+    <div class="row text-center">
+        <div class="card text-center">
+            <div class="card-header">
+                Reseerva de: {{ booking.booking.nombre }}
+            </div>
+            <div class="card-body">
+                <h3>Cod: {{ booking.id }}</h3>
+                <h5 class="card-title">Solicitado por: {{ booking.name }} {{ booking.surname }}</h5>
+
+                <p>Estado: {{ booking.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
+                {% if pago %}
+                    <a href="{{ pago.linkPago }}" class="btn btn-primary">Pagar con PayPal</a>
+                {% endif %}
+
+                {% if adicionales | length > 0 %}
+                    <hr>
+                    <p class="card-text" style="text-align: left">Con reservas adicionales para:</p>
+                    <ul style="text-align: left">
+                        {% for reserva in adicionales %}
+                            <li>{{ reserva.name }} {{ reserva.surname }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <hr>
+                <h5>Codigo qr a detalles</h5>
+                <div class="row" style="justify-content: center"><img style="max-width: 15rem" src="{{ qr_code_url(melink) }}" /></div>
+
+            </div>
+        </div>
+    </div>
+
+{% endif %}

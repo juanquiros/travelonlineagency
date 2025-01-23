@@ -1,0 +1,126 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home - Travel Online Agency{% endblock %}
+
+{% block body %}
+    <section class="home-jumbo" data-aos="fade-up"
+              data-aos-duration="2000" >
+        <div class="row-home-h1"  style="background:linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.6)),url({{ asset('img/waterfall.jpg') }}); background-position-y: 40%">
+            <img src="{{ asset('img/logosinfondo.png') }}" alt="" style="height: 10em">
+            <h1>TRAVEL ONLINE AGENCY</h1>
+        </div>
+    </section>
+    <section   data-aos="fade-up" data-aos-duration="2000">
+        <div class="row">
+            <div class="col-md-12 center">
+                <h2>Booking</h2>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <p class="text-center">Facilitamos tus viajes con un servicio integral de reservas para alojamientos, actividades, tours y transporte. Nos encargamos de todos los detalles para que solo te enfoques en disfrutar tu experiencia. ¡Planifica tu próxima aventura con nosotros!</p>
+                        <hr>
+                    </div>
+                    <div class="col-md-4"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light" style="display: flex; flex-direction: row; justify-content: space-evenly">
+                                <ul class="navbar-nav mr-auto">
+                                    <li class="nav-item">
+                                        <a class="nav-link" onclick="getBookingsbyfecha('{{ 'now' | date('Y-m-d') }}')">Ver todo</a>
+                                    </li>
+                                </ul>
+                                <form class="form-inline my-2 my-lg-0" style="display: flex; flex-direction: row;">
+                                    <label for="filtro" class="mr-5">Seleccionar un día</label>
+                                    <input type="date" id="filtrofecha" class="form-control" onchange="getBookingsbyfecha()">
+                                </form>
+                        </nav>
+                        <hr>
+                    </div>
+                    <div class="col-md-3"></div>
+                </div>
+                <div class="row center" id="bookingrowinicio">
+                    {% include 'inicio/bookings.html.twig' %}
+                </div>
+            </div>
+        </div>
+    </section>
+    <section data-aos="fade-up" data-aos-duration="1500">
+        <div class="row" >
+            <div class="col-md-12 center">
+                <h2>Transfer</h2>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <p class="text-center">Ofrecemos traslados directos y seguros desde el Aeropuerto Internacional de Iguazú hacia las majestuosas Cataratas o el hotel de tu elección. Viaja con comodidad y puntualidad, disfrutando de un servicio diseñado para que tu experiencia sea inolvidable desde el primer momento. ¡Nos encargamos de tu traslado para que tú solo te relajes y disfrutes!</p>
+                        <hr>
+                    </div>
+                    <div class="col-md-4"></div>
+                </div>
+
+                <div class="row center     ">
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-img-top">
+                            <div class="row-flecha p-0 m-0" style="position: relative;height: 285px;">
+                                <div class="col-md-6 arrowRight p-0 m-0" >
+                                    <img src="{{ asset('img/traslados/aeropuerto-igr.jpg') }}" class="arrowRightImg" alt="...">
+                                </div>
+                                <div class="col-md-6 arrowBox" >
+                                    <img src="{{ asset('img/traslados/cataratas.jpg') }}" class="arrowBoxImg"  alt="...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3>Transfer from the airport to Iguazu Falls</h3>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary w-100" type="button">Request</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-img-top">
+                            <div class="row-flecha p-0 m-0" style="position: relative;height: 285px;">
+                                <div class="col-md-6 arrowRight p-0 m-0" >
+                                    <img src="{{ asset('img/traslados/aeropuerto-igr.jpg') }}" class="arrowRightImg" alt="...">
+                                </div>
+                                <div class="col-md-6 arrowBox" >
+                                    <img src="{{ asset('img/traslados/HOTEL.jpg') }}" class="arrowBoxImg"  alt="...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3>Transfer from the airport to a hotel</h3>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary w-100" type="button">Request</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+    <section data-aos="fade-up" >
+        <div class="w-100 text-center center" style="padding: 0.5em;">
+            <h3>Social media</h3>
+            <hr>
+        </div>
+        <div class="text-center" style="display: flex;flex-direction: row; width: 100%; justify-content: center; font-size: 2.5em">
+            <a href="https://www.instagram.com/cataratastravelagency_online/" style="margin: 0.5em">
+
+                <span class="mbr-iconfont bi bi-instagram"></span>
+            </a>
+
+            <a href=" https://wa.me/5493757572141" style=" margin: 0.5em">
+
+                <span class="mbr-iconfont bi bi-whatsapp"></span>
+            </a>
+        </div>
+
+    </section>
+{% endblock %}

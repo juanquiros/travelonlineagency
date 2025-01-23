@@ -1,0 +1,82 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Servicios de Booking{% endblock %}
+
+{% block body %}
+    <div class="" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="row" >
+            <div class="col-md-3"></div>
+            <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
+                <h1>Administrar servicios de Booking's</h1>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                <h3>Boking's</h3>
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_new_service_booking') }}"><box-icon name='list-plus'></box-icon> Nuevo</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#"><box-icon name='list-check'></box-icon> Todos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#"><box-icon type='solid' name='file-pdf'></box-icon> Pdf</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#"><box-icon name='check' ></box-icon><div> Realizado</div></a>
+                            </li>
+                        </ul>
+                        <form class="form-inline my-2 my-lg-0">
+                            <label for="filtro" class="mr-5">Filtrar</label>
+                            <select id="filtro" class="form-control">
+                                <option selected>Todos</option>
+                                <option>Cataratas</option>
+                                <option>"Hotel grand"</option>
+                            </select>
+                        </form>
+                    </div>
+                </nav>
+                <hr>
+                <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                    <thead>
+                    <tr>
+                        <th scope="col">Seleccionar</th>
+                        <th scope="col">Codigo</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Disponibles</th>
+                        <th scope="col">Válido hasta</th>
+                        <th scope="col">Habilitado</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                    {% for booking in servicios %}
+                        <tr>
+                            <td><input type="checkbox" ></td>
+                            <td>{{ booking.id }}</td>
+                            <td>{{ booking.nombre }}</td>
+                            <td>{{ booking.disponibles }}</td>
+                            <td>{{ booking.validoHasta | date("d/m/Y H:i","America/Argentina/Buenos_Aires")}}</td>
+                            <td><input type="checkbox" {% if booking.habilitado  %}checked{% endif  %}></td>
+                            <td><a href="{{ path('app_new_service_booking',{id:booking.id }) }}" >editar</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+{% endblock %}

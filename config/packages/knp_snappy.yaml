@@ -1,0 +1,11 @@
+knp_snappy:
+    pdf:
+        enabled:    true
+        binary:     '%kernel.project_dir%\vendor\wemersonjanuario\wkhtmltopdf-windows\bin\64bit\wkhtmltopdf.exe'
+        options:
+            - { name: 'viewport-size', value: '1024x768' }
+            - { name: 'page-size', value: 'A4'}
+    image:
+        enabled:    true
+        binary:     '%env(WKHTMLTOIMAGE_PATH)%'
+        options:    []

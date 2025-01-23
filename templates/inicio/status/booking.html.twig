@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello PayPalController!{% endblock %}
+
+{% block body %}
+<div class="row m-5">
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        {% if render %}
+            <h1>Detalles de la reserva</h1>
+            {{ render | raw }}
+
+        {% else %}
+            <h1>Buscar estado de mi reserva</h1>
+            <hr>
+            <p>Ingresa tu email para consultar</p>
+            <input type="email">
+            <button class="btn btn-success btn-sm">Buscar</button>
+            <div class="row text-center">
+
+
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-4"></div>
+</div>
+{% endblock %}

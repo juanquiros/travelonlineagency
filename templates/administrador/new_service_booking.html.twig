@@ -1,0 +1,264 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Mensajes{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('/tinymce/js/tinymce/tinymce.min.js') }}" referrerpolicy="origin"></script>
+{%  endblock %}
+
+{% block body %}
+    <div class="p-3" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="row" >
+            <div class="col-md-3"></div>
+            <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
+                <h1>{% if(bookingid) %}Editar{% else%}Nuevo{% endif %} Booking</h1>
+
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                {{ form_start(form) }}
+                {{ form_errors(form) }}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.nombre)}}
+                        {{ form_widget(form.nombre) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.descripcion)}}(máximo 90 caracteres)
+                        {{ form_widget(form.descripcion) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.detalles)}}
+                        {{ form_widget(form.detalles) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.disponibles)}}
+                        {{ form_widget(form.disponibles) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.lenguaje)}}
+                        {{ form_widget(form.lenguaje) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.validoHasta)}}
+                        {{ form_widget(form.validoHasta) }}
+                    </div>
+                </div>
+                <div class="row mt-5">
+                    <label for="rowImagenesBooking">Imagenes</label>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 p-5 mb-3" style="text-align: left; min-width: 410px !important; border: 1px solid gray">
+                        <div class="row" id="rowImagenesBooking" style="display: flex; flex-direction: row; flex-wrap: wrap; align-content: center; justify-content: center;">
+                            {% for img in bookingimg %}
+
+                                <div style="display: flex;flex-direction: column">
+                                    <img src="/img/booking/{{ img.imagen }}" class="img-thumbnail" alt="" width="120px" height="120px"/>
+                                    <input class="form-control" type="checkbox" {% if img.portada %}checked{% endif %} onchange="cambiarportada('{{ img.imagen }}')" id="{{ img.imagen }}">
+                                </div>
+
+                            {% endfor %}
+                        </div>
+                        <div class="row" id="rowImagenesBooking" style="margin:1em; border:1px solid gray; display: flex; flex-direction: row; flex-wrap: wrap; align-content: center; justify-content: center;">
+
+                            <style>
+                                .col-auto{
+                                    align-content: center;
+                                }
+                            </style>
+                            <div class="col-auto">
+                                <input type="text" readonly class="form-control-plaintext" id="labelAgregar" value="Agregar imagen">
+                            </div>
+                            <div class="col-auto">
+                                <input class="form-control form-control-sm"   type="file" name="imagen" id="newImagenBooking" accept="image/*" />
+                            </div>
+                            <div class="col-auto">
+                                    <input type="number" value="{{ bookingid }}" hidden id="bookingId">
+                            </div>
+                            <div class="col-auto">
+                                <input type="text" readonly class="form-control-plaintext" id="labelportada" value="Marcar como principal">
+                            </div>
+                            <div class="col-auto">
+                                <input class="form-control" type="checkbox" id="isportada">
+                            </div>
+                            <div class="col-auto">
+                                <button onclick="uploadImgBooking(event)" id="btnSubirImagenBooking" class="btn btn-primary btn-sm w-100">Subir</button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-2"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                        <h3>Datos adicionales requeridos</h3>
+                        <p>Se solicitará estos datos al cliente al hacer su reserva.</p>
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent2" aria-controls="navbarSupportedContent2" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+
+                            <div class="collapse navbar-collapse" id="navbarSupportedContent2">
+                                <ul class="navbar-nav mr-auto">
+                                    <li class="nav-item">
+                                        <a class="nav-link" onclick="agregardatoadicional()"><box-icon name='list-check'></box-icon> Agregar nuevo</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                        <hr>
+                        <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                            <thead>
+                            <tr>
+                                <th scope="col">Dato solicitado</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody class="table-group-divider" id="tbody-datosadicionales">
+
+
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="col-md-2"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                        <h3>Precios</h3>
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent3" aria-controls="navbarSupportedContent3" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+
+                            <div class="collapse navbar-collapse" id="navbarSupportedContent3">
+                                <ul class="navbar-nav mr-auto">
+                                    <li class="nav-item">
+                                        <a class="nav-link" onclick="agregarprecioBooking()"><box-icon name='list-check'></box-icon> Agregar nuevo</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                        <hr>
+                        <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                            <thead>
+                            <tr>
+                                <th scope="col">Código</th>
+                                <th scope="col">Valor</th>
+                                <th scope="col">Moneda</th>
+                                <th scope="col">Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody class="table-group-divider" id="tbody-preciosBooking">
+
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="col-md-2"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                        <h3>Fechas del servicio</h3>
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent3" aria-controls="navbarSupportedContent3" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+
+                            <div class="collapse navbar-collapse" id="navbarSupportedContent3">
+                                <ul class="navbar-nav mr-auto">
+                                    <li class="nav-item">
+                                        <input type="datetime-local" id="filtrofecha" class="form-control">
+                                        <a class="nav-link" onclick="agregarFechaBooking()"><box-icon name='list-check'></box-icon> Agregar nuevo</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                        <hr>
+                        <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                            <thead>
+                            <tr>
+                                <th scope="col">Fecha hora</th>
+                                <th scope="col">Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody class="table-group-divider" id="tbody-fechasBooking">
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="col-md-2"></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        {{ form_label(form.habilitado)}}
+                        {{ form_widget(form.habilitado) }}
+                        {{ form_widget(form.Guardar, {'attr': {'class': 'btn btn-primary w-100'}})}}
+                    </div>
+                    <div class="col-md-3"></div>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+    <script src="{{ asset('panel.js') }}"></script>
+    <script>
+        {% if datos %}
+            {% for dato in datos %}
+                cargartabladatosadicional({dato:'{{ dato.dato}}',tipo:'{{ dato.tipo }}'},{{ dato.id }});
+            {% endfor %}
+        {% endif %}
+        var monedas = JSON.parse('{{ monedas | json_encode | raw }}');
+
+        {% if precios %}
+
+            {% for precio in precios %}
+                cargartablapreciosBooking( monedas ,{valor:'{{ precio.valor}}',monedaId:'{{ precio.moneda.id }}'},{{ precio.id }});
+            {% endfor %}
+        {% endif %}
+        {% if fechas %}
+            {% for fecha in fechas %}
+                agregarFechaBooking( '{{ fecha.fecha }}');
+            {% endfor %}
+        {% endif %}
+        tinymce.remove()
+        tinymce.init({
+            selector: '#booking_detalles',
+            branding:false,
+            menubar: false,
+            toolbar: 'undo redo | styles forecolor | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | image'
+        });
+
+    </script>
+
+{% endblock %}

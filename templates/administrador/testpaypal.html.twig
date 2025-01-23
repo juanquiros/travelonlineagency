@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}test paypal{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+    <meta property="og:url" content="http://localhost:8000" />
+
+
+
+</head>
+<body>
+<a href="{{ link }}">Pagar con paypal</a>
+<span id='btn-paypalLogin'></span>
+
+<script src='https://www.paypalobjects.com/js/external/api.js'></script>
+
+<script>
+
+    paypal.use( ['login'], function (login) {
+
+        login.render ({
+
+            "appid":"AcN_E-S19Ofp3CZeem3xHiAVVeLjVIz6kDYiEGAAQ9xIeW_Yl3Cb5lycPByr8m74sCBlPl365c6KTniV",
+
+            "scopes":"None",
+
+            "containerid":"btn-paypalLogin",
+
+            "responseType":"code",
+
+            "locale":"es-es",
+
+            "buttonType":"CWP",
+
+            "buttonShape":"pill",
+
+            "buttonSize":"sm",
+
+            "fullPage":"true",
+
+            "returnurl":"https://shophardware.com.ar/paypal/login"
+
+        });
+
+    });
+
+</script>
+</body>

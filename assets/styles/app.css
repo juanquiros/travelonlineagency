@@ -1,3 +1,100 @@
 body {
-    background-color: skyblue;
+    background-color: whitesmoke;
+    font-family: "Ubuntu", serif;
+    font-style: normal;
+}
+
+.row-home-h1{
+    font-weight: 700;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    min-height: calc( 80vh);
+    height: 30em;
+    background-repeat: no-repeat !important;
+    background-size: cover !important;
+    background-position-y: -35%;
+}
+
+section h1{
+    font-family: "Ubuntu", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+    color: #abaa8f;
+}
+section{
+    padding: 1em;
+    margin-bottom: 1em;
+
+}
+footer{
+    padding-top: 2em;
+    padding-bottom: 2em;
+    color: dimgray;
+    background-color: #1c1c1c;
+}
+footer a{
+    color: dimgray;
+}
+footer li{
+    list-style-type: none;
+}
+.navbar-brand:hover{
+    color: darkgray !important;
+}
+.center{
+    text-align: center;
+    justify-content: center;
+}
+.card{
+    margin: 1em ;
+    box-shadow: 0 10px 61px -29px rgb(0 0 0 / 26%)
+}
+.row-home-h1{
+    padding: 1em;
+}
+.home-jumbo{
+    padding: 0;
+    width: 100%;
+}
+
+
+
+
+/* div flecha */
+
+.row-flecha{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+/* RIGHT ARROW */
+.arrowRight {
+    clip-path: polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%);
+    z-index: 2; position: absolute; min-width: 70%;  height: 100%; overflow: hidden;     display: block;
+}
+.arrowRightImg{
+    height: 100%;
+    margin-left: -35%;
+}
+.arrowBox{
+    z-index: 1;
+    position: absolute;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-width: 100%;
+    justify-content: right;
+}
+.arrowBoxImg {
+    position: absolute;
+    height: 100%;
+}
+.card-body{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }

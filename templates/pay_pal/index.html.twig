@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello PayPalController!{% endblock %}
+
+{% block body %}
+<div class="row m-5">
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <h1>Pago de reserva</h1>
+        <hr>
+        <p>Ultimo paso, completa el pago de tu reserva.</p>
+        <div class="row text-center">
+            <div class="card text-center">
+                <div class="card-header">
+                    {{ booking.booking.nombre }}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Solicitado por: {{ booking.name }} {{ booking.surname }}</h5>
+                    {% if cantidad and cantidad > 1 %}
+                        <p class="card-text" style="text-align: left">Con reservas adicionales para:</p>
+                        <ul style="text-align: left">
+                        {% for reserva in adicionales %}
+                            <li>{{ reserva.name }} {{ reserva.surname }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <a href="{{ link }}" class="btn btn-primary">Go to PayPal</a>
+                </div>
+                <div class="card-footer text-muted">
+                    USD {{ total |number_format(2, '.', ',') }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4"></div>
+</div>
+{% endblock %}

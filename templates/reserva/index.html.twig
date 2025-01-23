@@ -1,0 +1,204 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home - Travel Online Agency{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}
+{% block body %}
+    <section   data-aos="fade-up" data-aos-duration="2000">
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8" style="background:linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.6)),url('/img/booking/{{ booking.getImgPortada }}'); background-position-y: 60%;min-height: 11em; background-size: cover;">
+
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="center">
+                <h1>{{ booking.nombre }}</h1>
+                <h2>Booking</h2>
+                <hr>
+                </div>
+                <p>{{ booking.detalles | raw }}</p>
+                {% for precio in booking.precios %}
+                    <h4>{{ precio.moneda.simbolo }} {{ precio.valor | number_format(2, '.', ',')  }}</h4>
+
+                {% endfor %}
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    </section>
+    <section data-aos="fade-up" data-aos-duration="1500">
+        <div class="row" >
+            <hr>
+        </div>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-4 center">
+                <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for imagen in imagenes %}
+                            <div class="carousel-item {% if imagen.portada %}active{% endif %}" data-bs-interval="3000">
+                                <img src="/img/booking/{{ imagen.imagen }}" class="d-block w-100" alt="...">
+                            </div>
+                        {% endfor %}
+
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleAutoplaying" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+
+
+
+            </div>
+            <div class="col-md-4">
+                <h2>Reservar ahora</h2>
+                {{ form_start(reservaForm) }}
+                <hr>
+                <div class="row" id="datosSolicitante" hidden>
+                    <div class="row">
+                        <h5>Mis datos</h5>
+                        <ul id="uldatossolicitante">
+                        </ul>
+                    </div>
+                </div>
+                <div class="row" id="rowAgregarPersona" hidden data-aos="fade-up" data-aos-duration="1500">
+                    <div class="col-md-12">
+                        <div class="row">
+                            Reservas adicionales
+                            <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Apellido</th>
+                                    <th scope="col">Acción</th>
+                                </tr>
+                                </thead>
+                                <tbody class="table-group-divider" id="tbody-personasinBooking">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+                </div>
+                <div class="row" id="rowdatosprincipalbooking">
+                    <div class="col-md-12">
+                        <h3>Mis datos para la reserva</h3>
+                        {{ form_errors(reservaForm) }}
+                        {{ form_label(reservaForm.name) }}
+                        {{ form_widget(reservaForm.name) }}
+                        {{ form_label(reservaForm.surname) }}
+                        {{ form_widget(reservaForm.surname) }}
+                        {{ form_label(reservaForm.email) }}
+                        {{ form_widget(reservaForm.email) }}
+                        {{ form_label(reservaForm.phone) }}
+                        {{ form_widget(reservaForm.phone) }}
+
+                        <div class="row" id="datosadicionales-booking">
+                            {% if formulario %}
+                                {% for dato in formulario %}
+                                    <div class="mb-3">
+                                        <label for="datoFormBooking-{{ dato.id }}" class="form-label" id="labeldatoFormBooking-{{ dato.id }}">{{ dato.dato }}</label>
+                                        <input onchange="datoadicionalmodificado('datoFormBooking-{{ dato.id }}')" type="{{ dato.tipo }}" id="datoFormBooking-{{ dato.id }}" class="form-control" >
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="row m-4">
+                            {% if fechas %}
+                                <h5>Seleccionar fecha para reserva</h5>
+                                <div class="btn-group" role="group" aria-label="Basic radio toggle button group" id="rowfechasdisponibles">
+                                    {% for fecha in fechas %}
+                                        <input type="radio" class="btn-check" name="fechabtnradio" id="fechabtnradio{{ loop.index }}" autocomplete="off" onchange="seleccionarfechabookingsolicitud('{{ fecha | date('Y-m-d H:i') }}')">
+                                        <label class="btn btn-outline-primary" for="fechabtnradio{{ loop.index }}">{{ fecha | date('d-m-Y H:i') }}</label>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div><!---->
+                </div>
+                <div class="row pb-3 pt-3" id="Formularioreservaadicional" hidden data-aos="fade-up" data-aos-duration="1500">
+                    <div class="col-md-12">
+                        <h3>Datos de reserva adicional</h3>
+                        <label for="solicitud_reserva_nameAdicional" class="form-label required" onchange="">Name</label>
+                        <input type="text" id="solicitud_reserva_nameAdicional" maxlength="255" class="form-control">
+                        <label for="solicitud_reserva_surnameAdicional" class="form-label required">Surname</label>
+                        <input type="text" id="solicitud_reserva_surnameAdicional" maxlength="255" class="form-control">
+                        {% if formulario %}
+                            <div id="datosadicionales-nuevaPersona">
+                            {% for dato in formulario %}
+                                    <label for="datoFormBookingAdicional-{{ dato.id }}" id="labelPersona-{{ dato.id }}" class="form-label">{{ dato.dato }}</label>
+                                    <input type="{{ dato.tipo }}" id="datoFormBookingAdicional-{{ dato.id }}" class="form-control">
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="mt-3" style="display: flex; flex-direction: row; align-content: first baseline; justify-content: space-around;">
+                            <button class="btn btn-primary btn-sm" id="btn-finalizaragregarpersona" style="width: 40%;">Finalizar</button>
+                            <button class="btn btn-primary btn-sm" onclick="finagregarpersonabooking(false)"  style="width: 40%;">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3 mt-3">
+                    <button id="btnagregarpersonabooking" class="btn btn-primary btn-sm" onclick="agregarpersonabooking()">Agregar persona a la reserva</button>
+                </div>
+                <div class="row mb-5">
+                    {{ form_widget(reservaForm.submit) }}
+                </div>
+                {{ form_end(reservaForm) }}
+            </div>
+            <script>
+                var tienefechas = document.getElementById('rowfechasdisponibles');
+                if( tienefechas && tienefechas.children.length > 0 ){
+                    var disabled = document.createAttribute('disabled')
+                    document.getElementById('solicitud_reserva_submit').attributes.setNamedItem(disabled);
+                }
+                cargar_datos_formularioBooking();
+            </script>
+            <div class="col-md-2"></div>
+        </div>
+
+    </section>
+    <section   data-aos="fade-up" data-aos-duration="2000">
+        <div class="row">
+            <div class="col-md-12 center">
+                <h2>Other clients also booked:</h2>
+                <hr>
+                <div class="row center     ">
+                    <div class="card" style="width: 18rem;">
+                        <img src="{{ asset('img/reservas/icebar1.jpg') }}" class="card-img-top" alt="...">
+                        <div class="card-body">
+                            <h3>Icebar</h3>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary w-100" type="button">Reserve</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="width: 18rem;">
+                        <img src="{{ asset('img/reservas/catamaran1.jpg') }}" class="card-img-top" alt="...">
+                        <div class="card-body">
+                            <h3>Catamarán</h3>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary w-100" type="button">Reserve</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

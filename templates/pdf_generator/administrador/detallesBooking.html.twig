@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body{
+            font-family: sans-serif;
+            font-size: 120%;
+        }
+    </style>
+</head>
+<body>
+<table>
+    <tr>
+        <td><p></p></td>
+    </tr>
+</table>
+<table style="margin: 0;padding-left: 10px;padding-right: 10px;padding-top: 20px; padding-bottom: -30px;width: 100%; box-shadow: 0px 0px 100px rgba(0,0,0,0.5);">
+    <tr style="padding-bottom: 0;">
+        <td></td>
+        <td colspan="5"><h2>{{ booking.nombre }}</h2></td>
+    </tr>
+    <tr style="margin: 0; padding-bottom: -100px;">
+        <td style="margin: 0; padding-bottom: 0;">
+            <img src="{{ ico }}" alt="" width="100px" height="100px" style="position: relative;top: -40px;">
+        </td>
+        <td style="margin: 0; padding-bottom: 0;text-align: left;">Fecha de impresión:</td>
+        <td style="margin: 0; padding-bottom: 0;text-align: left;">{{ 'now' | date("d/m/Y H:i:s","America/Argentina/Buenos_Aires") }}</td>
+        <td style="margin: 0; padding-bottom: 0;"></td>
+        <td style="margin: 0;padding-bottom: 0;text-align: left;">Reservas confirmadas:</td>
+        <td style="margin: 0;padding-bottom: 0;text-align: left;">{{ reservas | length }}</td>
+    </tr>
+</table>
+
+<table style="width: 100%">
+
+
+    {% for reserva in reservas %}
+        <tr style="page-break-inside: avoid !important;">
+            <td>
+                    <tr >
+                        <td colspan="5">
+                            <p></p>
+                        </td>
+                    </tr>
+                    <tr >
+                        <td style="color:lightgray;text-align: center; background-color: rgba(0,0,0,0.5); margin-left: 0; padding: 0">
+                            <p>N°</p>
+                            <p><h1 style="font-size: 120%"><strong>{{ reserva.id }}</strong></h1></p>
+                        </td>
+                        <td style="color:lightgray;text-align: center; background-color: rgba(0,0,0,0.5); margin-left: 0; padding: 0">
+                            <p>Solicitado por</p>
+                            <p>{{ reserva.name }} {{ reserva.surname }}</p>
+                        </td>
+                        <td style="color:lightgray;text-align: center; background-color: rgba(0,0,0,0.5); margin-left: 0; padding: 0">
+                            <p>Personas</p>
+                            <p>{{ reserva.getInChargeOfArray | length + 1 }}</p>
+                        </td>
+                        <td style="color:lightgray;text-align: center; background-color: rgba(0,0,0,0.5); margin-left: 0; padding: 0">
+                            <p>F. servicio</p>
+                            <p>{% if reserva.fechaSeleccionada %}{{ reserva.fechaSeleccionada | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}{% endif %}</p>
+                        </td>
+                        <td style="color:lightgray;text-align: center; background-color: rgba(0,0,0,0.5); margin-left: 0; padding: 0">
+                            <p>Solicitado el</p>
+                            <p>{{ reserva.getUpdatedAt | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</p>
+                        </td>
+                    </tr>
+                    <tr style="padding: 0; margin: 0">
+                        <td></td>
+                        <td colspan="2" style="text-align: center; background-color: rgba(0,0,0,0.07); margin-left: 0; padding: 0">Email: {{ reserva.email }}</td>
+                        <td style="text-align: center; background-color: rgba(0,0,0,0.07); margin-right: 0; padding: 0">Teléfono: {{ reserva.phone }}</td>
+                        <td style="text-align: center; background-color: rgba(0,0,0,0.07); margin-right: 0; padding: 0">Estado: {{ reserva.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</td>
+                    </tr>
+
+                    <tr style="padding: 0; margin: 0">
+                        <td style="padding: 0; margin: 0"></td>
+                        <td colspan="4" style="padding-top: 10px ;text-align: center; background-color: rgba(0,0,0,0.2);">
+                            <strong>Datos de las personas</strong>
+                        </td>
+                    </tr>
+
+                    <tr style="padding: 0; margin: 0">
+                        <td style="padding: 0; margin: 0"></td>
+                        <td style="text-align: center; background-color: rgba(0,0,0,0.1); margin-left: 0; padding: 0">Nombre</td>
+                        <td style="text-align: center; background-color: rgba(0,0,0,0.1); margin-left: 0; padding: 0">Apellido</td>
+                        {% for dato in reserva.getFormRequiredArray %}
+                            <td style="text-align: center; background-color: rgba(0,0,0,0.1); margin-left: 0; padding: 0">{{ dato.dato }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td style="padding: 0; margin: 0"></td>
+                        <td>{{ reserva.name }}</td>
+                        <td>{{ reserva.surname }}</td>
+                        {% for dato in reserva.getFormRequiredArray %}
+                            <td>{{ dato.value }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% if reserva.getInChargeOfArray | length > 0 %}
+                            <tr style="padding: 0; margin: 0">
+                                <td></td>
+                                    {% for adiccional in reserva.getInChargeOfArray %}
+                                            <td>{{ adiccional.name }}</td>
+                                            <td>{{ adiccional.surname }}</td>
+                                            {% for dato in adiccional.form_required %}
+                                                <td>{{ dato.value }}</td>
+                                            {% endfor %}
+                                    {% endfor %}
+                            </tr>
+                    {% endif %}
+                    <tr style="padding: 0; margin: 0">
+                        <td></td>
+                        <td colspan="4">
+                            <p></p>
+                        </td>
+                    </tr>
+
+                    <tr style="border-bottom: 3px solid black;margin-bottom: 100px !important;">
+
+                        <td colspan="5">
+                            <hr>
+                        </td>
+                    </tr>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
