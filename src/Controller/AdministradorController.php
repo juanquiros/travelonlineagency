@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
@@ -10,6 +11,7 @@ use App\Entity\Precio;
 use App\Entity\RespuestaMensaje;
 use App\Entity\SolicitudReserva;
 use App\Form\BookingType;
+use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
 use App\Form\RespuestaMensajeType;
 use App\Services\LanguageService;
@@ -369,18 +371,41 @@ class AdministradorController extends AbstractController
         $this->adminMenu['configuraciones'] = true;
 
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-        $fechavence = null;
+
+        //MERCADOPAGO CREDENCIALES PLATAFORMA
+
+        $credencialesMercadoPago = $plataforma->getCredencialesMercadoPago();
+        if(!isset($credencialesMercadoPago)|| empty($credencialesMercadoPago))$credencialesMercadoPago = new CredencialesMercadoPago();
+
+        $formularioMercadoPago = $this->createForm(CredencialesMercadoPagoType::class,$credencialesMercadoPago);
+        $formularioMercadoPago->handleRequest($request);
+        if($formularioMercadoPago->isSubmitted() && $formularioMercadoPago->isValid()){
+                $this->em->persist($credencialesMercadoPago);
+                $plataforma->setCredencialesMercadoPago($credencialesMercadoPago);
+                $this->em->persist($plataforma);
+                $this->em->flush();
+                $this->redirectToRoute('app_admin_configuraciones',[],302);
+
+        }
+
+
+
+
+
+
+
+        //PAYPAL CREDENCIALES PLATAFORMA
         $credencialesPayPalPlataforma = $plataforma->getCredencialesPayPal();
         if(!isset($credencialesPayPalPlataforma)|| empty($credencialesPayPalPlataforma))$credencialesPayPalPlataforma = new CredencialesPayPal();
 
-        $formulario = $this->createForm(CredencialesPayPalType::class,$credencialesPayPalPlataforma);
-        $formulario->handleRequest($request);
-        if($formulario->isSubmitted() && $formulario->isValid()){
-            $token = $this->getTokenPaypal($formulario->get('client_id')->getData(),$formulario->get('client_secret')->getData());
+        $formularioPayPal = $this->createForm(CredencialesPayPalType::class,$credencialesPayPalPlataforma);
+        $formularioPayPal->handleRequest($request);
+        if($formularioPayPal->isSubmitted() && $formularioPayPal->isValid()){
+            $token = $this->getTokenPaypal($formularioPayPal->get('client_id')->getData(),$formularioPayPal->get('client_secret')->getData());
             if(!isset($token['token']['access_token']) || empty($token['token']['access_token']) || $token['token'] == null){
-                $formulario->addError(new FormError('Credenciales Inválidas: '.$token['token']['error_description']));
+                $formularioPayPal->addError(new FormError('Credenciales Inválidas: '.$token['token']['error_description']));
             }
-            if($formulario->isValid()) {
+            if($formularioPayPal->isValid()) {
                 $credencialesPayPalPlataforma->setAccessToken($token['token']['access_token']);
                 $credencialesPayPalPlataforma->setTokenType($token['token']['token_type']);
                 $credencialesPayPalPlataforma->setAppId($token['token']['app_id']);
@@ -402,7 +427,8 @@ class AdministradorController extends AbstractController
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'servicios'=>$servicios,
-            'formularioCredencialesPayPal'=>$formulario
+            'formularioCredencialesPayPal'=>$formularioPayPal,
+            'formularioCredencialesMp'=>$formularioMercadoPago
         ]);
     }
     #[Route('/administrador/servicio/booking/quitar/precio', name: 'app_service_booking_del_precio',methods: ['POST'], options: ['expose'=>true])]

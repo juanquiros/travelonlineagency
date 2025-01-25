@@ -63,6 +63,12 @@ class SolicitudReserva
     private Collection $pagosPayPal;
 
     /**
+     * @var Collection<int, MercadoPagoPago>
+     */
+    #[ORM\OneToMany(targetEntity: MercadoPagoPago::class, mappedBy: 'solicitudReserva')]
+    private Collection $pagosMercadoPago;
+
+    /**
      * @param \DateTime|null $updated_at
      * @param \DateTime|null $created_at
      * @param bool|null $canceled
@@ -77,6 +83,7 @@ class SolicitudReserva
         $this->inChargeOf = '[]';
         $this->form_required = '[]';
         $this->pagosPayPal = new ArrayCollection();
+        $this->pagosMercadoPago = new ArrayCollection();
     }
 
 
@@ -261,6 +268,36 @@ class SolicitudReserva
             // set the owning side to null (unless already changed)
             if ($pagosPayPal->getSolicitudReserva() === $this) {
                 $pagosPayPal->setSolicitudReserva(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MercadoPagoPago>
+     */
+    public function getPagosMercadoPago(): Collection
+    {
+        return $this->pagosMercadoPago;
+    }
+
+    public function addPagosMercadoPago(MercadoPagoPago $pagosMercadoPago): static
+    {
+        if (!$this->pagosMercadoPago->contains($pagosMercadoPago)) {
+            $this->pagosMercadoPago->add($pagosMercadoPago);
+            $pagosMercadoPago->setSolicitudReserva($this);
+        }
+
+        return $this;
+    }
+
+    public function removePagosMercadoPago(MercadoPagoPago $pagosMercadoPago): static
+    {
+        if ($this->pagosMercadoPago->removeElement($pagosMercadoPago)) {
+            // set the owning side to null (unless already changed)
+            if ($pagosMercadoPago->getSolicitudReserva() === $this) {
+                $pagosMercadoPago->setSolicitudReserva(null);
             }
         }
 

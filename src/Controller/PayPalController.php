@@ -25,7 +25,7 @@ class PayPalController extends AbstractController
         $this->em = $em;
     }
 
-    #[Route('/pay/booking/{id}', name: 'paypal_pay_booking')]
+    #[Route('/pay/paypal/booking/{id}', name: 'paypal_pay_booking')]
     public function index(SolicitudReserva $reserva,Request $request): Response
     {
         if($reserva->getEstado()->getId() != 1) return $this->redirectToRoute('app_inicio'); //redireccionar a pagina de estado de reserva ->>>>> gotostatus
@@ -279,12 +279,10 @@ class PayPalController extends AbstractController
 
 
 
-        return $this->render('pay_pal/return.html.twig', [
+        return $this->render('pago/returnBooking.html.twig', [
             'controller_name' => 'PayPalController',
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
-            'totalpagado'=>$total,
-            'solicitud'=>$solicitudDeReserva,
             'pago'=>$pago,
             'linkDetalles'=>$linkDetalles
         ]);

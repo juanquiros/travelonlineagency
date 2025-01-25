@@ -47,6 +47,9 @@ class Plataforma
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     private ?CredencialesPayPal $CredencialesPayPal = null;
 
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    private ?CredencialesMercadoPago $credencialesMercadoPago = null;
+
     public function __construct()
     {
         $this->traslados_OD_libres = false;
@@ -187,6 +190,18 @@ class Plataforma
     public function setCredencialesPayPal(?CredencialesPayPal $CredencialesPayPal): static
     {
         $this->CredencialesPayPal = $CredencialesPayPal;
+
+        return $this;
+    }
+
+    public function getCredencialesMercadoPago(): ?CredencialesMercadoPago
+    {
+        return $this->credencialesMercadoPago;
+    }
+
+    public function setCredencialesMercadoPago(?CredencialesMercadoPago $credencialesMercadoPago): static
+    {
+        $this->credencialesMercadoPago = $credencialesMercadoPago;
 
         return $this;
     }

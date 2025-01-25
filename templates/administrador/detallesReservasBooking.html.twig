@@ -8,6 +8,9 @@
             <div class="col-md-3"></div>
             <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
                 <h1>Reservas para {{ booking.nombre }}</h1>
+                <button type="button" class="btn btn-secondary" data-toggle="tooltip" data-html="true" title="<em>Tooltip</em> <u>with</u> <b>HTML</b>">
+                    Tooltip with HTML
+                </button>
             </div>
             <div class="col-md-3"></div>
         </div>
@@ -132,7 +135,7 @@
                                                         </tbody>
                                                     </table>
                                                 {% endif %}
-                                                {% if reserva.pagosPayPal %}
+                                                {% if reserva.pagosPayPal or reserva.pagosMercadoPago %}
                                                     <table class="table table-sm">
                                                         <thead>
                                                         <tr>
@@ -144,7 +147,25 @@
                                                         </tr>
                                                         </thead>
                                                         <tbody>
+                                                        {% for pago in reserva.pagosMercadoPago %}
+                                                            <tr>
+                                                                <td>{{ pago.updatedAt  | date("d/m/Y H:i","America/Argentina/Buenos_Aires")}}</td>
+                                                                <td>{{ pago.paymentId  }}</td>
+                                                                <td>{{ pago.status }}</td>
+                                                                <td>
 
+                                                                    ARS ${{ pago.transactionAmount - pago.transactionAmountRefunded }}</td>
+                                                            </tr>
+                                                            <tr style="font-size: 0.8rem; color:gray !important;">
+                                                                <td>Pago:${{ pago.transactionAmount }}</td>
+                                                                <td>Refunded:${{ pago.transactionAmountRefunded }}</td>
+                                                                <td>Metodo:{{ pago.paymentTypeId }}</td>
+                                                                <td>
+                                                                    Recibido:${{ pago.netReceivedAmount }}
+                                                                    {% if pago.getFeeDetailsArray | length > 0 %}{% for detalle in pago.getFeeDetailsArray %}{{ detalle.type }}(${{ detalle.amount }}),{% endfor %}{% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
                                                         {% for pago in reserva.pagosPayPal %}
                                                             <tr>
                                                                 <td>{{ pago.updatedAt  | date("d/m/Y H:i","America/Argentina/Buenos_Aires")}}</td>
@@ -345,6 +366,8 @@
             })
 
         })
-
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
     </script>
 {% endblock %}

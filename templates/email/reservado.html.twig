@@ -1,0 +1,56 @@
+<h1>¡Gracias por elegirnos!</h1>
+<h3>Solo queda un paso. Completa el pago en: <a href="{{ absolute_url(path('apps_pago',{ id:reserva.id })) }}">Pagar ahora</a></h3>
+<p>Para ver el estado de tu solicitud ingresa a: <a href="{{ absolute_url(path('app_status_booking',{ id:reserva.id, tokenId:tokenDetalles })) }}">Estado</a></p>
+
+<p>Estado: {{ reserva.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
+<p><strong>Datos del solicitante</strong></p>
+<table class="table table-borderless">
+    <thead>
+    <tr>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Email</th>
+        <th>Telefono</th>
+        {% for dato in reserva.getFormRequiredArray %}
+            <th>{{ dato.dato }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>{{ reserva.name }}</td>
+        <td>{{ reserva.surname }}</td>
+        <td>{{ reserva.email }}</td>
+        <td><a href="https://wa.me/{{ reserva.phone }}">{{ reserva.phone }}</a></td>
+        {% for dato in reserva.getFormRequiredArray %}
+            <td>{{ dato.value }}</td>
+        {% endfor %}
+    </tr>
+    </tbody>
+</table>
+
+<p>Reservas adicionales</p>
+<table>
+    <thead>
+    <tr>
+        <th  scope="col" >Nombre</th>
+        <th  scope="col" >Apellido</th>
+        {% for dato in reserva.getInChargeOfArray[0].form_required %}
+            <th  scope="col" >{{ dato.dato }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for adiccional in reserva.getInChargeOfArray %}
+        <tr>
+            <td>{{ adiccional.name }}</td>
+            <td>{{ adiccional.surname }}</td>
+            {% for dato in adiccional.form_required %}
+                <td>{{ dato.value }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<img style="max-width: 300px" src="{{ qr_code_url(melink) }}" />

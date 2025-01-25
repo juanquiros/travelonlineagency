@@ -51,3 +51,9 @@
 # Embedded web-server pid file
 /.web-server-pid
 /.env
+/public/img/booking/
+/public/img/language/
+/public/img/reservas/
+/public/img/traslados/
+/public/img/
+/public/logo.ico

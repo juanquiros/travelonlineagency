@@ -15,11 +15,14 @@ use App\Form\SolicitudReservaType;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use phpDocumentor\Reflection\Types\Boolean;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Attribute\Route;
 
 class InicioController extends AbstractController
@@ -46,7 +49,7 @@ class InicioController extends AbstractController
         ]);
     }
     #[Route('/reserva/{id}', name: 'app_reserva')]
-    public function reserva(Booking $booking,Request $request): Response
+    public function reserva(Booking $booking,Request $request,MailerInterface $mailer): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -97,7 +100,22 @@ class InicioController extends AbstractController
                 $reserva->setEstado($this->em->getRepository(EstadoReserva::class)->find(1));
                 $this->em->persist($reserva);
                 $this->em->flush();
-                return $this->redirectToRoute('paypal_pay_booking',['id'=>$reserva->getId()]);
+                $tokenId = base64_encode($reserva->getId() . ':'.$reserva->getEmail());
+                $emailcontext = [
+                    'tokenDetalles'=>$tokenId,
+                    'reserva'=>$reserva,
+                    'idiomaPlataforma'=>$idioma,
+                    'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$tokenId,'id'=>$reserva->getId()],false)
+                ];
+                $email = (new TemplatedEmail())
+                    ->from(new Address('tienda@shophardware.com.ar', $this->em->getRepository(Plataforma::class)->find(1)->getNombre() .' bot'))
+                    ->to($reserva->getEmail())
+                    ->subject('Reserva - ' . $reserva->getBooking()->getNombre())
+                    ->htmlTemplate('email/reservado.html.twig')
+                    ->context($emailcontext);
+                $mailer->send($email);
+                dump($mailer);
+                //return $this->redirectToRoute('apps_pago',['id'=>$reserva->getId()]);
 
             }
         }
@@ -106,8 +124,8 @@ class InicioController extends AbstractController
             'booking'=>$booking,
             'reservaForm'=>$reservaForm,
             'idiomas'=>$idiomas,
-            'imagenes'=>json_decode($booking->getImagenes()),
             'idiomaPlataforma'=>$idioma,
+            'imagenes'=>json_decode($booking->getImagenes()),
             'fechas'=>$fechasDatetime,
             'formulario'=>$formulario
         ]);
