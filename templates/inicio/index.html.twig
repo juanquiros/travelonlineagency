@@ -34,7 +34,7 @@
                                 </ul>
                                 <form class="form-inline my-2 my-lg-0" style="display: flex; flex-direction: row;">
                                     <label for="filtro" class="mr-5">Seleccionar un día</label>
-                                    <input type="date" id="filtrofecha" class="form-control" onchange="getBookingsbyfecha()">
+                                    <input type="date" id="filtrofecha" class="form-control" onchange="getBookingsbyfecha()" min="{{ now | date('Y-m-d') }}">
                                 </form>
                         </nav>
                         <hr>

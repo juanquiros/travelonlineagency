@@ -3,16 +3,36 @@
 {% block title %}PayPal Pay{% endblock %}
 
 {% block body %}
-    <div class="row mt-5 mb-5 text-center">
+    <div class="row mt-5 mb-5">
         <div class="col-md-4"></div>
-        <div class="col-md-4">
-            <h1>CheckOut</h1>
-            {% if PayPalLink %}
-                <a  class="btn btn-primary w-100 mt-5" href="{{ PayPalLink }}">Pagar con PayPal en USD</a>
-            {% endif %}
-            {% if MercadoPagoLink %}
-                <a class="btn btn-primary w-100 mt-5" href="{{ MercadoPagoLink }}">Pagar con MercadoPago en Pesos Argentinos</a>
-            {% endif %}
+        <div class="col-md-4 text-center">
+
+            <div class="card">
+                <div class="card-header">
+                    <h1>CheckOut</h1>
+                </div>
+                <div class="card-body">
+
+                    {% if PayPalLink and habilitado['pp'] and MercadoPagoLink and habilitado['mp']%}
+                        <h3><strong>USD {{ habilitado['pp'].valor * cantidad }}/ARG ${{ habilitado['mp'].valor * cantidad }}</strong></h3>
+                    {% else %}
+                        {% if PayPalLink and habilitado['pp']%}
+                        <h3><strong>USD {{ habilitado['pp'].valor * cantidad }}</strong></h3>
+                        {% endif %}
+                        {% if MercadoPagoLink and habilitado['mp'] %}
+                        <h3><strong>ARG ${{ habilitado['mp'].valor * cantidad }}</strong></h3>
+                        {% endif %}
+                    {% endif %}
+                    <p>Puedes pagar con:</p>
+                    {% if PayPalLink and habilitado['pp']%}
+                        <a  class="btn btn-primary mt-3 mb-1 " href="{{ PayPalLink }}">PayPal en USD</a>
+                    {% endif %}
+                    {% if MercadoPagoLink and habilitado['mp'] %}
+
+                        <a class="btn btn-primary" href="{{ MercadoPagoLink }}">MercadoPago en Pesos Argentinos</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         <div class="col-md-4"></div>
     </div>

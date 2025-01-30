@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UsuarioRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -35,6 +37,14 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     private ?string $nombre = null;
+
+    #[ORM\OneToMany(mappedBy: 'usuario', targetEntity: PushEndPoint::class)]
+    private Collection $pushEndPoints;
+
+    public function __construct()
+    {
+        $this->pushEndPoints = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -119,6 +129,35 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNombre(string $nombre): static
     {
         $this->nombre = $nombre;
+
+        return $this;
+    }
+    /**
+     * @return Collection<int, PushEndPoint>
+     */
+    public function getPushEndPoints(): Collection
+    {
+        return $this->pushEndPoints;
+    }
+
+    public function addPushEndPoint(PushEndPoint $pushEndPoint): static
+    {
+        if (!$this->pushEndPoints->contains($pushEndPoint)) {
+            $this->pushEndPoints->add($pushEndPoint);
+            $pushEndPoint->setUsuario($this);
+        }
+
+        return $this;
+    }
+
+    public function removePushEndPoint(PushEndPoint $pushEndPoint): static
+    {
+        if ($this->pushEndPoints->removeElement($pushEndPoint)) {
+            // set the owning side to null (unless already changed)
+            if ($pushEndPoint->getUsuario() === $this) {
+                $pushEndPoint->setUsuario(null);
+            }
+        }
 
         return $this;
     }

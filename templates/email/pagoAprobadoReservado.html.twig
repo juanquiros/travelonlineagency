@@ -1,0 +1,57 @@
+<h1>Pago aprobado con éxito</h1>
+<h3>Puedes presentar este qr como comprobante de tu reserva</h3>
+<img style="max-width: 300px" src="{{ qr_code_url(melink) }}" />
+<p>Para ver el estado de tu solicitud ingresa a: <a href="{{ melink }}">Estado</a></p>
+
+<p>Estado: {{ reserva.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
+<p><strong>Datos del solicitante</strong></p>
+<table class="table table-borderless">
+    <thead>
+    <tr>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Email</th>
+        <th>Telefono</th>
+        {% for dato in reserva.getFormRequiredArray %}
+            <th>{{ dato.dato }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>{{ reserva.name }}</td>
+        <td>{{ reserva.surname }}</td>
+        <td>{{ reserva.email }}</td>
+        <td><a href="https://wa.me/{{ reserva.phone }}">{{ reserva.phone }}</a></td>
+        {% for dato in reserva.getFormRequiredArray %}
+            <td>{{ dato.value }}</td>
+        {% endfor %}
+    </tr>
+    </tbody>
+</table>
+
+{% if reserva.getInChargeOfArray %}
+<p>Reservas adicionales</p>
+<table>
+    <thead>
+    <tr>
+        <th  scope="col" >Nombre</th>
+        <th  scope="col" >Apellido</th>
+        {% for dato in reserva.getInChargeOfArray[0].form_required %}
+            <th  scope="col" >{{ dato.dato }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for adiccional in reserva.getInChargeOfArray %}
+        <tr>
+            <td>{{ adiccional.name }}</td>
+            <td>{{ adiccional.surname }}</td>
+            {% for dato in adiccional.form_required %}
+                <td>{{ dato.value }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}

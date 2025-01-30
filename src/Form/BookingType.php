@@ -27,6 +27,8 @@ class BookingType extends AbstractType
             ->add('form_requerido',HiddenType::class)
             ->add('imagenes',HiddenType::class)
             ->add('fechasdelservicio',HiddenType::class)
+
+            ->add('horaprevia',NumberType::class,['label'=>'Horas antes del cierre'])
             ->add('disponibles',NumberType::class,['label'=>'Cantidad disponible'])
             ->add('validoHasta', DateTimeType::class, [
                 'widget' => 'single_text',

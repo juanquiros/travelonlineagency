@@ -1,6 +1,6 @@
 <h1>¡Gracias por elegirnos!</h1>
 <h3>Solo queda un paso. Completa el pago en: <a href="{{ absolute_url(path('apps_pago',{ id:reserva.id })) }}">Pagar ahora</a></h3>
-<p>Para ver el estado de tu solicitud ingresa a: <a href="{{ absolute_url(path('app_status_booking',{ id:reserva.id, tokenId:tokenDetalles })) }}">Estado</a></p>
+<p>Para ver el estado de tu solicitud ingresa a: <a href="{{ melink }}">Estado</a></p>
 
 <p>Estado: {{ reserva.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
 <p><strong>Datos del solicitante</strong></p>
@@ -28,29 +28,29 @@
     </tr>
     </tbody>
 </table>
-
-<p>Reservas adicionales</p>
-<table>
-    <thead>
-    <tr>
-        <th  scope="col" >Nombre</th>
-        <th  scope="col" >Apellido</th>
-        {% for dato in reserva.getInChargeOfArray[0].form_required %}
-            <th  scope="col" >{{ dato.dato }}</th>
-        {% endfor %}
-    </tr>
-    </thead>
-    <tbody>
-    {% for adiccional in reserva.getInChargeOfArray %}
+{% if  reserva.getInChargeOfArray | length > 0 %}
+    <p>Reservas adicionales</p>
+    <table>
+        <thead>
         <tr>
-            <td>{{ adiccional.name }}</td>
-            <td>{{ adiccional.surname }}</td>
-            {% for dato in adiccional.form_required %}
-                <td>{{ dato.value }}</td>
+            <th  scope="col" >Nombre</th>
+            <th  scope="col" >Apellido</th>
+            {% for dato in reserva.getInChargeOfArray[0].form_required %}
+                <th  scope="col" >{{ dato.dato }}</th>
             {% endfor %}
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
+        </thead>
+        <tbody>
+        {% for adiccional in reserva.getInChargeOfArray %}
+            <tr>
+                <td>{{ adiccional.name }}</td>
+                <td>{{ adiccional.surname }}</td>
+                {% for dato in adiccional.form_required %}
+                    <td>{{ dato.value }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
 <img style="max-width: 300px" src="{{ qr_code_url(melink) }}" />

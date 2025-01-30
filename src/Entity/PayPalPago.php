@@ -34,8 +34,6 @@ class PayPalPago
     #[ORM\Column(length: 255)]
     private ?string $estado = null;
 
-    #[ORM\Column(length: 1024)]
-    private ?string $linkPago = null;
 
     #[ORM\Column]
     private ?float $total = null;
@@ -46,8 +44,7 @@ class PayPalPago
     #[ORM\OneToMany(targetEntity: DetallePagoPayPal::class, mappedBy: 'PayPalPago', orphanRemoval: true)]
     private Collection $detallesPago;
 
-    #[ORM\Column(length: 1024, nullable: true)]
-    private ?string $linkReintegro = null;
+
 
     public function __construct()
     {
@@ -133,17 +130,7 @@ class PayPalPago
         return $this;
     }
 
-    public function getLinkPago(): ?string
-    {
-        return $this->linkPago;
-    }
 
-    public function setLinkPago(string $linkPago): static
-    {
-        $this->linkPago = $linkPago;
-
-        return $this;
-    }
 
     public function getTotal(): ?float
     {
@@ -187,15 +174,5 @@ class PayPalPago
         return $this;
     }
 
-    public function getLinkReintegro(): ?string
-    {
-        return $this->linkReintegro;
-    }
 
-    public function setLinkReintegro(?string $linkReintegro): static
-    {
-        $this->linkReintegro = $linkReintegro;
-
-        return $this;
-    }
 }

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use phpDocumentor\Reflection\Types\Integer;
 
 #[ORM\Entity(repositoryClass: BookingRepository::class)]
 class Booking
@@ -64,12 +65,16 @@ class Booking
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $fechasdelservicio = null;
 
+    #[ORM\Column]
+    private ?int $horaprevia = null;
+
     /**
      * @param bool|null $habilitado
      */
     public function __construct()
     {
         $this->disponibles = 0;
+        $this->horaprevia = 0;
         $this->habilitado = false;
         $this->precios = new ArrayCollection();
         $this->traducciones = new ArrayCollection();
@@ -133,6 +138,10 @@ class Booking
     public function getImagenes(): ?string
     {
         return $this->imagenes;
+    }
+    public function getImagenesArray(): ?array
+    {
+        return json_decode($this->imagenes);
     }
 
     public function setImagenes(?string $imagenes): static
@@ -307,4 +316,84 @@ class Booking
 
         return $this;
     }
+
+    public function getHoraprevia(): ?int
+    {
+        return $this->horaprevia;
+    }
+
+    public function setHoraprevia(int $horaprevia): static
+    {
+        $this->horaprevia = $horaprevia;
+
+        return $this;
+    }
+
+    public function getfechasdisponibles():?array{
+        $fechasDatetime = null;
+        $fechas = $this->getFechasdelservicioArray();
+        if(isset($fechas) && !empty($fechas)){
+            $datetimeNow=new \DateTime();
+            foreach ($fechas as $fechaDatetime){
+
+                $fechaAux = \DateTime::createFromFormat('Y-m-d\TH:i', $fechaDatetime->fecha);
+                $horasprevias = (clone $fechaAux)->add(new \DateInterval("PT{$this->getHoraprevia()}H"));
+
+
+                if($fechaDatetime->cantidad > 0 && $horasprevias > $datetimeNow ){
+                    $aux=[];
+                    $aux['fecha']= $fechaAux;
+                    $aux['cantidad']= $fechaDatetime->cantidad;
+                    $fechasDatetime []= $aux;
+                }
+            }
+        }
+        return $fechasDatetime;
+    }
+
+    public function getLugaresDisponibles():?array
+    {
+
+        $fechasServicio =[];
+        $total=0;
+        $fechas = $this->getFechasdelservicioArray();
+        if(isset($fechas) && !empty($fechas)){
+            $fechasServicio = $this->getfechasdisponibles();
+            if(isset($fechasServicio) && !empty($fechasServicio)){
+                foreach ($fechasServicio as $fecha){
+                    $total+= $fecha['cantidad'];
+                }
+            }
+        }else{
+            if(isset($this->validoHasta)&&!empty($this->validoHasta)){
+                $fechaAux = \DateTime::createFromFormat('Y-m-d\TH:i', $this->validoHasta->format('Y-m-d\TH:i'));
+                $horasprevias = (clone $fechaAux)->add(new \DateInterval("PT{$this->getHoraprevia()}H"));
+                $datetimeNow = new \DateTime();
+                if($this->disponibles > 0 && $horasprevias > $datetimeNow ) {
+                    $aux = [];
+                    $aux['fecha'] = $this->validoHasta;
+                    $aux['cantidad'] = $this->disponibles;
+                    $total+=$this->disponibles;
+                    $fechasServicio [] = $aux;
+                }
+            }
+        }
+        return ['fechas'=>$fechasServicio,'total'=>$total];
+    }
+
+    public function modificarStock(int $variar = 0,string $fecha=null)
+    {
+        if(isset($fecha) && !empty($fecha)){
+            $json = json_decode($this->fechasdelservicio);
+            $specific_value = str_replace(' ','T',$fecha);
+            foreach ($json as $date){
+                if($date->fecha === $specific_value)$date->cantidad += $variar;
+            }
+            $this->fechasdelservicio = json_encode($json);
+        }else{
+            $this->disponibles += $variar;
+        }
+
+    }
+
 }

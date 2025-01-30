@@ -68,6 +68,9 @@ class SolicitudReserva
     #[ORM\OneToMany(targetEntity: MercadoPagoPago::class, mappedBy: 'solicitudReserva')]
     private Collection $pagosMercadoPago;
 
+    #[ORM\ManyToOne]
+    private ?Lenguaje $idiomaPreferido = null;
+
     /**
      * @param \DateTime|null $updated_at
      * @param \DateTime|null $created_at
@@ -75,6 +78,8 @@ class SolicitudReserva
      * @param string|null $inChargeOf
      * @param string|null $form_required
      */
+
+
     public function __construct()
     {
         $this->updated_at = new \DateTime();
@@ -239,6 +244,30 @@ class SolicitudReserva
 
     public function setEstado(?EstadoReserva $estado): static
     {
+        $varDownStok = null;
+        $adicionales = json_decode($this->inChargeOf);
+        $cantidad = count($adicionales ) + 1;
+
+        if(isset($estado) && !empty($estado)){
+            if(isset($this->estado ) && !empty($this->estado )){
+                if($this->estado->getId() == 2){
+                      if($estado->getId() != 2 ) $varDownStok = 1;
+                  }else{
+                    if($estado->getId() == 2 ) $varDownStok = -1;
+                  }
+            }else{
+                if($estado->getId()==2)$varDownStok = -1;
+            }
+        }else{
+            if(isset($this->estado ) && !empty($this->estado ) && $this->estado == 2 )$varDownStok = 1;
+        }
+
+        if(isset($varDownStok) && !empty($varDownStok)){
+            $cantidad = $cantidad * $varDownStok;
+            $fechaaux = null;
+            if(isset($this->fechaSeleccionada) && !empty($this->fechaSeleccionada)) $fechaaux = $this->fechaSeleccionada->format('Y-m-d H:i');
+            $this->getBooking()->modificarStock($cantidad,$fechaaux);
+        }
         $this->estado = $estado;
         $this->updated_at = new \DateTime();
         return $this;
@@ -303,6 +332,21 @@ class SolicitudReserva
 
         return $this;
     }
+    public function getLinkDetalles():?string
+    {
+        return base64_encode($this->getId() . ':'.$this->getEmail());
+    }
 
+    public function getIdiomaPreferido(): ?Lenguaje
+    {
+        return $this->idiomaPreferido;
+    }
+
+    public function setIdiomaPreferido(?Lenguaje $idiomaPreferido): static
+    {
+        $this->idiomaPreferido = $idiomaPreferido;
+
+        return $this;
+    }
 
 }

@@ -1,15 +1,24 @@
 {% if bookings %}
     {% for booking in bookings %}
+
         <div class="card" style="width: 18rem;">
             <img src="/img/booking/{{ booking.getImgPortada }}" class="card-img-top" alt="...">
             <div class="card-body">
                 <h3>{{ booking.nombre }}</h3>
+                {% if booking.getLugaresDisponibles['total'] == 1  %}
+                    <p style="color: darkgreen;">¡Ultimo lugar disponible!</p>
+                {% endif %}
                 <p class="card-text">{{ booking.descripcion }}</p>
                 <div class="d-grid gap-2">
-                    <a class="btn btn-primary w-100" type="button" href="{{ path('app_reserva',{id:booking.id}) }}">Reserve</a>
+                    {% if booking.getLugaresDisponibles['total']  > 0%}
+                        <a class="btn btn-primary w-100" type="button" href="{{ path('app_reserva',{id:booking.id}) }}">Reserve</a>
+                    {% else %}
+                        <a class="btn btn-secondary w-100 disabled" type="button" href="{{ path('app_reserva',{id:booking.id}) }}">Sin lugares disponible</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
+
     {% endfor %}
 {% else %}
     <div class="row" style="display: flex; flex-direction: row; justify-content: center">

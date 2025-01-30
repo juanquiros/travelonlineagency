@@ -30,14 +30,18 @@ class SolicitudReservaRepository extends ServiceEntityRepository
     //            ->getResult()
     //        ;
     //    }
-
-    //    public function findOneBySomeField($value): ?SolicitudReserva
-    //    {
-    //        return $this->createQueryBuilder('s')
-    //            ->andWhere('s.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        //SELECT solicitud_reserva.fecha_seleccionada,(count(solicitud_reserva.id) + SUM(JSON_LENGTH(solicitud_reserva.in_charge_of))) as solicitudes FROM solicitud_reserva WHERE solicitud_reserva.booking_id =37 GROUP BY solicitud_reserva.fecha_seleccionada;
+        public function solicitudesDeBooking(int $idBooking, int $idEstado): ?array
+        {
+            return $this->createQueryBuilder('s')
+                ->select('s.fechaSeleccionada as fecha, (count(s.id) + SUM(JSON_LENGTH(s.inChargeOf))) as solicitudes ')
+                ->andWhere('s.Booking = :idBooking')
+                ->andWhere('s.estado = :idEstado')
+                ->setParameter('idBooking', $idBooking)
+                ->setParameter('idEstado', $idEstado)
+                ->groupBy('fecha')
+                ->getQuery()
+                ->getResult()
+            ;
+        }
 }

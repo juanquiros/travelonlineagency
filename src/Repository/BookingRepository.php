@@ -40,4 +40,5 @@ class BookingRepository extends ServiceEntityRepository
                 ->getQuery()
                 ->getResult();
         }
+
 }

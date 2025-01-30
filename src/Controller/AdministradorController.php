@@ -322,6 +322,21 @@ class AdministradorController extends AbstractController
             'servicios'=>$servicios
         ]);
     }
+    #[Route('/administrador/notificaciones', name: 'app_administrador_notificaciones')]
+    public function app_administrador_notificaciones(Request $request): Response
+    {
+    $idiomas = LanguageService::getLenguajes($this->em);
+    $idioma = LanguageService::getLenguaje($this->em,$request);
+    $this->adminMenu['notificaciones'] = true;
+
+    return $this->render('administrador/notificaciones.html.twig', [
+        'controller_name' => 'Notificaciones Administrador',
+        'usuario'=>$this->getUser(),
+        'menu'=>$this->adminMenu,
+        'idiomas'=>$idiomas,
+        'idiomaPlataforma'=>$idioma
+    ]);
+}
     #[Route('/administrador/booking/{id}', name: 'app_administrador_booking')]
     public function app_administrador_booking(Booking $booking = null, Request $request): Response
     {
@@ -333,7 +348,10 @@ class AdministradorController extends AbstractController
         $reservas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>2,'Booking'=>$booking->getId()]);
         $reservas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>1,'Booking'=>$booking->getId()]);
         $reservas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>3,'Booking'=>$booking->getId()]);
-        $srv = new SolicitudReserva();
+        $personas=[];
+        $personas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),1);
+        $personas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),2);
+        $personas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),3);
 
         return $this->render('administrador/detallesReservasBooking.html.twig', [
             'controller_name' => 'AdministradorController',
@@ -342,7 +360,8 @@ class AdministradorController extends AbstractController
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'booking'=>$booking,
-            'reservas'=>$reservas
+            'reservas'=>$reservas,
+            'personas'=>$personas
         ]);
     }
     #[Route('/administrador/servicio/booking', name: 'app_service_booking')]
@@ -533,7 +552,7 @@ class AdministradorController extends AbstractController
                 if(isset($bookingId) && !empty($bookingId)) {
                     $booking = $this->em->getRepository(Booking::class)->find($bookingId);
                     if (isset($booking) && !empty($booking)) {
-                        $imagenes = $booking->getImagenes();
+                        $imagenes = $booking->getImagenesArray();
                     }
                 }
             }

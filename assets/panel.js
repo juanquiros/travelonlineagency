@@ -328,7 +328,7 @@ function cambiarmonedadepreciobooking(){
 function agregarprecioBooking(){
     cargartablapreciosBooking(monedas,{valor:0.0,monedaId:1});
 }
-function agregarFechaBooking(fecha=null){
+function agregarFechaBooking(fecha=null,cantidad=0){
     var index = 0;
     var tbodyfechasBooking = document.getElementById('tbody-fechasBooking');
     if(tbodyfechasBooking.children.length > 0){
@@ -336,11 +336,13 @@ function agregarFechaBooking(fecha=null){
     }
     if(fecha == null) {
         fecha = document.getElementById('filtrofecha').value;
+        cantidad = document.getElementById('cantidaddereservas').value;
     }
 
     if(fecha){
         tbodyfechasBooking.innerHTML += '<tr id="fechabooking-'+index+'" >' +
             '<td>'+fecha+'</td>' +
+            '<td>'+cantidad+'</td>' +
             '<td><a href="#" onclick="quitarfecha(\'fechabooking-'+index+'\')">Quitar</a></td>' +
             '</tr>'
     }
@@ -354,6 +356,7 @@ function getfechasBookingTbody(){
         childrenArray.forEach((fecha)=>{
             var fechaarray = {}
             fechaarray.fecha = fecha.children[0].innerHTML;
+            fechaarray.cantidad = fecha.children[1].innerHTML;
             resp.push(fechaarray);
         })
     }

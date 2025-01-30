@@ -45,7 +45,8 @@ class InicioController extends AbstractController
             'controller_name' => 'InicioController',
             'idiomas'=>$idiomas,
             'bookings'=>$bookings,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma'=>$idioma,
+            'now'=> new \DateTime()
         ]);
     }
     #[Route('/reserva/{id}', name: 'app_reserva')]
@@ -54,22 +55,22 @@ class InicioController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $fechasDatetime = null;
-        if(!isset($booking) || empty($booking) || !$booking->isHabilitado()){
-            return $this->redirect('app_inicio');
+        $datetimeNow = new \DateTime();
+        if(!isset($booking) || empty($booking) || !$booking->isHabilitado() || $booking->getValidoHasta() <= ($datetimeNow)){
+            return $this->redirectToRoute('app_inicio');
         }
         $fechas = $booking->getFechasdelservicio();
+
         $formulario = $booking->getFormRequerido();
         if(isset($formulario)&& !empty($formulario)){
             $formulario = json_decode($formulario);
         }
-        if(isset($fechas) && !empty($fechas)){
-            $fechasDatetime = [];
-            foreach (json_decode($fechas) as $fechaDatetime){
-                $fechasDatetime []= \DateTime::createFromFormat('Y-m-d\TH:i', $fechaDatetime->fecha);
-            }
-        }
+
+        $fechasDatetime = $booking->getfechasdisponibles();
+
         $reserva = new SolicitudReserva();
         $reserva->setBooking($booking);
+        $reserva->setIdiomaPreferido($idioma);
         $reservaForm = $this->createForm(SolicitudReservaType::class,$reserva);
         $reservaForm->handleRequest($request);
         if($reservaForm->isSubmitted() && $reservaForm->isValid()){
@@ -100,12 +101,12 @@ class InicioController extends AbstractController
                 $reserva->setEstado($this->em->getRepository(EstadoReserva::class)->find(1));
                 $this->em->persist($reserva);
                 $this->em->flush();
-                $tokenId = base64_encode($reserva->getId() . ':'.$reserva->getEmail());
+
+
                 $emailcontext = [
-                    'tokenDetalles'=>$tokenId,
                     'reserva'=>$reserva,
                     'idiomaPlataforma'=>$idioma,
-                    'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$tokenId,'id'=>$reserva->getId()],false)
+                    'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$reserva->getLinkDetalles(),'id'=>$reserva->getId()])
                 ];
                 $email = (new TemplatedEmail())
                     ->from(new Address('tienda@shophardware.com.ar', $this->em->getRepository(Plataforma::class)->find(1)->getNombre() .' bot'))
@@ -114,8 +115,7 @@ class InicioController extends AbstractController
                     ->htmlTemplate('email/reservado.html.twig')
                     ->context($emailcontext);
                 $mailer->send($email);
-                dump($mailer);
-                //return $this->redirectToRoute('apps_pago',['id'=>$reserva->getId()]);
+                return $this->redirectToRoute('apps_pago',['id'=>$reserva->getId()]);
 
             }
         }

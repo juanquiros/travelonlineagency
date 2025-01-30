@@ -1,3 +1,5 @@
+var cantidad_disponible_Booking = 0;
+
 function changelan(id_lang){
     var dropdownSelectLang = document.getElementById('lang-seceted-dropdown');
     var  ruta = Routing.generate('app_cahngelanguage');
@@ -43,11 +45,12 @@ function getBookingsbyfecha(filtrofechainput = null){
     })
 }
 
-function seleccionarfechabookingsolicitud(fecha){
+function seleccionarfechabookingsolicitud(fecha,fechaindexloop){
     if(document.getElementById('solicitud_reserva_submit').attributes.getNamedItem('disabled')) {
         document.getElementById('solicitud_reserva_submit').attributes.removeNamedItem('disabled');
     }
     document.getElementById('solicitud_reserva_fechaSeleccionadaString').value = fecha;
+    cantidad_disponible_Booking = document.getElementById('fechacantidad'+fechaindexloop).value;
 }
 function habilitarFormularioAdicionalBooking(){
     var datosprincipal = document.getElementById('rowdatosprincipalbooking');
@@ -80,33 +83,45 @@ function habilitarFormularioAdicionalBooking(){
     document.getElementById('solicitud_reserva_submit').attributes.setNamedItem(disabled)
 }
 function agregarpersonabooking(){
-    habilitarFormularioAdicionalBooking();
-    var tbodyPersonas = document.getElementById('tbody-personasinBooking');
-    tbodyPersonas.innerHTML += '<tr id="nuevapersonatablaadicional">' +
-        '<td id="personaenformularioNombre"></td>' +
-        '<td id="personaenformularioApellido"></td>' +
-        '<td id="personaenformularioAccion"><button class="btn btn-link" onclick="finagregarpersonabooking()">Cancelar</button></td>' +
-        '</tr>'
-    document.getElementById('btnagregarpersonabooking').attributes.setNamedItem(document.createAttribute("disbled"));
-    var rowDatosPrincipalshow = document.getElementById('uldatossolicitante');
-    var nombre = document.getElementById('solicitud_reserva_name').value;
-    var apellido = document.getElementById('solicitud_reserva_surname').value;
-    var email = document.getElementById('solicitud_reserva_email').value;
-    var telefono = document.getElementById('solicitud_reserva_phone').value;
-    document.getElementById('btn-finalizaragregarpersona').replaceWith(document.getElementById('btn-finalizaragregarpersona').cloneNode(true))
-    document.getElementById('btn-finalizaragregarpersona').addEventListener("click",function () {
-        finagregarpersonabooking(true,null);
-    });
-    document.getElementById('solicitud_reserva_nameAdicional').value=""
-    document.getElementById('solicitud_reserva_surnameAdicional').value=""
-    var datos_adicionales =  document.getElementById('datosadicionales-nuevaPersona').children
-    if(datos_adicionales && datos_adicionales.length > 0){
-     for (let dato of datos_adicionales){
-         if(dato.tagName === "INPUT")dato.value = "";
-     }
-    }
+    event.preventDefault();
 
-    rowDatosPrincipalshow.innerHTML = "<p>"+nombre.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase())+" "+apellido.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase())+ ", "+email+ ", "+telefono+"</p>"
+
+
+    var tbodyPersonas = document.getElementById('tbody-personasinBooking');
+    if(cantidad_disponible_Booking > tbodyPersonas.children.length + 1) {
+        habilitarFormularioAdicionalBooking();
+        tbodyPersonas.innerHTML += '<tr id="nuevapersonatablaadicional">' +
+            '<td id="personaenformularioNombre"></td>' +
+            '<td id="personaenformularioApellido"></td>' +
+            '<td id="personaenformularioAccion"><button class="btn btn-link" onclick="finagregarpersonabooking()">Cancelar</button></td>' +
+            '</tr>'
+        document.getElementById('btnagregarpersonabooking').attributes.setNamedItem(document.createAttribute("disbled"));
+        var rowDatosPrincipalshow = document.getElementById('uldatossolicitante');
+        var nombre = document.getElementById('solicitud_reserva_name').value;
+        var apellido = document.getElementById('solicitud_reserva_surname').value;
+        var email = document.getElementById('solicitud_reserva_email').value;
+        var telefono = document.getElementById('solicitud_reserva_phone').value;
+        document.getElementById('btn-finalizaragregarpersona').replaceWith(document.getElementById('btn-finalizaragregarpersona').cloneNode(true))
+        document.getElementById('btn-finalizaragregarpersona').addEventListener("click", function () {
+            finagregarpersonabooking(true, null);
+        });
+        document.getElementById('solicitud_reserva_nameAdicional').value = ""
+        document.getElementById('solicitud_reserva_surnameAdicional').value = ""
+        var datos_adicionales = document.getElementById('datosadicionales-nuevaPersona').children
+        if (datos_adicionales && datos_adicionales.length > 0) {
+            for (let dato of datos_adicionales) {
+                if (dato.tagName === "INPUT") dato.value = "";
+            }
+        }
+
+        rowDatosPrincipalshow.innerHTML = "<p>" + nombre.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()) + " " + apellido.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()) + ", " + email + ", " + telefono + "</p>"
+    }else{
+        if(cantidad_disponible_Booking == 0 && document.getElementById('solicitud_reserva_fechaSeleccionadaString').value == ''){
+            alert('Seleccione una fecha de servicio antes de agregar.')
+        }else{
+            alert('Solo hay ' + cantidad_disponible_Booking + ' lugares disponibles para esta fecha.')
+        }
+    }
 }
 
 function datoadicionalmodificado(datoId){

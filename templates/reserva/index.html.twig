@@ -8,6 +8,7 @@
     {{ parent() }}
 {% endblock %}
 {% block body %}
+
     <section   data-aos="fade-up" data-aos-duration="2000">
         <div class="row">
             <div class="col-md-2"></div>
@@ -26,7 +27,7 @@
                 </div>
                 <p>{{ booking.detalles | raw }}</p>
                 {% for precio in booking.precios %}
-                    <h4>{{ precio.moneda.simbolo }} {{ precio.valor | number_format(2, '.', ',')  }}</h4>
+                    <h4>{{ precio.moneda.simbolo }} {{ precio.valor | number_format(2, '.', ',')  }} / por persona</h4>
 
                 {% endfor %}
             </div>
@@ -121,8 +122,10 @@
                                 <h5>Seleccionar fecha para reserva</h5>
                                 <div class="btn-group" role="group" aria-label="Basic radio toggle button group" id="rowfechasdisponibles">
                                     {% for fecha in fechas %}
-                                        <input type="radio" class="btn-check" name="fechabtnradio" id="fechabtnradio{{ loop.index }}" autocomplete="off" onchange="seleccionarfechabookingsolicitud('{{ fecha | date('Y-m-d H:i') }}')">
-                                        <label class="btn btn-outline-primary" for="fechabtnradio{{ loop.index }}">{{ fecha | date('d-m-Y H:i') }}</label>
+                                        <input type="radio" class="btn-check" name="fechabtnradio" id="fechabtnradio{{ loop.index }}" autocomplete="off" onchange="seleccionarfechabookingsolicitud('{{ fecha.fecha | date('Y-m-d H:i') }}',{{ loop.index }})">
+
+                                        <label class="btn btn-outline-primary" for="fechabtnradio{{ loop.index }}">{{ fecha.fecha | date('d-m-Y H:i') }}<br>Disponible: {{ fecha.cantidad }}</label>
+                                        <input type="hidden" value="{{ fecha.cantidad }}" id="fechacantidad{{ loop.index }}">
                                     {% endfor %}
                                 </div>
                             {% endif %}
@@ -163,6 +166,8 @@
                 if( tienefechas && tienefechas.children.length > 0 ){
                     var disabled = document.createAttribute('disabled')
                     document.getElementById('solicitud_reserva_submit').attributes.setNamedItem(disabled);
+                }else{
+                    cantidad_disponible_Booking = {{ booking.disponibles }}
                 }
                 cargar_datos_formularioBooking();
             </script>
