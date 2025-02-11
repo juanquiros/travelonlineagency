@@ -1,43 +1,134 @@
 {% extends 'administrador/base.html.twig' %}
 
-{% block title %}Panel - Mensajes{% endblock %}
+{% block title %}Panel - Configuraciones{% endblock %}
 
 {% block body %}
-   <div class="row">
+   <div class="row mb-5">
        <div class="col-md-3"></div>
        <div class="col-md-6">
-           <h1>Hola Mundo desde configuraciones</h1>
+           <h1>Configuraciones de plataforma</h1>
        </div>
        <div class="col-md-3"></div>
    </div>
-    <section id="sectionCredencialesPayPal">
-        <div class="row">
-            <div class="col-md-3"></div>
-            <div class="col-md-6">
-                <div class="row">
-                    <h3>Credenciales PayPal</h3>
-                </div>
-                <div class="row">
+    <div class="row mb-5">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+    <div class="accordion accordion-flush" id="accordionFlushConfiguracioneS">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                    Configuraciones generales
+                </button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushConfiguracioneS">
+                <div class="accordion-body">
+                    {{ form_start(formularioPlataforma) }}
 
-                    {{ form(formularioCredencialesPayPal) }}
+                    {{ form_errors(formularioPlataforma.nombre) }}
+                    {{ form_label(formularioPlataforma.nombre) }}
+                    {{ form_widget(formularioPlataforma.nombre) }}
+
+
+
+                    {{ form_errors(formularioPlataforma.logo) }}
+                    {{ form_label(formularioPlataforma.logo) }}
+                    {% if plataforma.logo %}
+                        <p style="color: gray">Logo actual</p>
+                        <img src="{{ asset(img ~'/' ~ plataforma.logo) }}" style="max-width: 100px" class="ml-5 mb-3">
+                    {% endif %}
+                    {{ form_widget(formularioPlataforma.logo) }}
+
+
+                    {{ form_errors(formularioPlataforma.icono) }}
+                    {{ form_label(formularioPlataforma.icono) }}
+                    {% if plataforma.icono %}
+                        <p style="color: gray">Icono actual</p>
+                        <img src="{{ asset('/' ~ plataforma.icono) }}" style="max-width: 100px" class="ml-5 mb-3">
+                    {% endif %}
+
+                    {{ form_widget(formularioPlataforma.icono) }}
+
+
+                    {{ form_end(formularioPlataforma  ) }}
+
+
                 </div>
             </div>
-            <div class="col-md-3"></div>
         </div>
-    </section>
-    <section id="sectionCredencialesPayPal">
-        <div class="row">
-            <div class="col-md-3"></div>
-            <div class="col-md-6">
-                <div class="row">
-                    <h3>Credenciales MercadoPago</h3>
-                </div>
-                <div class="row">
 
+
+
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                    Credenciales MercadoPago
+                </button>
+            </h2>
+            <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushConfiguracioneS">
+                <div class="accordion-body">
                     {{ form(formularioCredencialesMp) }}
                 </div>
             </div>
-            <div class="col-md-3"></div>
         </div>
-    </section>
+
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse4" aria-expanded="false" aria-controls="flush-collapse4">
+                    Credenciales PayPal
+                </button>
+            </h2>
+            <div id="flush-collapse4" class="accordion-collapse collapse" data-bs-parent="#accordionFlushConfiguracioneS">
+                <div class="accordion-body">
+                    {{ form(formularioCredencialesPayPal) }}
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                    Traducciones plataforma
+                </button>
+            </h2>
+            <div id="flush-collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionFlushConfiguracioneS">
+                <div class="accordion-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">KeyValue</th>
+                            <th scope="col">Cod Lenguaje</th>
+                            <th scope="col">Value</th>
+                            <th scope="col">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if traduccionesPlataforma %}
+                            {% for traduccion in traduccionesPlataforma %}
+                                <tr>
+                                    <th>{{ traduccion.id }}</th>
+                                    <td>{{ traduccion.getKeyName }}</td>
+                                    <td><img src="{{ asset(icon_language  ~ '/'  ~ traduccion.lenguaje.icono ) }}" alt="" style="height: 1rem"> {{ traduccion.lenguaje.codigo }}</td>
+                                    <td>{{ traduccion.value |slice(0, 30) }}{% if traduccion.value | length > 30 %}...{% endif %}</td>
+                                    <td><a href="{{ path('app_admin_traduccion_plataforma',{codLenguaje:traduccion.lenguaje.codigo,keyValue:traduccion.getKeyName}) }}">Editar</a></td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+        <div class="col-md-3"></div>
+    </div>
+
+
+
 {% endblock %}

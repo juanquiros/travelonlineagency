@@ -3,7 +3,8 @@ twig:
     form_themes: ['bootstrap_5_layout.html.twig']
     globals:
         icon_language: '%icon_language%'
-
+        img: '/img'
+        basedir: '%kernel.project_dir%'
 when@test:
     twig:
         strict_variables: true

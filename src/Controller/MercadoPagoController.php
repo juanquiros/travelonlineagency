@@ -104,7 +104,7 @@ final class MercadoPagoController extends AbstractController
             'linkDetalles'=>$linkDetalles,
         ]);
     }
-    #[Route('/pay/mercadopago/ipn', name: 'mercadopago_ipn')]
+    #[Route('/pay/mercadopago/ipn', name: 'mercadopago_ipn', methods: ['POST'])]
     public function mercadopago_ipn(Request $request,MailerInterface $mailer): Response
     {
         $pagoMP = null;

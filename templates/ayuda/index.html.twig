@@ -1,73 +1,40 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Preguntas frecuentes{% endblock %}
+{% block title %}{{ titulo }}{% endblock %}
 
 {% block body %}
-    <style>
-        html,body{
-            height: 100vh; /* Ocupa el 100% del alto del viewport */
-            margin: 0; /* Elimina márgenes por defecto */
-            display: flex; /* Opcional: Permite usar Flexbox si es necesario para centrar contenido */
-            flex-direction: column;
-        }
-    </style>
 <div class="row mt-5">
     <div class="col-md-4"></div>
-    <div class="col-md-4">
-        <h1>Preguntas Frecuentes</h1>
+    <div class="col-md-4 ">
+        <h1 class="m-3">{{ titulo }}</h1>
         <hr>
     </div>
     <div class="col-md-4"></div>
 </div>
     <section>
-        <div class="row">
+        <div class="row mb-5">
             <div class="col-md-4"></div>
             <div class="col-md-4">
-                <div id="accordion">
-                    <div class="card">
-                        <div class="card-header" id="headingOne">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                    ¿Cómo puedo reservar un traslado o tour?
-                                </button>
-                            </h5>
-                        </div>
+                <div class="accordion accordion-flush mb-5" id="accordionPreguntasFrecuentes">
 
-                        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-                            <div class="card-body">
-                                Puedes reservar fácilmente seleccionando la fecha, hora y destino deseado en nuestra página de inicio. Una vez que completes los datos requeridos, podrás proceder al pago para confirmar tu reserva.
+                    {% if preguntas %}
+                        {% for pregunta in preguntas %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{ loop.index  }}" aria-expanded="false" aria-controls="flush-collapse{{ loop.index  }}">
+                                        <strong>{{ pregunta.titulo }}</strong>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapse{{ loop.index  }}" class="accordion-collapse collapse" data-bs-parent="#accordionPreguntasFrecuentes">
+                                    <div class="accordion-body">
+                                        {{ pregunta.respuesta | raw }}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header" id="headingTwo">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                    ¿Puedo cancelar o modificar mi reserva?
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                            <div class="card-body">
-                                Sí, puedes cancelar o modificar tu reserva hasta [indicar plazo, ejemplo: 24 horas antes del servicio] sin costo adicional. Para hacerlo, accede a tu cuenta o contáctanos directamente por correo o teléfono.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header" id="headingThree">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                    ¿Qué pasa si mi vuelo o llegada se retrasa?
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
-                            <div class="card-body">
-                                Nuestro equipo monitorea los horarios de los vuelos en tiempo real. Si tienes un retraso, ajustaremos el horario de recogida para asegurarnos de que te esperen al llegar sin costo adicional.
-                            </div>
-                        </div>
-                    </div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
+
             </div>
             <div class="col-md-4"></div>
         </div>

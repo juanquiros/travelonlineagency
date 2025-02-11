@@ -5,15 +5,23 @@ namespace App\Controller;
 use App\Entity\Booking;
 use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
+use App\Entity\Lenguaje;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
+use App\Entity\PreguntaFrecuente;
 use App\Entity\RespuestaMensaje;
 use App\Entity\SolicitudReserva;
+use App\Entity\TraduccionPlataforma;
+use App\Entity\TraduccionPreguntaFrecuente;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
+use App\Form\PlataformaType;
+use App\Form\PreguntaFrecuenteType;
 use App\Form\RespuestaMensajeType;
+use App\Form\TraduccionPlataformaType;
+use App\Form\TraduccionPreguntaFrecuenteType;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
@@ -39,7 +47,8 @@ class AdministradorController extends AbstractController
         's_traslados'=>false,
         's_reservas'=>false,
         'configuraciones'=>false,
-        'home'=>false
+        'home'=>false,
+        's_preguntas'=>false
     ];
 
     private $em;
@@ -58,26 +67,36 @@ class AdministradorController extends AbstractController
             if($calidad > 1536){ $calidad = 70;}else{$calidad = 100;}
             $mime = $imgInfo['mime'];
 
-            switch($mime){
-                case 'image/jpeg':
-                    $imagen = imagecreatefromjpeg($file);
-                    break;
-                case 'image/png':
-                    $imagen = imagecreatefrompng($file);
-                    break;
-                case 'image/gif':
-                    $imagen = imagecreatefromgif($file);
-                    break;
-                default:
-                    $imagen = imagecreatefromjpeg($file);
+            if($mime==='image/png' || $mime==='image/ico' || $mime==='image/x-icon' || $mime==='image/vnd.microsoft.icon'){
+                try {
+                    $file->move(
+                        $this->getParameter($path),
+                        $newFilename
+                    );
+                } catch (FileException $e) {
+                    return ['filename'=> "",'upload'=>false];
+                }
+            }else{
+                dump($mime);
+                switch($mime){
+                    case 'image/jpeg':
+                        $imagen = imagecreatefromjpeg($file);
+                        break;
+                    case 'image/gif':
+                        $imagen = imagecreatefromgif($file);
+                        break;
+                    default:
+                        $imagen = imagecreatefromjpeg($file);
+                }
+
+                try {
+                    imagejpeg($imagen, $this->getParameter($path).'/'.$newFilename,$calidad);
+
+                } catch (FileException $e) {
+                    return ['filename'=> "",'upload'=>false];
+                }
             }
 
-            try {
-                imagejpeg($imagen, $this->getParameter($path).'/'.$newFilename,$calidad);
-
-            } catch (FileException $e) {
-                return ['filename'=> "",'upload'=>false];
-            }
             return ['filename'=> $newFilename,'upload'=>true];
         }
     }
@@ -126,122 +145,15 @@ class AdministradorController extends AbstractController
     #[Route('/administrador', name: 'app_administrador_home')]
     public function app_administrador_home(Request $request): Response
     {
-
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-        $credenciales = $plataforma->getCredencialesPayPal();
-        $token = null;
-
-
-
-        $accesToken = $credenciales->getAccessToken();
-        if($accesToken) {
-            $fechavence = \DateTime::createFromImmutable($credenciales->getUpdatedAt());
-            $expirein = $credenciales->getExpiresIn() . ' seconds';
-            date_add($fechavence, date_interval_create_from_date_string($expirein));
-            if(new \DateTime() >= $fechavence){
-                $token = $this->getTokenPaypal($credenciales->getClientId(),$credenciales->getClientSecret())['token'];
-            }
-        }else{
-            $token = $this->getTokenPaypal($credenciales->getClientId(),$credenciales->getClientSecret())['token'];
-        }
-        if(isset($token) && !empty($token) && isset($token['token']['access_token']) && !empty($token['token']['access_token'])){
-            $credenciales->setAccessToken($token['token']['access_token']);
-            $credenciales->setTokenType($token['token']['token_type']);
-            $credenciales->setAppId($token['token']['app_id']);
-            $credenciales->setExpiresIn(intval($token['token']['expires_in']));
-            $credenciales->setNonce($token['token']['nonce']);
-            $credenciales->setScope($token['token']['scope']);
-            $this->em->persist($credenciales);
-            $this->em->flush();
-        }
-
-
-
-            $url = 'https://api-m.sandbox.paypal.com/v2/checkout/orders';
-            $params = [
-                'intent' => "CAPTURE",
-                'payment_source' => [
-                    'paypal'=>[
-                        'experience_context'=>[
-                            'payment_method_preference'=>'IMMEDIATE_PAYMENT_REQUIRED',
-                            'user_action'=>'PAY_NOW',
-                            'return_url'=>'https://localhost:8000',
-                            'cancel_url'=>'https://localhost:8000'
-                        ]
-                    ]
-                ],
-                'purchase_units' => [[
-                    'amount'=>[
-                        'currency_code'=>'USD',
-                        'value'=>'10.00',
-                        'breakdown'=>[
-                            'item_total'=>[
-                                'currency_code'=>'USD',
-                                'value'=>'10.00'
-                            ]
-                        ]
-                    ],
-                    'items'=>[[
-                        'name'=>'CATAMARAN NOMBRE',
-                        'description'=>'DESCRIPCION DEL SERVICIO',
-                        'unit_amount'=>[
-                            'currency_code'=>'USD',
-                            'value'=>'10.00'
-                        ],
-                        'quantity'=>'1',
-                        'sku'=>'HOLAMUNDOID'
-                    ]]
-                ]]
-            ];
-            $ch = curl_init();
-            $autorization = 'Bearer ' . $credenciales->getAccessToken() ;
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'content-type: application/json',
-                'Authorization:' . $autorization
-            ));
-            curl_setopt($ch, CURLOPT_POSTFIELDS,
-                json_encode($params));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-            $response = curl_exec($ch);
-            if (curl_errno($ch)) {
-                $respuesta = 'Curl error: ' . curl_error($ch);
-            } else {
-                $decodedResponse = json_decode($response, true);
-                if ($decodedResponse !== null) {
-
-                    $respuesta = "success";
-                } else {
-                    $respuesta = $response;
-                }
-            }
-            curl_close($ch);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         return $this->render('administrador/testpaypal.html.twig', [
             'controller_name' => 'AdministradorController',
-            'link'=>$decodedResponse['links'][1]['href']
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma
 
         ]);
     }
@@ -251,6 +163,7 @@ class AdministradorController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $this->adminMenu['mensajes'] = true;
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         return $this->render('administrador/index.html.twig', [
             'controller_name' => 'AdministradorController',
             'sinrespuesta'=>[['id'=>233,'email'=>'juanquiross@gmail.com','getCreatedAt'=>new \DateTime(),'getRespuestasMensaje'=>[],'']],
@@ -258,7 +171,8 @@ class AdministradorController extends AbstractController
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma
         ]);
     }
     #[Route('/administrador/mensaje', name: 'app_mensaje')]
@@ -281,6 +195,7 @@ class AdministradorController extends AbstractController
                     'getCreatedAt'=>new \DateTime()
                 ]]
         ];
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         return $this->render('administrador/mensaje.html.twig', [
             'controller_name' => 'AdministradorController',
             'mensaje'=>$mensaje,
@@ -288,7 +203,8 @@ class AdministradorController extends AbstractController
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma
 
         ]);
     }
@@ -298,12 +214,14 @@ class AdministradorController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $this->adminMenu['traslados'] = true;
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         return $this->render('administrador/traslados.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma
         ]);
     }
     #[Route('/administrador/bookings', name: 'app_administrador_bookings')]
@@ -313,13 +231,15 @@ class AdministradorController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $this->adminMenu['reservas'] = true;
         $servicios = $this->em->getRepository(Booking::class)->findAll();
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         return $this->render('administrador/reservas.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
-            'servicios'=>$servicios
+            'servicios'=>$servicios,
+            'plataforma'=>$plataforma
         ]);
     }
     #[Route('/administrador/notificaciones', name: 'app_administrador_notificaciones')]
@@ -328,13 +248,15 @@ class AdministradorController extends AbstractController
     $idiomas = LanguageService::getLenguajes($this->em);
     $idioma = LanguageService::getLenguaje($this->em,$request);
     $this->adminMenu['notificaciones'] = true;
+    $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
     return $this->render('administrador/notificaciones.html.twig', [
         'controller_name' => 'Notificaciones Administrador',
         'usuario'=>$this->getUser(),
         'menu'=>$this->adminMenu,
         'idiomas'=>$idiomas,
-        'idiomaPlataforma'=>$idioma
+        'idiomaPlataforma'=>$idioma,
+        'plataforma'=> $plataforma
     ]);
 }
     #[Route('/administrador/booking/{id}', name: 'app_administrador_booking')]
@@ -352,12 +274,13 @@ class AdministradorController extends AbstractController
         $personas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),1);
         $personas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),2);
         $personas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),3);
-
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         return $this->render('administrador/detallesReservasBooking.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
+            'plataforma'=>$plataforma,
             'idiomaPlataforma'=>$idioma,
             'booking'=>$booking,
             'reservas'=>$reservas,
@@ -369,27 +292,172 @@ class AdministradorController extends AbstractController
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $servicios = $this->em->getRepository(Booking::class)->findAll();
         $this->adminMenu['s_reservas'] = true;
         return $this->render('administrador/service_booking.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
+            'plataforma'=>$plataforma,
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'servicios'=>$servicios
         ]);
     }
+    #[Route('/administrador/FAKs', name: 'app_plataforma_preguntas')]
+    public function app_plataforma_preguntas(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $preguntas = $this->em->getRepository(PreguntaFrecuente::class)->findAll();
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['s_preguntas'] = true;
+        return $this->render('administrador/FAKs.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'plataforma'=>$plataforma,
+            'usuario'=>$this->getUser(),
+            'menu'=>$this->adminMenu,
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'preguntas'=>$preguntas
+        ]);
+    }
+
+    #[Route('/administrador/FAKs/quitar/pregunta', name: 'app_admin_remove_fak',methods: ['POST'], options: ['expose'=>true])]
+    public function app_admin_remove_fak(Request $request): Response
+    {
+        $id = json_decode($request->getContent())->preguntaId;
+        $ret = false;
+        if(isset($id) && !empty($id)) {
+            $pregunta = $this->em->getRepository(PreguntaFrecuente::class)->find($id);
+            $this->em->remove($pregunta);
+            $this->em->flush();
+            $ret = true;
+        }
+        return new JsonResponse(['eliminado'=>$ret,'id'=>$id,],200);
+    }
+    #[Route('/administrador/FAKs/agregareditar/{codLenguaje}/{id}', defaults:["id"=> 0], name: 'app_admin_add_edit_fak')]
+    public function app_admin_add_edit_fak(string $codLenguaje,PreguntaFrecuente $pregunta = null,Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $editarPregunta = false;
+        $lenguaje = $this->em->getRepository(Lenguaje::class)->findOneBy(['codigo' => $codLenguaje]);
+        $traduccion = null;
+        if (!isset($lenguaje) || empty($lenguaje)) return $this->redirectToRoute('app_inicio');
+        $this->adminMenu['configuraciones'] = true;
+
+
+        if (isset($pregunta) && !empty($pregunta)) {
+            $traduccion = $pregunta->getTraduccionSiExiste($lenguaje);
+            if (isset($traduccion) && !empty($traduccion)) {
+                if ($traduccion->getId() == null) $editarPregunta = true;
+            } else {
+                $traduccion = new TraduccionPreguntaFrecuente();
+                $traduccion->setLenguaje($lenguaje);
+                $traduccion->setPreguntaFrecuente($pregunta);
+            }
+        }else{
+            $pregunta = new PreguntaFrecuente();
+            $pregunta->setLenguajeDefecto($lenguaje);
+            $editarPregunta = true;
+        }
+
+            $formularioTraduccion = $this->createForm(TraduccionPreguntaFrecuenteType::class, $traduccion);
+            $formularioTraduccion->handleRequest($request);
+            if ($formularioTraduccion->isSubmitted() && $formularioTraduccion->isValid() && !$editarPregunta) {
+
+                $this->em->persist($traduccion);
+                $this->em->flush();
+                return $this->redirectToRoute('app_plataforma_preguntas', [], 302);
+            }
+
+            $formularioPregunta = $this->createForm(PreguntaFrecuenteType::class, $pregunta);
+            $formularioPregunta->handleRequest($request);
+            if ($formularioPregunta->isSubmitted() && $formularioPregunta->isValid() && $editarPregunta) {
+                $this->em->persist($pregunta);
+                $this->em->flush();
+                return $this->redirectToRoute('app_plataforma_preguntas', [], 302);
+            }
+
+
+
+
+
+        return $this->render('administrador/formFAKs.html.twig', [
+            'controller_name' => 'Preguntas de plataforma',
+            'plataforma'=>$plataforma,
+            'pregunta'=>$pregunta,
+            'editarPregunta'=>$editarPregunta,
+            'usuario'=>$this->getUser(),
+            'menu'=>$this->adminMenu,
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'lenguajeFormulario'=>$lenguaje,
+            'formularioPregunta'=>$formularioPregunta,
+            'formularioTraduccion'=>$formularioTraduccion
+        ]);
+    }
+
+
     #[Route('/administrador/configuraciones', name: 'app_admin_configuraciones')]
-    public function app_admin_configuraciones(Request $request): Response
+    public function app_admin_configuraciones(Request $request,SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $servicios = $this->em->getRepository(Booking::class)->findAll();
-
+        $traducciones = $this->em->getRepository(TraduccionPlataforma::class)->findAll();
         $this->adminMenu['configuraciones'] = true;
 
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $plataforma->backLogo = $plataforma->getLogo();
+        $plataforma->backIcono = $plataforma->getIcono();
+        //Plataforma
+
+        $formularioPlataforma = $this->createForm(PlataformaType::class,$plataforma);
+        $formularioPlataforma->handleRequest($request);
+        if($formularioPlataforma->isSubmitted() && $formularioPlataforma->isValid()){
+
+
+            $logo = $formularioPlataforma->get('logo')->getData();
+            if(isset($logo) && !empty($logo)){
+                $upload = $this->upload($logo,'img',$slugger);
+                if($upload['upload']){
+                    $plataforma->setLogo($upload['filename']);
+                }
+            }
+
+            if((isset($plataforma->backLogo) && !empty($plataforma->backLogo) ) && ($plataforma->getLogo() == null || count(explode('.',$plataforma->getLogo())) <= 1 )){
+                $plataforma->setLogo($plataforma->backLogo);
+            }
+
+            $icono = $formularioPlataforma->get('icono')->getData();
+            if(isset($icono) && !empty($icono)){
+                $upload = $this->upload($icono,'basedir',$slugger);
+                if($upload['upload']){
+                    $plataforma->setIcono($upload['filename']);
+                }
+            }
+
+            if((isset($plataforma->backIcono) && !empty($plataforma->backIcono) ) && ($plataforma->getIcono() == null || count(explode('.',$plataforma->getIcono())) <= 1 )){
+                $plataforma->setIcono($plataforma->backIcono);
+            }
+
+
+
+
+
+
+
+            $this->em->persist($plataforma);
+            $this->em->flush();
+            $this->redirectToRoute('app_admin_configuraciones',[],302);
+
+        }
+
+
 
         //MERCADOPAGO CREDENCIALES PLATAFORMA
 
@@ -403,16 +471,9 @@ class AdministradorController extends AbstractController
                 $plataforma->setCredencialesMercadoPago($credencialesMercadoPago);
                 $this->em->persist($plataforma);
                 $this->em->flush();
-                $this->redirectToRoute('app_admin_configuraciones',[],302);
+            return $this->redirectToRoute('app_admin_configuraciones',[],302);
 
         }
-
-
-
-
-
-
-
         //PAYPAL CREDENCIALES PLATAFORMA
         $credencialesPayPalPlataforma = $plataforma->getCredencialesPayPal();
         if(!isset($credencialesPayPalPlataforma)|| empty($credencialesPayPalPlataforma))$credencialesPayPalPlataforma = new CredencialesPayPal();
@@ -436,18 +497,57 @@ class AdministradorController extends AbstractController
                 $plataforma->setCredencialesPayPal($credencialesPayPalPlataforma);
                 $this->em->persist($plataforma);
                 $this->em->flush();
-                $this->redirectToRoute('app_admin_configuraciones',[],302);
+                return $this->redirectToRoute('app_admin_configuraciones',[],302);
             }
         }
         return $this->render('administrador/configuraciones.html.twig', [
             'controller_name' => 'Configuración de plataforma',
+            'plataforma'=>$plataforma,
             'usuario'=>$this->getUser(),
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'servicios'=>$servicios,
             'formularioCredencialesPayPal'=>$formularioPayPal,
-            'formularioCredencialesMp'=>$formularioMercadoPago
+            'formularioCredencialesMp'=>$formularioMercadoPago,
+            'traduccionesPlataforma'=>$traducciones,
+            'formularioPlataforma'=>$formularioPlataforma
+        ]);
+    }
+    #[Route('/administrador/configuraciones/traduccion/plataforma/{codLenguaje}/{keyValue}', name: 'app_admin_traduccion_plataforma')]
+    public function app_admin_traduccion_plataforma(string $codLenguaje,string $keyValue,Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $lenguaje = $this->em->getRepository(Lenguaje::class)->findOneBy(['codigo'=>$codLenguaje]);
+        if(!isset($lenguaje) || empty($lenguaje)) return $this->redirectToRoute('app_inicio');
+        $this->adminMenu['configuraciones'] = true;
+
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $traduccion = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['lenguaje'=>$lenguaje,'key_name'=>$keyValue]);
+        if(!isset($traduccion)||empty($traduccion)){
+            $traduccion = new TraduccionPlataforma();
+            $traduccion->setLenguaje($lenguaje);
+            $traduccion->setPlataforma($plataforma);
+            $traduccion->setKeyName($keyValue);
+        }
+
+        $formularioTraduccion = $this->createForm(TraduccionPlataformaType::class,$traduccion);
+        $formularioTraduccion->handleRequest($request);
+        if($formularioTraduccion->isSubmitted() && $formularioTraduccion->isValid()){
+            $this->em->persist($traduccion);
+            $this->em->flush();
+            return $this->redirectToRoute('app_admin_configuraciones',[],302);
+        }
+        return $this->render('administrador/plataforma/traduccion.html.twig', [
+            'controller_name' => 'Configuración de plataforma',
+            'usuario'=>$this->getUser(),
+            'menu'=>$this->adminMenu,
+            'plataforma'=>$plataforma,
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'form'=>$formularioTraduccion,
+            'traduccion'=>$traduccion
         ]);
     }
     #[Route('/administrador/servicio/booking/quitar/precio', name: 'app_service_booking_del_precio',methods: ['POST'], options: ['expose'=>true])]
@@ -463,6 +563,9 @@ class AdministradorController extends AbstractController
         }
         return new JsonResponse(['eliminado'=>$ret,'id'=>$id,'cont'=>$request->getContent(),'user'=>$request->getUser()],200);
     }
+
+
+
     #[Route('/administrador/servicio/booking/administrar/{id?}', defaults:["id"=> 0], name: 'app_new_service_booking')]
     public function app_new_service_booking(Request $request,Booking $booking = null): Response
     {
@@ -498,6 +601,20 @@ class AdministradorController extends AbstractController
         if($formulario->isSubmitted() && $formulario->isValid()){
             $precios = $formulario->get('preciosaux')->getData();
             $this->em->persist($booking);
+            $fechas = json_decode($booking->getFechasdelservicio());
+            if(isset($fechas) && !empty($fechas)){
+                $fechasAux=[];
+                foreach ($fechas as $fech){
+                    $filtro = array_filter($fechasAux, function ($obj) use ($fech) {return $obj->fecha == $fech->fecha;});
+                    if(isset($filtro) && !empty($filtro)){
+                        $fechasAux[array_key_first($filtro)]->cantidad += $fech->cantidad;
+                    }else{
+                        $fechasAux []=$fech;
+                    }
+                    if($fechasAux[array_key_last($fechasAux)]->cantidad < 0) $fechasAux[array_key_last($fechasAux)]->cantidad = 0;
+                }
+                $booking->setFechasdelservicio(json_encode($fechasAux));
+            }
             if(isset($precios) && !empty($precios)){
                 $precios = json_decode($precios);
                 foreach ($precios as $precio){
@@ -523,6 +640,7 @@ class AdministradorController extends AbstractController
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
             'bookingid'=>$bookingId,
+            'plataforma'=>$plataforma,
             'bookingimg'=>$imgs,
             'datos'=>$datos,
             'precios'=>$preciosBooking,

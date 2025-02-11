@@ -322,6 +322,34 @@ function quitarprecioBooking(idRow,id){
 
     }
 }
+
+function quitarprecioFAKs(id){
+
+    if(confirm('¿Eliminar pregunta?')){
+        if(id){
+            var  ruta = Routing.generate('app_admin_remove_fak');
+            $.ajax({
+                type:'POST',
+                url: ruta,
+                data:JSON.stringify({preguntaId:parseInt(id)}),
+                async: true,
+                dataType: "json",
+                contentType: false,
+                processData: false,
+                success: function (data){
+                    if(data.eliminado){
+                    }else{
+                        alert('No fue posible quitar la pregunta')
+                    }
+                },
+                error:   function(response) {
+                    alert('No fue posible quitar la pregunta')
+                }
+            })
+        }
+
+    }
+}
 function cambiarmonedadepreciobooking(){
     document.getElementById('booking_preciosaux').value = getpreciosBookingTbody();
 }

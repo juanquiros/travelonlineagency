@@ -1,0 +1,35 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - FAK's{% endblock %}
+
+{% block body %}
+    <div class="" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="row" >
+            <div class="col-md-3"></div>
+            <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
+                <h1>FAK's Preguntas Frecuentes</h1>
+                <p>Lenguaje: {{ lenguajeFormulario.nombre }}  <img src="{{ asset(icon_language  ~ '/'  ~ lenguajeFormulario.icono ) }}" alt="" style="height: 1rem"></p>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                {% if editarPregunta == true %}
+                    <h3>Crear/editar pregunta</h3>
+                    <p>Lenguaje por defecto: {{ lenguajeFormulario.nombre }}  <img src="{{ asset(icon_language  ~ '/'  ~ lenguajeFormulario.icono ) }}" alt="" style="height: 1rem"></p>
+                    {{ form(formularioPregunta) }}
+                {% endif %}
+                {% if  editarPregunta == false %}
+                    <h3>Crear/editar traduccion</h3>
+                    <p>Pregunta: {{ pregunta.titulo }}</p>
+                    <p>Traduccion al: {{ lenguajeFormulario.nombre }}  <img src="{{ asset(icon_language  ~ '/'  ~ lenguajeFormulario.icono ) }}" alt="" style="height: 1rem"></p>
+                    {{ form(formularioTraduccion) }}
+                {% endif %}
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+{% endblock %}

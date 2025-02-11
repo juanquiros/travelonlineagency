@@ -6,10 +6,7 @@
 {% endblock %}
 
 
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('/tinymce/js/tinymce/tinymce.min.js') }}" referrerpolicy="origin"></script>
-{%  endblock %}
+
 
 {% block body %}
     <div class="p-3" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
@@ -204,7 +201,7 @@
                                         <label>Fecha de servicio</label>
                                         <input type="datetime-local" id="filtrofecha" class="form-control">
                                         <label>Cantidad de reservas:</label>
-                                        <input type="number" id="cantidaddereservas" class="form-control" value="1" min="0">
+                                        <input type="number" id="cantidaddereservas" class="form-control" value="1">
                                         <a class="nav-link" onclick="agregarFechaBooking()"><box-icon name='list-check'></box-icon> Agregar nuevo</a>
                                     </li>
                                 </ul>

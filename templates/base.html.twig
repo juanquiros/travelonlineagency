@@ -2,17 +2,17 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
+        <title>{% block title %}Inicio{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {% block meta %}
-            <meta name="description" content="Travel Online Agency - Iguazu">
-            <meta property="og:image" content="{{ asset('img/logo.png') }}" />
+            <meta name="description" content="{{ plataforma.nombre }}">
+            <meta property="og:image" content="{{ absolute_url(asset('img/'~ plataforma.logo)) }}" />
         {% endblock %}
 
-        <meta property="og:url" content="http://localhost:8000" />
+        <meta property="og:url" content="{{ absolute_url(path('app_inicio')) }}" />
 
-        <link rel="icon" href="{{ asset('logo.ico') }}">
+        <link rel="icon" href="{{  absolute_url(asset('/'~ plataforma.icono)) }}">
 
 
 
@@ -25,6 +25,24 @@
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+            <style>
+                html {
+                    min-height: 100%;
+                    position: relative;
+                }
+                body {
+                    margin-bottom: 40px;
+                    padding-bottom: 24rem;
+                }
+                footer {
+                    background-color: black;
+                    position: absolute;
+                    bottom: 0;
+                    width: 100%;
+                }
+            </style>
+
         {% endblock %}
 
         {% block javascripts %}
@@ -43,7 +61,7 @@
     </head>
     <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light" style="padding-left: 1rem; padding-right: 1rem; ">
-        <a class="navbar-brand" href="{{ path('app_inicio') }}"><img src="{{ asset('img/logosinfondo.png') }}" style="height: 2em"></a>
+        <a class="navbar-brand" href="{{ path('app_inicio') }}"><img src="{{ asset('img/'~ plataforma.logo) }}" style="height: 2em"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 
 
@@ -56,7 +74,7 @@
                     <a class="nav-link" href="{{ path('app_inicio') }}">Home <span class="sr-only"></span></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Booking</a>
+                    <a class="nav-link" href="{{ path('app_inicio') }}#bookings">Booking</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ path('app_ayuda') }}">Common questions</a>
@@ -102,22 +120,23 @@
                     </div>
                     <div class="col-md-4">
                         <ul>
-                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}">Tourist places</a></li>
-                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}">Booking</a></li>
+
+                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}#bookings">Booking</a></li>
                         </ul>
                     </div>
                     <div class="col-md-4">
                         <ul>
                             <li>Contact</li>
-                            <li>Phone: +54 9 3757 57-2141</li>
-                            <li>Email: contacto@correoelectronico.com.ar</li>
-                            <li>N3370 Puerto Iguazú, Misiones</li>
+                            {% if plataforma.contactoTelefono != '' %}<li>Phone: {{ plataforma.contactoTelefono }}</li>{% endif %}
+                            {% if plataforma.contactoCorreo != '' %}<li>Email: {{ plataforma.contactoCorreo }}</li>{% endif %}
+                            {% if plataforma.contactoDireccion != '' %}<li>{{ plataforma.contactoDireccion }}</li>{% endif %}
                         </ul>
                     </div>
                 </div>
             </div>
             <div class="col-md-2"></div>
         </div>
+
         <div class="row">
             <div class="col-md-4"></div>
             <div class="col-md-4 center" data-aos="fade-up">

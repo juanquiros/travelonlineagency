@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Lenguaje;
 use App\Entity\TraduccionPlataforma;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -31,13 +32,19 @@ class TraduccionPlataformaRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?TraduccionPlataforma
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        public function buscarTraduccion($key,Lenguaje $lenguaje): ?TraduccionPlataforma
+        {
+            $result =  $this->createQueryBuilder('t')
+                ->where('(t.key_name = :key and t.lenguaje = :len)')
+                ->setParameter('key', $key  )
+                ->setParameter('len', $lenguaje->getId())->getQuery()->getOneOrNullResult();
+            if (!isset($result) || empty($result)) $result = $this->createQueryBuilder('t')
+                ->where('t.key_name = :key')
+                ->setParameter('key', $key  )
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            return $result;
+
+        }
 }

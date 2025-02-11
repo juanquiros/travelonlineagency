@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Plataforma;
 use App\Entity\Precio;
 use App\Entity\SolicitudReserva;
 use App\Services\LanguageService;
@@ -24,9 +25,10 @@ class PagoController extends AbstractController
     {
         $mp = true;
         $pp = true;
-        if(!isset($solicitudReserva) || empty($solicitudReserva)) return $this->redirectToRoute('app_inicio');
+        if(!isset($solicitudReserva) || empty($solicitudReserva) || $solicitudReserva->getEstado()->getId() == 2 ) return $this->redirectToRoute('app_inicio');
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $precioBokingMp=$this->em->getRepository(Precio::class)->findOneBy(['moneda'=>2,'booking'=>$solicitudReserva->getBooking()->getId()]);
         $precioBokingPP=$this->em->getRepository(Precio::class)->findOneBy(['moneda'=>1,'booking'=>$solicitudReserva->getBooking()->getId()]);
         $adicionales = json_decode($solicitudReserva->getInChargeOf());
@@ -35,6 +37,8 @@ class PagoController extends AbstractController
             'controller_name' => 'PagoController',
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma,
+            'solicitud'=>$solicitudReserva,
             'PayPalLink'=>$this->generateUrl('paypal_pay_booking',['id'=>$solicitudReserva->getId()]),
             'MercadoPagoLink'=>$this->generateUrl('mercadopago_pay_booking',['id'=>$solicitudReserva->getId()]),
             'habilitado'=>['mp'=>$precioBokingMp,'pp'=>$precioBokingPP],

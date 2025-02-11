@@ -12,7 +12,7 @@
                     <h1>CheckOut</h1>
                 </div>
                 <div class="card-body">
-
+                    <p>Reserva para "{{ solicitud.booking.nombre }}"</p>
                     {% if PayPalLink and habilitado['pp'] and MercadoPagoLink and habilitado['mp']%}
                         <h3><strong>USD {{ habilitado['pp'].valor * cantidad }}/ARG ${{ habilitado['mp'].valor * cantidad }}</strong></h3>
                     {% else %}

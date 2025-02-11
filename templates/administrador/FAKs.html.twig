@@ -1,0 +1,61 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - FAK's{% endblock %}
+
+{% block body %}
+    <div class="" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="row" >
+            <div class="col-md-3"></div>
+            <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
+                <h1>FAK's Preguntas Frecuentes</h1>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                <h3>FAK's</h3>
+                <a class="btn btn-secondary btn-sm mb-5" href="{{ path('app_admin_add_edit_fak',{codLenguaje:plataforma.languageDef.codigo}) }}">Agregar nueva pregunta</a>
+                <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
+                    <thead>
+                    <tr>
+                        <th scope="col">id</th>
+                        <th scope="col">Pregunta</th>
+                        <th scope="col">Traducciones</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+
+                    {% for pregunta in preguntas %}
+                        <tr>
+                            <td>{{ pregunta.id }}</td>
+                            <td>{{ pregunta.titulo }}</td>
+                            <td>
+
+                                {% for leng in  idiomas %}
+                                    <!-- {codLenguaje}/{id}', name: 'app_admin_add_edit_fak')] -->
+                                    {% if(pregunta.getLenguajesDisp[leng.codigo] is defined) %}
+                                        <a href="{{ path('app_admin_add_edit_fak',{codLenguaje:leng.codigo,id:pregunta.id}) }}"><img src="{{ asset(icon_language  ~ '/'  ~ pregunta.getLenguajesDisp[leng.codigo].icono ) }}" alt="" style="height: 1rem"></a>
+                                    {% else %}
+                                        <a href="{{ path('app_admin_add_edit_fak',{codLenguaje:leng.codigo,id:pregunta.id}) }}">agregar '{{ leng.codigo }}'</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                            </td>
+                            <td>
+                                <button class="btn btn-link btn-sm" onclick="quitarprecioFAKs({{ pregunta.id }})">Borrar</button></td>
+
+                        </tr>
+
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+{% endblock %}

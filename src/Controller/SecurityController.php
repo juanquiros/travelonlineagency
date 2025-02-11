@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Plataforma;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,12 +30,14 @@ class SecurityController extends AbstractController
         $error = $authenticationUtils->getLastAuthenticationError();
         // last username entered by the user
         $lastUsername = $authenticationUtils->getLastUsername();
-
+        $plataforma=$this->em->getRepository(Plataforma::class)->find(1);
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         return $this->render('security/login.html.twig', ['last_username' => $lastUsername, 'error' => $error,
             'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma]);
+            'idiomaPlataforma'=>$idioma,
+            'plataforma'=>$plataforma
+            ]);
     }
 
     #[Route(path: '/logout', name: 'app_logout')]

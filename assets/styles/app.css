@@ -98,3 +98,7 @@ footer li{
     flex-direction: column;
     justify-content: space-between;
 }
+#solicitud_reserva_submit{
+    height: 5rem;
+    font-size: 1.6rem;
+}

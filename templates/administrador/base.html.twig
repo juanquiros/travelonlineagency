@@ -6,13 +6,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {% block meta %}
-            <meta name="description" content="Travel Online Agency - Iguazu">
-            <meta property="og:image" content="{{ asset('img/logo.png') }}" />
+            <meta name="description" content="Panel Administrador">
+            <meta property="og:image" content="{{ absolute_url(asset('img/'~ plataforma.logo)) }}" />
         {% endblock %}
 
-        <meta property="og:url" content="http://localhost:8000" />
+        <meta property="og:url" content="{{  absolute_url(path('app_inicio')) }}" />
 
-        <link rel="icon" href="{{ asset('logo.ico') }}">
+        <link rel="icon" href="{{  absolute_url(asset('/'~ plataforma.icono)) }}">
 
 
 
@@ -37,7 +37,7 @@
             <script src="{{ path('fos_js_routing_js', { callback: 'fos.Router.setData' }) }}"></script>
 
             {% block importmap %}{{ importmap('app') }}{% endblock %}
-
+            <script src="{{ asset('/tinymce/js/tinymce/tinymce.min.js') }}" referrerpolicy="origin"></script>
 
         {% endblock %}
     </head>
@@ -50,8 +50,8 @@
     <div class="barra-lateral">
         <div>
             <div class="nombre-pagina">
-                <img style="width: 3rem;" id="logo" name="logo-firefox" src="{{ asset('img/logosinfondo.png') }}">
-                <span>Travel Panel</span>
+                <img style="width: 3rem;" id="logo" name="logo-firefox" src="{{ asset('img/'~ plataforma.logo) }}">
+                <span>Panel Admin</span>
             </div>
         </div>
 
@@ -92,18 +92,24 @@
                     <hr>
                     <span>Servicios</span>
                     <ul>
-                    <li>
-                        <a {% if menu['s_traslados'] %}id="inbox"{% endif %} href="#">
-                            <ion-icon name="car-outline"></ion-icon>
-                            <span>Traslado</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a {% if menu['s_reservas'] %}id="inbox"{% endif %} href="{{ path('app_service_booking') }}">
-                            <ion-icon name="document-text-outline"></ion-icon>
-                            <span>Booking</span>
-                        </a>
-                    </li>
+                        <li>
+                            <a {% if menu['s_traslados'] %}id="inbox"{% endif %} href="#">
+                                <ion-icon name="car-outline"></ion-icon>
+                                <span>Traslado</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['s_reservas'] %}id="inbox"{% endif %} href="{{ path('app_service_booking') }}">
+                                <ion-icon name="document-text-outline"></ion-icon>
+                                <span>Booking</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['s_preguntas'] %}id="inbox"{% endif %} href="{{ path('app_plataforma_preguntas') }}">
+                                <ion-icon name="document-text-outline"></ion-icon>
+                                <span>FAK's</span>
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                 </li>

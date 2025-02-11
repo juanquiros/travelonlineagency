@@ -1,0 +1,32 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Mensajes{% endblock %}
+
+{% block body %}
+   <div class="row">
+       <div class="col-md-3"></div>
+       <div class="col-md-6">
+           <h1>Traduccion Plataforma</h1>
+       </div>
+       <div class="col-md-3"></div>
+   </div>
+    <section id="traduccionPlataforma">
+        <div class="row">
+            <div class="col-md-3"></div>
+            <div class="col-md-6">
+                <div class="row">
+
+                    <h3>{{ traduccion.getKeyName}}</h3>
+                    {% if traduccion.id == null %}
+                        <p style="color: darkred;">Esta traduccion no existe para el idioma: '{{ traduccion.lenguaje.nombre }}'</p>
+                    {% endif %}
+                </div>
+                <div class="row">
+
+                    {{ form(form) }}
+                </div>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+    </section>
+{% endblock %}

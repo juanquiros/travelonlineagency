@@ -50,6 +50,27 @@ class Plataforma
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     private ?CredencialesMercadoPago $credencialesMercadoPago = null;
 
+    #[ORM\Column(length: 255,nullable: true)]
+    private ?string $logo = null;
+
+    #[ORM\Column(length: 255,nullable: true)]
+    private ?string $icono = null;
+
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $linkInstagram = null;
+
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $linkWhatsapp = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $contactoTelefono = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $contactoCorreo = null;
+
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $contactoDireccion = null;
+
     public function __construct()
     {
         $this->traslados_OD_libres = false;
@@ -202,6 +223,90 @@ class Plataforma
     public function setCredencialesMercadoPago(?CredencialesMercadoPago $credencialesMercadoPago): static
     {
         $this->credencialesMercadoPago = $credencialesMercadoPago;
+
+        return $this;
+    }
+
+    public function getLogo(): ?string
+    {
+        return $this->logo;
+    }
+
+    public function setLogo(?string $logo): static
+    {
+        $this->logo = $logo;
+
+        return $this;
+    }
+
+    public function getIcono(): ?string
+    {
+        return $this->icono;
+    }
+
+    public function setIcono(?string $icono): static
+    {
+        $this->icono = $icono;
+
+        return $this;
+    }
+
+    public function getLinkInstagram(): ?string
+    {
+        return $this->linkInstagram;
+    }
+
+    public function setLinkInstagram(?string $linkInstagram): static
+    {
+        $this->linkInstagram = $linkInstagram;
+
+        return $this;
+    }
+
+    public function getLinkWhatsapp(): ?string
+    {
+        return $this->linkWhatsapp;
+    }
+
+    public function setLinkWhatsapp(string $linkWhatsapp): static
+    {
+        $this->linkWhatsapp = $linkWhatsapp;
+
+        return $this;
+    }
+
+    public function getContactoTelefono(): ?string
+    {
+        return $this->contactoTelefono;
+    }
+
+    public function setContactoTelefono(?string $contactoTelefono): static
+    {
+        $this->contactoTelefono = $contactoTelefono;
+
+        return $this;
+    }
+
+    public function getContactoCorreo(): ?string
+    {
+        return $this->contactoCorreo;
+    }
+
+    public function setContactoCorreo(?string $contactoCorreo): static
+    {
+        $this->contactoCorreo = $contactoCorreo;
+
+        return $this;
+    }
+
+    public function getContactoDireccion(): ?string
+    {
+        return $this->contactoDireccion;
+    }
+
+    public function setContactoDireccion(?string $contactoDireccion): static
+    {
+        $this->contactoDireccion = $contactoDireccion;
 
         return $this;
     }

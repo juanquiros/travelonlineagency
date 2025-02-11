@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\CredencialesPayPal;
 use App\Entity\DetallePagoPayPal;
 use App\Entity\EstadoReserva;
 use App\Entity\PayPalPago;
@@ -14,6 +15,7 @@ use App\Services\LanguageService;
 use App\Services\mailerServer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
@@ -32,6 +34,7 @@ class PayPalController extends AbstractController
     #[Route('/pay/paypal/booking/{id}', name: 'paypal_pay_booking')]
     public function index(SolicitudReserva $reserva,Request $request): Response
     {
+        $plataforma =$this->em->getRepository(Plataforma::class)->find(1);
         if($reserva->getEstado()->getId() != 1) return $this->redirectToRoute('app_inicio'); //redireccionar a pagina de estado de reserva ->>>>> gotostatus
         $precioBoking=$this->em->getRepository(Precio::class)->findOneBy(['moneda'=>1,'booking'=>$reserva->getBooking()->getId()]);
         $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['estado'=>'PAYER_ACTION_REQUIRED','solicitudReserva'=>$reserva->getId()]);
@@ -41,7 +44,6 @@ class PayPalController extends AbstractController
         $total = $precioBoking->getValor() * $cantidad;
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
-        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
         if(!isset($pago) || empty($pago)){
             $credenciales = $plataforma->getCredencialesPayPal();
@@ -156,6 +158,7 @@ class PayPalController extends AbstractController
             'cantidad'=>$cantidad,
             'total'=>$total,
             'adicionales'=>$adicionales,
+            'plataforma'=>$plataforma,
             'link'=>$link
         ]);
     }
@@ -163,20 +166,43 @@ class PayPalController extends AbstractController
     public function paypal_return_booking(Request $request,MailerInterface $mailer): Response
     {
         $ordersId = $request->get('token');
-        $payerID = $request->get('PayerID');
+        $plataforma =$this->em->getRepository(Plataforma::class)->find(1);
         if(!isset($ordersId) || empty($ordersId)) return $this->redirectToRoute('app_inicio');
-        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId,'estado'=>'PAYER_ACTION_REQUIRED']);
-        if(!isset($pago) || empty($pago)) return $this->redirectToRoute('app_inicio');
+        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId]);
+
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         if(!isset($pago) || empty($pago)){
             return $this->redirectToRoute('app_inicio');
-        }else{
-            $credenciales = $pago->getCredencialesPayPal();
         }
+        return $this->render('pago/returnBooking.html.twig', [
+            'controller_name' => 'PayPalController',
+            'idiomas'=>$idiomas,
+            'plataforma'=>$plataforma,
+            'idiomaPlataforma'=>$idioma,
+            'pago'=>$pago,
+            'linkDetalles'=> $this->generateUrl('app_status_booking',['tokenId'=>$pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()])
+        ]);
+    }
+    #[Route('/paypal/webhook', name: 'app_paypal_webhook', methods: ['POST'])]
+    public function app_paypal_webhook(Request $request,MailerInterface $mailer): Response
+    {
+
+        $contenido = $request->query->all();
+        if(!isset($contenido['webhook_event']) || !isset($contenido['webhook_event']['resource']) || !isset($contenido['webhook_event']['resource']['id'])) return new JsonResponse(['status'=>'fail'],500);
+        $ordersId = $contenido['webhook_event']['resource']['id'];
+
+
+
+        if(!isset($ordersId) || empty($ordersId)) return new JsonResponse(['status'=>'fail'],500);
+        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId,'estado'=>'PAYER_ACTION_REQUIRED']);
+        if(!isset($pago) || empty($pago)) return new JsonResponse(['status'=>'fail'],500);
+
+        $credenciales = $pago->getCredencialesPayPal();
+
         $token = null;
         $accesToken = $credenciales->getAccessToken();
-        if($accesToken) {
+        if(isset($accesToken) && !empty($accesToken)) {
             $fechavence = \DateTime::createFromImmutable($credenciales->getUpdatedAt());
             $expirein = $credenciales->getExpiresIn() . ' seconds';
             date_add($fechavence, date_interval_create_from_date_string($expirein));
@@ -213,6 +239,7 @@ class PayPalController extends AbstractController
         $response = curl_exec($ch);
         $total=0;
         if (curl_errno($ch)) {
+
         } else {
             $decodedResponse = json_decode($response, true);
             if ($decodedResponse !== null) {
@@ -253,17 +280,14 @@ class PayPalController extends AbstractController
             $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
             \App\Services\notificacion::enviarMasivo($administradores, $pago->getSolicitudReserva()->getName() . ' reservó (' . $cantidad .') "'. $pago->getSolicitudReserva()->getBooking()->getNombre().'".', 'Nueva reserva', $this->generateUrl('app_administrador_booking', ['id' => $pago->getSolicitudReserva()->getBooking()->getId()]));
             mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$pago->getSolicitudReserva(),$this->generateUrl('app_status_booking',['tokenId'=> $pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()]));
+
+
+
             $this->em->persist($pago->getSolicitudReserva());
             $this->em->persist($pago);
             $this->em->flush();
         }
-        return $this->render('pago/returnBooking.html.twig', [
-            'controller_name' => 'PayPalController',
-            'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma,
-            'pago'=>$pago,
-            'linkDetalles'=> $this->generateUrl('app_status_booking',['tokenId'=>$pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()])
-        ]);
+        return new JsonResponse(['status'=>'success'],200);
     }
     private function getTokenPaypal($client_id,$client_secret){
         $token = null;

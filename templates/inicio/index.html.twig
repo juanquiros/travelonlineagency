@@ -6,23 +6,27 @@
     <section class="home-jumbo" data-aos="fade-up"
               data-aos-duration="2000" >
         <div class="row-home-h1"  style="background:linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.6)),url({{ asset('img/waterfall.jpg') }}); background-position-y: 40%">
-            <img src="{{ asset('img/logosinfondo.png') }}" alt="" style="height: 10em">
-            <h1>TRAVEL ONLINE AGENCY</h1>
+            <img src="{{ asset('img/'~ plataforma.logo) }}" alt="" style="height: 10em">
+            <h1>{{ plataforma.nombre }}</h1>
         </div>
     </section>
-    <section   data-aos="fade-up" data-aos-duration="2000">
+    <section id="bookings"   data-aos="fade-up" data-aos-duration="2000">
         <div class="row">
             <div class="col-md-12 center">
-                <h2>Booking</h2>
+                <h2>{{ cfg_bookings['titulo'] }}</h2>
                 <hr>
-                <div class="row">
-                    <div class="col-md-4"></div>
-                    <div class="col-md-4">
-                        <p class="text-center">Facilitamos tus viajes con un servicio integral de reservas para alojamientos, actividades, tours y transporte. Nos encargamos de todos los detalles para que solo te enfoques en disfrutar tu experiencia. ¡Planifica tu próxima aventura con nosotros!</p>
-                        <hr>
+                {% if cfg_bookings['descripcion'] %}
+                    <div class="row">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4">
+                            <p class="text-center">
+                                    {{ cfg_bookings['descripcion'] }}
+                            </p>
+                            <hr>
+                        </div>
+                        <div class="col-md-4"></div>
                     </div>
-                    <div class="col-md-4"></div>
-                </div>
+                {% endif %}
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
@@ -50,17 +54,18 @@
     <section data-aos="fade-up" data-aos-duration="1500">
         <div class="row" >
             <div class="col-md-12 center">
-                <h2>Transfer</h2>
+                <h2>{{ cfg_traslados['titulo'] }}</h2>
                 <hr>
-                <div class="row">
-                    <div class="col-md-4"></div>
-                    <div class="col-md-4">
-                        <p class="text-center">Ofrecemos traslados directos y seguros desde el Aeropuerto Internacional de Iguazú hacia las majestuosas Cataratas o el hotel de tu elección. Viaja con comodidad y puntualidad, disfrutando de un servicio diseñado para que tu experiencia sea inolvidable desde el primer momento. ¡Nos encargamos de tu traslado para que tú solo te relajes y disfrutes!</p>
-                        <hr>
+                {% if cfg_traslados['descripcion'] %}
+                    <div class="row">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4">
+                            <p class="text-center">{{ cfg_traslados['descripcion'] }}</p>
+                            <hr>
+                        </div>
+                        <div class="col-md-4"></div>
                     </div>
-                    <div class="col-md-4"></div>
-                </div>
-
+                {% endif %}
                 <div class="row center     ">
                     <div class="card" style="width: 18rem;">
                         <div class="card-img-top">
@@ -111,15 +116,16 @@
             <hr>
         </div>
         <div class="text-center" style="display: flex;flex-direction: row; width: 100%; justify-content: center; font-size: 2.5em">
-            <a href="https://www.instagram.com/cataratastravelagency_online/" style="margin: 0.5em">
-
-                <span class="mbr-iconfont bi bi-instagram"></span>
-            </a>
-
-            <a href=" https://wa.me/5493757572141" style=" margin: 0.5em">
-
-                <span class="mbr-iconfont bi bi-whatsapp"></span>
-            </a>
+            {%  if plataforma.linkInstagram != '' %}
+                <a href="{{ plataforma.linkInstagram }}" style="margin: 0.5em">
+                    <span class="mbr-iconfont bi bi-instagram"></span>
+                </a>
+            {% endif %}
+            {%  if plataforma.linkInstagram != '' %}
+                <a href="{{ plataforma.linkWhatsapp }}" style="margin: 0.5em">
+                    <span class="mbr-iconfont bi bi-whatsapp"></span>
+                </a>
+            {% endif %}
         </div>
 
     </section>

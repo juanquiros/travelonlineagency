@@ -11,6 +11,7 @@ function changelan(id_lang){
         dataType: "json",
         success: function (data){
             dropdownSelectLang.innerHTML='<img src="'+data.padtoimg+'" alt="" style="height: 1rem"> ' + data.nombre
+            location.reload();
         },
         error:   function(response) {
             alert('No fue posible cambiar el idioma')
