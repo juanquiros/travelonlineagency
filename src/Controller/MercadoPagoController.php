@@ -86,6 +86,7 @@ final class MercadoPagoController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $solicitudReserva = null;
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $contenido = $request->query->all();
         // Agrega credenciales
         MercadoPagoConfig::setAccessToken($this->credencialesPlataforma->getAccessToken());
@@ -101,6 +102,7 @@ final class MercadoPagoController extends AbstractController
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'pago'=>$pagoDB,
+            'plataforma'=>$plataforma,
             'linkDetalles'=>$linkDetalles,
         ]);
     }

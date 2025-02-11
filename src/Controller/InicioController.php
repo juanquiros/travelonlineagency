@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class InicioController extends AbstractController
 {
@@ -192,7 +193,7 @@ class InicioController extends AbstractController
                 $emailcontext = [
                     'reserva'=>$reserva,
                     'idiomaPlataforma'=>$idioma,
-                    'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$reserva->getLinkDetalles(),'id'=>$reserva->getId()])
+                    'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$reserva->getLinkDetalles(),'id'=>$reserva->getId()],UrlGeneratorInterface::ABSOLUTE_URL)
                 ];
                 $email = (new TemplatedEmail())
                     ->from(new Address('tienda@shophardware.com.ar', $this->em->getRepository(Plataforma::class)->find(1)->getNombre() .' bot'))
