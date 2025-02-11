@@ -121,14 +121,14 @@ final class MercadoPagoController extends AbstractController
             MercadoPagoConfig::setAccessToken($credencial->getAccessToken());
             $pago = new PaymentClient();
             try {
-                $pagoMP = $pago->get($contenido['payment_id']);
-                $respuesta = $respuesta .'payment:'.$contenido['payment_id'].' '. json_encode($pagoMP);
+                $pagoMP = $pago->get($contenido['id']);
+                $respuesta = $respuesta .'payment:'.$contenido['id'].' '. json_encode($pagoMP);
                 if(isset($pagoMP) && !empty($pagoMP)){
                     $pagoDB = $this->loadPayment($pagoMP);
                     break;
                 }
             }catch ( MPApiException $e ){
-                $respuesta = $respuesta .'payment:'.$contenido['payment_id'].' '. json_encode($e->getApiResponse()->getContent());
+                $respuesta = $respuesta .'payment:'.$contenido['id'].' '. json_encode($e->getApiResponse()->getContent());
             }
         }
         if(isset($pagoDB) && !empty($pagoDB)){
