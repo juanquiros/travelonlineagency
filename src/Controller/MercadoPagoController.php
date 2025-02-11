@@ -64,11 +64,11 @@ final class MercadoPagoController extends AbstractController
                 "email"=> $solicitudReserva->getEmail()
             ],
             "back_urls"=> [
-                "success"=> "https://www.shophardware.com.ar",//$this->generateUrl('mercadopago_pay_booking_return',[],UrlGeneratorInterface::ABSOLUTE_URL),
-                "pending"=> "https://www.shophardware.com.ar",
-                "failure"=> "https://www.shophardware.com.ar"
+                "success"=> $this->generateUrl('mercadopago_pay_booking_return',[],UrlGeneratorInterface::ABSOLUTE_URL),
+                "pending"=> $this->generateUrl('mercadopago_pay_booking_return',[],UrlGeneratorInterface::ABSOLUTE_URL),
+                "failure"=> $this->generateUrl('mercadopago_pay_booking_return',[],UrlGeneratorInterface::ABSOLUTE_URL)
             ],
-            "notification_url"=>"https://www.shophardware.com.ar",// $this->generateUrl('mercadopago_ipn',[],UrlGeneratorInterface::ABSOLUTE_URL),
+            "notification_url"=>$this->generateUrl('mercadopago_ipn',[],UrlGeneratorInterface::ABSOLUTE_URL),
             "auto_return"=> "approved",
             "external_reference"=> 'booking-'. $solicitudReserva->getBooking()->getId().'-'.$solicitudReserva->getId(),
             "expires"=> false
