@@ -39,6 +39,7 @@ final class MercadoPagoController extends AbstractController
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $precioBoking=$this->em->getRepository(Precio::class)->findOneBy(['moneda'=>2,'booking'=>$solicitudReserva->getBooking()->getId()]);
         if(!isset($precioBoking) || empty($precioBoking)) return $this->redirectToRoute('app_inicio');
         $adicionales = json_decode($solicitudReserva->getInChargeOf());
@@ -77,6 +78,7 @@ final class MercadoPagoController extends AbstractController
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'id'=>$preference->id,
+            'plataforma'=>$plataforma,
             'publicKey'=>$this->credencialesPlataforma->getPublicKey()
         ]);
     }
