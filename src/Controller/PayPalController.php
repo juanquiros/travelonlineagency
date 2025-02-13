@@ -190,13 +190,16 @@ class PayPalController extends AbstractController
     public function app_paypal_webhook(Request $request,MailerInterface $mailer): Response
     {
 
-        $contenido = $request->query->all();
-        if(!isset($contenido['webhook_event']) || !isset($contenido['webhook_event']['resource']) || !isset($contenido['webhook_event']['resource']['id'])) return new JsonResponse(['status'=>'fail',"contenido"=>json_encode($contenido)],500);
-        $ordersId = $contenido['webhook_event']['resource']['id'];
+        $contenido = json_decode($request->getContent());
+        $ip = $request->getClientIp();
+        $archivo = fopen('artiPP.dim', 'a+');
+        fwrite($archivo, PHP_EOL . json_encode(['date'=>(new \DateTime())->format('d-m-Y H:i:s'),'ip'=>$ip,$contenido]) );
+        fclose($archivo);
+
+        if( !isset($contenido->resource) || !isset($contenido->resource->id)) return new JsonResponse(['status'=>'fail'],500);
+        $ordersId = $contenido->resource->id;
 
         $jsonResponse = $this->comprobarPago($ordersId,$mailer);
-
-
         return $jsonResponse;
     }
     private function getTokenPaypal($client_id,$client_secret){
