@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\SolicitudReserva;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use mysql_xdevapi\Exception;
 
 /**
  * @extends ServiceEntityRepository<SolicitudReserva>
@@ -31,17 +32,42 @@ class SolicitudReservaRepository extends ServiceEntityRepository
     //        ;
     //    }
         //SELECT solicitud_reserva.fecha_seleccionada,(count(solicitud_reserva.id) + SUM(JSON_LENGTH(solicitud_reserva.in_charge_of))) as solicitudes FROM solicitud_reserva WHERE solicitud_reserva.booking_id =37 GROUP BY solicitud_reserva.fecha_seleccionada;
-        public function solicitudesDeBooking(int $idBooking, int $idEstado): ?array
-        {
-            return $this->createQueryBuilder('s')
-                ->select('s.fechaSeleccionada as fecha, (count(s.id) + SUM(JSON_LENGTH(s.inChargeOf))) as solicitudes ')
-                ->andWhere('s.Booking = :idBooking')
-                ->andWhere('s.estado = :idEstado')
-                ->setParameter('idBooking', $idBooking)
-                ->setParameter('idEstado', $idEstado)
-                ->groupBy('fecha')
-                ->getQuery()
-                ->getResult()
-            ;
+    public function solicitudesDeBooking(int $idBooking, int $idEstado, string $fecha = null): ?array
+    {
+        $query = null;
+        $queryBuilder = $this->createQueryBuilder('s')
+            ->select('s.fechaSeleccionada as fecha, (count(s.id) + SUM(JSON_LENGTH(s.inChargeOf))) as solicitudes ')
+            ->andWhere('s.Booking = :idBooking')
+            ->andWhere('s.estado = :idEstado');
+        if (isset($fecha) && !empty($fecha) &&  strlen($fecha) >= 16){
+            $datetime = \DateTime::createFromFormat( 'd-m-Y H:i', $fecha);
+            if(!$datetime) return null;
+                $queryBuilder->andWhere('s.fechaSeleccionada = :fechaFiltro')
+                        ->setParameter('fechaFiltro',$datetime->format('Y-m-d H:i'));
         }
+        $query = $queryBuilder
+            ->setParameter('idBooking', $idBooking)
+            ->setParameter('idEstado', $idEstado)
+            ->groupBy('fecha')
+            ->getQuery();
+        return $query->getResult();
+    }
+    public function reservas(int $idBooking, int $idEstado, string $fecha = null):SolicitudReserva|array
+    {
+        $query = [];
+        $queryBuilder = $this->createQueryBuilder('s')
+            ->andWhere('s.Booking = :idBooking')
+            ->andWhere('s.estado = :idEstado');
+        if (isset($fecha) && !empty($fecha) &&  strlen($fecha) >= 16){
+            $datetime = \DateTime::createFromFormat( 'd-m-Y H:i', $fecha);
+            if(!$datetime) return [];
+            $queryBuilder->andWhere('s.fechaSeleccionada = :fechaFiltro')
+                ->setParameter('fechaFiltro',$datetime->format('Y-m-d H:i'));
+        }
+        $query = $queryBuilder
+            ->setParameter('idBooking', $idBooking)
+            ->setParameter('idEstado', $idEstado)
+            ->getQuery();
+        return $query->getResult();
+    }
 }

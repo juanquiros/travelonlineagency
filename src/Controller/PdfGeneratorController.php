@@ -29,9 +29,15 @@ final class PdfGeneratorController extends AbstractController
     public function index(Booking $booking,int $estadoId = null, Request $request,Pdf $pdf): Response
     {
         if(!isset($booking) || empty($booking) || !isset($estadoId) || empty($estadoId)) return new JsonResponse(['status'=>'fail'],200);
-        $reservas = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>$estadoId,'Booking'=>$booking->getId()]);
+
+
+        $contenido = $request->query->all();
+        $fechafiltro = null;
+        if(isset($contenido) && isset($contenido['ff']) && !empty($contenido['ff']))$fechafiltro = $contenido['ff'];
+
+        $reservas = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),$estadoId,$fechafiltro);
         $idioma = LanguageService::getLenguaje($this->em,$request);
-        $solicitudesDelBooking = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),$estadoId);
+        $solicitudesDelBooking = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),$estadoId,$fechafiltro);
         $estado = $this->em->getRepository(EstadoReserva::class)->find($estadoId);
         $arrContextOptions=array(
             "ssl"=>array(

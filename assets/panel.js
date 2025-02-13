@@ -390,6 +390,11 @@ function getfechasBookingTbody(){
     }
     return JSON.stringify(resp);
 }
-
+function filtrarFechaSolicitudesBooking(bookingId,idSelect){
+    //app_administrador_booking
+    fechaFiltro = document.getElementById(idSelect).value.replaceAll("/", "-")
+    var  ruta = Routing.generate('app_administrador_booking',{id:bookingId,ff:fechaFiltro},true);
+    window.location.replace(ruta)
+}
 
 console.log('Load file js')

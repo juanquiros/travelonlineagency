@@ -259,22 +259,31 @@ class AdministradorController extends AbstractController
         'plataforma'=> $plataforma
     ]);
 }
-    #[Route('/administrador/booking/{id}', name: 'app_administrador_booking')]
+    #[Route('/administrador/booking/{id}', name: 'app_administrador_booking', options: ['expose'=>true])]
     public function app_administrador_booking(Booking $booking = null, Request $request): Response
     {
         if(!isset($booking) || empty($booking) ) return $this->redirectToRoute('app_administrador_bookings');
+        $this->adminMenu['reservas'] =   true;
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
-        $this->adminMenu['reservas'] =   true;
+        $contenido = $request->query->all();
+        $fechafiltro = null;
+        if(isset($contenido) && isset($contenido['ff']) && !empty($contenido['ff']))$fechafiltro = $contenido['ff'];
+        dump($fechafiltro);
         $reservas=[];
-        $reservas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>2,'Booking'=>$booking->getId()]);
-        $reservas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>1,'Booking'=>$booking->getId()]);
-        $reservas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->findBy(['estado'=>3,'Booking'=>$booking->getId()]);
         $personas=[];
-        $personas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),1);
-        $personas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),2);
-        $personas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),3);
-        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $reservas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),2,$fechafiltro);
+        $reservas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),1,$fechafiltro);
+        $reservas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),3,$fechafiltro);
+
+
+        $personas['pendientes'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),1,$fechafiltro);
+        $personas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),2,$fechafiltro);
+        $personas['canceladas'] = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),3,$fechafiltro);
+
+
+
         return $this->render('administrador/detallesReservasBooking.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario'=>$this->getUser(),
@@ -283,6 +292,7 @@ class AdministradorController extends AbstractController
             'plataforma'=>$plataforma,
             'idiomaPlataforma'=>$idioma,
             'booking'=>$booking,
+            'fechaFiltro'=>$fechafiltro,
             'reservas'=>$reservas,
             'personas'=>$personas
         ]);

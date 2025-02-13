@@ -38,15 +38,23 @@
                     <div class="collapse navbar-collapse" id="navbarSupportedContent">
                         <ul class="navbar-nav mr-auto">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:2}) }}"><box-icon type='solid' name='file-pdf'></box-icon> Pdf</a>
+                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:2,ff:fechaFiltro}) }}"><box-icon type='solid' name='file-pdf'></box-icon>Generar pdf{% if fechaFiltro  %} para fecha "{{ fechaFiltro | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}" {% else %} de todas las fechas{% endif %}</a>
                             </li>
                         </ul>
                         <form class="form-inline my-2 my-lg-0">
-                            <label for="filtro" class="mr-5">Filtrar</label>
-                            <select id="filtro" class="form-control">
-                                <option selected>Todos</option>
-                                {% for date in booking.getFechasdelservicioArray %}
-                                    <option>{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
+                            <label for="filtroFecha" class="mr-5">Filtrar</label>
+
+                            <select id="filtroFecha" onchange="filtrarFechaSolicitudesBooking({{ booking.id }},'filtroFecha')" class="form-control">
+                                <option selected value="0">Todos</option>
+                                {%set arrayDate = booking.getFechasdelservicioArray %}
+                                {% for date in arrayDate %}
+
+                                    <option
+                                        {% if fechaFiltro and (fechaFiltro == (date.fecha | date("d-m-Y H:i","America/Argentina/Buenos_Aires"))) %}
+                                            selected
+                                        {% endif %}
+                                    >{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
+
                                 {% endfor %}
                             </select>
                         </form>
@@ -230,15 +238,20 @@
                     <div class="collapse navbar-collapse" id="navbarSupportedContent2">
                         <ul class="navbar-nav mr-auto">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:1}) }}"><box-icon type='solid' name='file-pdf'></box-icon> Pdf</a>
+                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:1,ff:fechaFiltro}) }}"><box-icon type='solid' name='file-pdf'></box-icon>Generar pdf{% if fechaFiltro  %} para fecha "{{ fechaFiltro | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}" {% else %} de todas las fechas{% endif %}</a>
                             </li>
                         </ul>
                         <form class="form-inline my-2 my-lg-0">
-                            <label for="filtro" class="mr-5">Filtrar</label>
-                            <select id="filtro" class="form-control">
+                            <label for="filtroFecha2" class="mr-5">Filtrar</label>
+                            <select id="filtroFecha2" onchange="filtrarFechaSolicitudesBooking({{ booking.id }},'filtroFecha2')" class="form-control">
                                 <option selected>Todos</option>
-                                {% for date in booking.getFechasdelservicioArray %}
-                                    <option>{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
+                                {%set arrayDate = booking.getFechasdelservicioArray %}
+                                {% for date in arrayDate %}
+                                    <option
+                                            {% if fechaFiltro and (fechaFiltro == (date.fecha | date("d-m-Y H:i","America/Argentina/Buenos_Aires"))) %}
+                                                selected
+                                            {% endif %}
+                                    >{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
                                 {% endfor %}
                             </select>
                         </form>
@@ -403,15 +416,20 @@
                     <div class="collapse navbar-collapse" id="navbarSupportedContent3">
                         <ul class="navbar-nav mr-auto">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:3}) }}"><box-icon type='solid' name='file-pdf'></box-icon> Pdf</a>
+                                <a class="nav-link" href="{{ path('app_pdf_generator',{id:booking.id,estadoId:3,ff:fechaFiltro}) }}"><box-icon type='solid' name='file-pdf'></box-icon>Generar pdf{% if fechaFiltro  %} para fecha "{{ fechaFiltro | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}" {% else %} de todas las fechas{% endif %}</a>
                             </li>
                         </ul>
                         <form class="form-inline my-2 my-lg-0">
-                            <label for="filtro" class="mr-5">Filtrar</label>
-                            <select id="filtro" class="form-control">
-                                <option selected>Todos</option>
-                                {% for date in booking.getFechasdelservicioArray %}
-                                    <option>{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
+                            <label for="filtroFecha3" class="mr-5">Filtrar</label>
+                            <select id="filtroFecha3" onchange="filtrarFechaSolicitudesBooking({{ booking.id }},'filtroFecha3')" class="form-control">
+                                <option>Todos</option>
+                                {%set arrayDate = booking.getFechasdelservicioArray %}
+                                {% for date in arrayDate %}
+                                    <option
+                                            {% if fechaFiltro and (fechaFiltro == (date.fecha | date("d-m-Y H:i","America/Argentina/Buenos_Aires"))) %}
+                                                selected
+                                            {% endif %}
+                                    >{{ date.fecha | date("d/m/Y H:i","America/Argentina/Buenos_Aires") }}</option>
                                 {% endfor %}
                             </select>
                         </form>
