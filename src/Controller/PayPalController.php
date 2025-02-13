@@ -133,7 +133,6 @@ class PayPalController extends AbstractController
 
         } else {
             $decodedResponse = json_decode($response, true);
-            dump($decodedResponse);
             if ($decodedResponse !== null && isset($decodedResponse['links'])) {
                 if(isset($decodedResponse['status']) && $decodedResponse['status']=== 'PAYER_ACTION_REQUIRED')$pago->setOrdersId($decodedResponse['id']);
                 foreach ($decodedResponse['links'] as $linkresponse) {
@@ -168,6 +167,9 @@ class PayPalController extends AbstractController
         $ordersId = $request->get('token');
         $plataforma =$this->em->getRepository(Plataforma::class)->find(1);
         if(!isset($ordersId) || empty($ordersId)) return $this->redirectToRoute('app_inicio');
+
+        $this->comprobarPago($ordersId,$mailer);
+
         $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId]);
 
         $idiomas = LanguageService::getLenguajes($this->em);
@@ -189,14 +191,58 @@ class PayPalController extends AbstractController
     {
 
         $contenido = $request->query->all();
-        if(!isset($contenido['webhook_event']) || !isset($contenido['webhook_event']['resource']) || !isset($contenido['webhook_event']['resource']['id'])) return new JsonResponse(['status'=>'fail'],500);
+        if(!isset($contenido['webhook_event']) || !isset($contenido['webhook_event']['resource']) || !isset($contenido['webhook_event']['resource']['id'])) return new JsonResponse(['status'=>'fail',"contenido"=>json_encode($contenido)],500);
         $ordersId = $contenido['webhook_event']['resource']['id'];
 
+        $jsonResponse = $this->comprobarPago($ordersId,$mailer);
 
 
-        if(!isset($ordersId) || empty($ordersId)) return new JsonResponse(['status'=>'fail'],500);
+        return $jsonResponse;
+    }
+    private function getTokenPaypal($client_id,$client_secret){
+        $token = null;
+        $respuesta = "success";
+        $url = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
+        $autorization = 'Basic ' . base64_encode($client_id . ':' . $client_secret);
+        $params = [
+            'grant_type' => 'client_credentials'
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'content-type: application/x-www-form-urlencoded',
+            'Authorization:' . $autorization
+        ));
+        curl_setopt($ch, CURLOPT_POSTFIELDS,
+            http_build_query($params));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            $respuesta = 'Error: ' . curl_error($ch);
+        } else {
+            $token = json_decode($response, true);
+            if ($token !== null) {
+
+            } else {
+                $respuesta = 'Error: ' . json_encode($response);
+            }
+        }
+        curl_close($ch);
+        $r = ['token'=>$token,'respuesta'=>$respuesta];
+        return $r;
+    }
+
+    private function comprobarPago(string $ordersId,MailerInterface $mailer ):JsonResponse
+    {
+        $jsonReturn = new JsonResponse(['status'=>'success'],200);;
+        if(!isset($ordersId) || empty($ordersId)) $jsonReturn = new JsonResponse(['status'=>'fail'],500);
         $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId,'estado'=>'PAYER_ACTION_REQUIRED']);
-        if(!isset($pago) || empty($pago)) return new JsonResponse(['status'=>'fail'],500);
+        if(!isset($pago) || empty($pago)) $jsonReturn = new JsonResponse(['status'=>'fail'],500);
 
         $credenciales = $pago->getCredencialesPayPal();
 
@@ -239,7 +285,7 @@ class PayPalController extends AbstractController
         $response = curl_exec($ch);
         $total=0;
         if (curl_errno($ch)) {
-
+            $jsonReturn = new JsonResponse(['status'=>'fail'],500);
         } else {
             $decodedResponse = json_decode($response, true);
             if ($decodedResponse !== null) {
@@ -287,43 +333,6 @@ class PayPalController extends AbstractController
             $this->em->persist($pago);
             $this->em->flush();
         }
-        return new JsonResponse(['status'=>'success'],200);
-    }
-    private function getTokenPaypal($client_id,$client_secret){
-        $token = null;
-        $respuesta = "success";
-        $url = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
-        $autorization = 'Basic ' . base64_encode($client_id . ':' . $client_secret);
-        $params = [
-            'grant_type' => 'client_credentials'
-        ];
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'content-type: application/x-www-form-urlencoded',
-            'Authorization:' . $autorization
-        ));
-        curl_setopt($ch, CURLOPT_POSTFIELDS,
-            http_build_query($params));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-        $response = curl_exec($ch);
-        if (curl_errno($ch)) {
-            $respuesta = 'Error: ' . curl_error($ch);
-        } else {
-            $token = json_decode($response, true);
-            if ($token !== null) {
-
-            } else {
-                $respuesta = 'Error: ' . json_encode($response);
-            }
-        }
-        curl_close($ch);
-        $r = ['token'=>$token,'respuesta'=>$respuesta];
-        return $r;
+        return $jsonReturn;
     }
 }
