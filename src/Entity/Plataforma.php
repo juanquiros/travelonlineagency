@@ -310,4 +310,21 @@ class Plataforma
 
         return $this;
     }
+
+    public function getTraduccionMenu(string $codLang):array
+    {
+        $traduccionesPlatadorma = $this->getTraducciones();
+        foreach ($traduccionesPlatadorma as $trad){
+            if($trad->getLenguaje()->getCodigo() == $codLang  && str_contains($trad->getKeyName(),'menu:') ){
+                $trad_menu[$trad->getKeyName()] = $trad->getValue();
+            }
+        }
+        if(!isset($trad_menu['menu:inicio']) || empty($trad_menu['menu:inicio']))$trad_menu['menu:inicio']='Home';
+        if(!isset($trad_menu['menu:reservas']) || empty($trad_menu['menu:reservas']))$trad_menu['menu:reservas']='Booking\'s';
+        if(!isset($trad_menu['menu:faks']) || empty($trad_menu['menu:faks']))$trad_menu['menu:faks']='Common questions';
+       return $trad_menu;
+    }
+
+
+
 }

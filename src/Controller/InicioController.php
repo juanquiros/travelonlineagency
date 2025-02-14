@@ -130,6 +130,8 @@ class InicioController extends AbstractController
 
 
 
+
+
         $fechasDatetime = null;
         $datetimeNow = new \DateTime();
         if(!isset($booking) || empty($booking) || !$booking->isHabilitado() || $booking->getValidoHasta() <= ($datetimeNow)){
