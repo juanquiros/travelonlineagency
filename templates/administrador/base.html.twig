@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
     <head>
         <meta charset="UTF-8">
         <title>{% block title %}Panel admin{% endblock %}</title>
@@ -50,7 +50,7 @@
     <div class="barra-lateral">
         <div>
             <div class="nombre-pagina">
-                <img style="width: 3rem;" id="logo" name="logo-firefox" src="{{ asset('img/'~ plataforma.logo) }}">
+                <img style="width: 3rem;" id="logo" src="{{ asset('img/'~ plataforma.logo) }}" alt="">
                 <span>Panel Admin</span>
             </div>
         </div>
@@ -58,13 +58,19 @@
         <nav class="navegacion">
             <ul>
                 <li>
+                    <a href="{{ path('app_inicio') }}" target="_blank">
+                        <ion-icon name="planet-outline"></ion-icon>
+                        <span>Ir a la web</span>
+                    </a>
+                </li>
+                <li>
                     <a {% if menu['notificaciones'] %}id="inbox"{% endif %} href="{{ path('app_administrador_notificaciones') }}">
                         <ion-icon name="notifications-outline"></ion-icon>
                         <span>Notificaciones</span>
                     </a>
                 </li>
                 <li>
-                    <a {% if menu['mensajes'] %}id="inbox"{% endif %} href="/administrador/mensajes">
+                    <a hidden {% if menu['mensajes'] %}id="inbox"{% endif %} href="/administrador/mensajes">
                         <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
                         <span>Mensajes</span>
                     </a>
@@ -79,7 +85,7 @@
                                 <span>Booking</span>
                             </a>
                         </li>
-                        <li>
+                        <li hidden>
                             <a {% if menu['traslados'] %}id="inbox"{% endif %} href="{{ path('app_reservas') }}">
                                 <ion-icon name="trail-sign-outline"></ion-icon>
                                 <span>Traslado</span>
@@ -92,7 +98,7 @@
                     <hr>
                     <span>Servicios</span>
                     <ul>
-                        <li>
+                        <li hidden>
                             <a {% if menu['s_traslados'] %}id="inbox"{% endif %} href="#">
                                 <ion-icon name="car-outline"></ion-icon>
                                 <span>Traslado</span>
@@ -126,7 +132,7 @@
         <div>
             <div class="linea"></div>
 
-            <div class="modo-oscuro">
+            <div class="modo-oscuro" hidden>
                 <div class="info">
                     <ion-icon name="moon-outline"></ion-icon>
                     <span>Drak Mode</span>
