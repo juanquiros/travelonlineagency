@@ -574,6 +574,32 @@ class AdministradorController extends AbstractController
         return new JsonResponse(['eliminado'=>$ret,'id'=>$id,'cont'=>$request->getContent(),'user'=>$request->getUser()],200);
     }
 
+    #[Route('/administrador/servicio/booking/quitar/fecha/{id}', name: 'app_service_booking_de_fecha',methods: ['POST'], options: ['expose'=>true])]
+    public function app_service_booking_de_fecha(Booking $booking,Request $request): Response
+    {
+        $fecha = json_decode($request->getContent())->fechaString;
+
+
+        $ret = false;
+        if(isset($fecha) && !empty($fecha) && isset($booking) && !empty($booking)) {
+            $fechas = json_decode($booking->getFechasdelservicio());
+            if(isset($fechas) && !empty($fechas) && count($fechas)>0){
+                $auxFechas=[];
+                foreach ($fechas as $f){
+                    if($f->fecha != $fecha){
+                        $auxFechas[]=$f;
+                    }
+                }
+                $booking->setFechasdelservicio(json_encode($auxFechas));
+                $this->em->persist($booking);
+                $this->em->flush();
+                $ret = true;
+            }
+
+        }
+        return new JsonResponse(['eliminado'=>$ret],200);
+    }
+
 
 
     #[Route('/administrador/servicio/booking/administrar/{id?}', defaults:["id"=> 0], name: 'app_new_service_booking')]

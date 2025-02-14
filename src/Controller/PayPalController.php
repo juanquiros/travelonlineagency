@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\CredencialesPayPal;
 use App\Entity\DetallePagoPayPal;
 use App\Entity\EstadoReserva;
 use App\Entity\PayPalPago;
@@ -10,7 +9,6 @@ use App\Entity\Plataforma;
 use App\Entity\Precio;
 use App\Entity\SolicitudReserva;
 use App\Entity\Usuario;
-use App\Service\notificacion;
 use App\Services\LanguageService;
 use App\Services\mailerServer;
 use Doctrine\ORM\EntityManagerInterface;
@@ -328,7 +326,7 @@ class PayPalController extends AbstractController
 
             $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
             \App\Services\notificacion::enviarMasivo($administradores, $pago->getSolicitudReserva()->getName() . ' reservó (' . $cantidad .') "'. $pago->getSolicitudReserva()->getBooking()->getNombre().'".', 'Nueva reserva', $this->generateUrl('app_administrador_booking', ['id' => $pago->getSolicitudReserva()->getBooking()->getId()]));
-            mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$pago->getSolicitudReserva(),$this->generateUrl('app_status_booking',['tokenId'=> $pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()]));
+            mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$pago->getSolicitudReserva(),$this->generateUrl('app_status_booking',['tokenId'=> $pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
 
 
 

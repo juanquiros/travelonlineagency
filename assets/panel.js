@@ -292,6 +292,7 @@ function close_modificarvalorpreciobooking(id){
     document.getElementById('booking_preciosaux').value = getpreciosBookingTbody();
 }
 function quitarprecioBooking(idRow,id){
+    e.preventDefault();
     var precio = document.getElementById('tr-precio-'+idRow+'')
     if(precio && confirm('¿Eliminar precio?')){
         if(id){
@@ -322,7 +323,37 @@ function quitarprecioBooking(idRow,id){
 
     }
 }
+function quitarFechaBooking(bookingId,fechastring,id){
+    event.preventDefault();
+    var fecha = document.getElementById(id)
+    if(fecha && confirm('¿Eliminar fecha '+fechastring+'?')){
+        if(bookingId){
+            console.log('eliminar:'+fechastring)
+            var  ruta = Routing.generate('app_service_booking_de_fecha',{id:bookingId});
+            $.ajax({
+                type:'POST',
+                url: ruta,
+                data:JSON.stringify({fechaString:fechastring}),
+                async: true,
+                dataType: "json",
+                contentType: false,
+                processData: false,
+                success: function (data){
+                    if(data.eliminado){
+                        fecha.remove()
+                    }else{
+                        alert('No fue posible quitar la fecha s')
+                    }
+                },
+                error:   function(response) {
+                    alert('No fue posible quitar la fecha ss')
+                }
+            })}else {
+            fecha.remove()
+        }
 
+    }
+}
 function quitarprecioFAKs(id){
 
     if(confirm('¿Eliminar pregunta?')){
@@ -356,7 +387,7 @@ function cambiarmonedadepreciobooking(){
 function agregarprecioBooking(){
     cargartablapreciosBooking(monedas,{valor:0.0,monedaId:1});
 }
-function agregarFechaBooking(fecha=null,cantidad=0){
+function agregarFechaBooking(fecha=null,cantidad=0,bookingId=""){
     var index = 0;
     var tbodyfechasBooking = document.getElementById('tbody-fechasBooking');
     if(tbodyfechasBooking.children.length > 0){
@@ -371,7 +402,7 @@ function agregarFechaBooking(fecha=null,cantidad=0){
         tbodyfechasBooking.innerHTML += '<tr id="fechabooking-'+index+'" >' +
             '<td>'+fecha+'</td>' +
             '<td>'+cantidad+'</td>' +
-            '<td><a href="#" onclick="quitarfecha(\'fechabooking-'+index+'\')">Quitar</a></td>' +
+            '<td><button class="btn btn-link" onclick="quitarFechaBooking('+bookingId+',\''+fecha+'\',\'fechabooking-'+index+'\')">Quitar</button></td>' +
             '</tr>'
     }
     document.getElementById('booking_fechasdelservicio').value = getfechasBookingTbody();

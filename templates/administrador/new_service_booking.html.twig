@@ -257,7 +257,7 @@
         {% endif %}
         {% if fechas %}
             {% for fecha in fechas %}
-                agregarFechaBooking( '{{ fecha.fecha }}',{{ fecha.cantidad }});
+                agregarFechaBooking( '{{ fecha.fecha }}',{{ fecha.cantidad }}{% if(bookingid) %},{{ bookingid }}{% endif %});
             {% endfor %}
         {% endif %}
         tinymce.remove()
