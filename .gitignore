@@ -60,3 +60,9 @@
 /public/ipn.txt
 /public/artiMP.dim
 /*.zip
+/config/packages/knp_snappy.yaml
+/config/services.yaml
+/public/artiPP.dim
+/wkhtmltox
+/wkhtmltox/*
+/public/*.ico
