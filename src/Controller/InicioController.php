@@ -4,18 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Booking;
 use App\Entity\EstadoReserva;
-use App\Entity\Lenguaje;
 use App\Entity\PayPalPago;
 use App\Entity\Plataforma;
-use App\Entity\Reserva;
-use App\Entity\servicioReserva;
 use App\Entity\SolicitudReserva;
 use App\Entity\TraduccionPlataforma;
-use App\Form\ReservaType;
 use App\Form\SolicitudReservaType;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
-use phpDocumentor\Reflection\Types\Boolean;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;

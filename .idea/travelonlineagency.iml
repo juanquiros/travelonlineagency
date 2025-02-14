@@ -172,5 +172,6 @@
     <orderEntry type="library" name="aos" level="application" />
     <orderEntry type="library" name="boxicons" level="application" />
     <orderEntry type="library" name="ionicons" level="application" />
+    <orderEntry type="library" name="@popperjs/core" level="application" />
   </component>
 </module>

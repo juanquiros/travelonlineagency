@@ -64,6 +64,12 @@
                     </a>
                 </li>
                 <li>
+                    <a {% if menu['dashboard'] %}id="inbox"{% endif %} href="{{ path('app_administrador_home') }}">
+                        <ion-icon name="podium-outline"></ion-icon>
+                        <span>DashBoard</span>
+                    </a>
+                </li>
+                <li>
                     <a {% if menu['notificaciones'] %}id="inbox"{% endif %} href="{{ path('app_administrador_notificaciones') }}">
                         <ion-icon name="notifications-outline"></ion-icon>
                         <span>Notificaciones</span>

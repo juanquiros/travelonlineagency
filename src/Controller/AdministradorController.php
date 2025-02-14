@@ -47,7 +47,7 @@ class AdministradorController extends AbstractController
         's_traslados'=>false,
         's_reservas'=>false,
         'configuraciones'=>false,
-        'home'=>false,
+        'dashboard'=>false,
         's_preguntas'=>false
     ];
 
@@ -148,12 +148,14 @@ class AdministradorController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-
-        return $this->render('administrador/testpaypal.html.twig', [
+        $this->adminMenu['dashboard'] = true;
+        return $this->render('administrador/dashboard.html.twig', [
             'controller_name' => 'AdministradorController',
             'idiomas'=>$idiomas,
+            'usuario'=>$this->getUser(),
             'idiomaPlataforma'=>$idioma,
-            'plataforma'=>$plataforma
+            'plataforma'=>$plataforma,
+            'menu'=>$this->adminMenu,
 
         ]);
     }
