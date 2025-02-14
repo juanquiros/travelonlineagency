@@ -37,7 +37,7 @@
                                     </li>
                                 </ul>
                                 <form class="form-inline my-2 my-lg-0" style="display: flex; flex-direction: row;">
-                                    <label for="filtro" class="mr-5">Seleccionar un día</label>
+                                    <label for="filtrofecha" class="mr-5">Seleccionar un día</label>
                                     <input type="date" id="filtrofecha" class="form-control" onchange="getBookingsbyfecha()" min="{{ now | date('Y-m-d') }}">
                                 </form>
                         </nav>
@@ -67,44 +67,6 @@
                     </div>
                 {% endif %}
                 <div class="row center     ">
-                    <div class="card" style="width: 18rem;">
-                        <div class="card-img-top">
-                            <div class="row-flecha p-0 m-0" style="position: relative;height: 285px;">
-                                <div class="col-md-6 arrowRight p-0 m-0" >
-                                    <img src="{{ asset('img/traslados/aeropuerto-igr.jpg') }}" class="arrowRightImg" alt="...">
-                                </div>
-                                <div class="col-md-6 arrowBox" >
-                                    <img src="{{ asset('img/traslados/cataratas.jpg') }}" class="arrowBoxImg"  alt="...">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <h3>Transfer from the airport to Iguazu Falls</h3>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-primary w-100" type="button">Request</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" style="width: 18rem;">
-                        <div class="card-img-top">
-                            <div class="row-flecha p-0 m-0" style="position: relative;height: 285px;">
-                                <div class="col-md-6 arrowRight p-0 m-0" >
-                                    <img src="{{ asset('img/traslados/aeropuerto-igr.jpg') }}" class="arrowRightImg" alt="...">
-                                </div>
-                                <div class="col-md-6 arrowBox" >
-                                    <img src="{{ asset('img/traslados/HOTEL.jpg') }}" class="arrowBoxImg"  alt="...">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <h3>Transfer from the airport to a hotel</h3>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-primary w-100" type="button">Request</button>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             </div>
