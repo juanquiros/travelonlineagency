@@ -136,9 +136,9 @@ final class MercadoPagoController extends AbstractController
                 if(isset($reserva) && !empty($reserva)){ //Enviar mail de pago aprobado para una reserva...
                     if($reserva->getEstado()->getId() == 2) {
                         $cantidad = count($reserva->getInChargeOfArray()) + 1;
-                        mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$reserva,$this->generateUrl('app_status_booking',['tokenId'=> $reserva->getLinkDetalles(),'id'=>$reserva->getId()]));
+                        mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$reserva,$this->generateUrl('app_status_booking',['tokenId'=> $reserva->getLinkDetalles(),'id'=>$reserva->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
                         $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
-                        \App\Services\notificacion::enviarMasivo($administradores, $reserva->getName() . ' reservó (' . $cantidad .') "'. $reserva->getBooking()->getNombre(), 'Nueva reserva', $this->generateUrl('app_administrador_booking', ['id' => $reserva->getBooking()->getId()]));
+                        \App\Services\notificacion::enviarMasivo($administradores, $reserva->getName() . ' reservó (' . $cantidad .') "'. $reserva->getBooking()->getNombre(), 'Nueva reserva', $this->generateUrl('app_administrador_booking', ['id' => $reserva->getBooking()->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
                     }
                 }
         }
