@@ -25,8 +25,8 @@ class SolicitudReserva
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
-    #[ORM\Column]
-    private ?int $phone = null;
+    #[ORM\Column(type: Types::BIGINT)]
+    private ?string $phone = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $form_required = null;
@@ -193,7 +193,6 @@ class SolicitudReserva
     public function setUpdatedAt(\DateTime $updated_at): static
     {
         $this->updated_at = new \DateTime();
-        $this->updated_at = $updated_at;
         return $this;
     }
 
@@ -348,5 +347,4 @@ class SolicitudReserva
 
         return $this;
     }
-
 }
