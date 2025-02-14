@@ -332,20 +332,31 @@ class Booking
     public function getfechasdisponibles():?array{
         $fechasDatetime = null;
         $fechas = $this->getFechasdelservicioArray();
-        if(isset($fechas) && !empty($fechas)){
-            $datetimeNow=new \DateTime();
+        $datetimeNow=new \DateTime();
+        if(isset($fechas) && !empty($fechas) && count($fechas) > 0){
+
             foreach ($fechas as $fechaDatetime){
 
                 $fechaAux = \DateTime::createFromFormat('Y-m-d\TH:i', $fechaDatetime->fecha);
-                $horasprevias = (clone $fechaAux)->add(new \DateInterval("PT{$this->getHoraprevia()}H"));
+
+                $horasprevias = (clone $datetimeNow)->add(new \DateInterval("PT{$this->getHoraprevia()}H"));
 
 
-                if($fechaDatetime->cantidad > 0 && $horasprevias > $datetimeNow ){
+                if($fechaDatetime->cantidad > 0 && $horasprevias < $fechaAux ){
                     $aux=[];
                     $aux['fecha']= $fechaAux;
                     $aux['cantidad']= $fechaDatetime->cantidad;
                     $fechasDatetime []= $aux;
                 }
+            }
+        }else{
+            $fechaAux = \DateTime::createFromInterface($this->validoHasta);
+            $horasprevias = (clone $datetimeNow)->add(new \DateInterval("PT{$this->getHoraprevia()}H"));
+            if(isset($this->disponibles) && !empty($this->disponibles) && $this->disponibles > 0 && $horasprevias < $fechaAux ){
+                $aux=[];
+                $aux['fecha']= $fechaAux;
+                $aux['cantidad']= $this->disponibles;
+                $fechasDatetime []= $aux;
             }
         }
         return $fechasDatetime;

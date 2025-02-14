@@ -36,6 +36,7 @@ class BookingRepository extends ServiceEntityRepository
             return $this->createQueryBuilder('b')
                 ->where('b.habilitado = true')
                 ->andWhere('b.validoHasta >= :val')
+
                 ->setParameter('val', $fecha)
                 ->getQuery()
                 ->getResult();

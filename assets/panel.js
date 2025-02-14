@@ -341,6 +341,7 @@ function quitarFechaBooking(bookingId,fechastring,id){
                 success: function (data){
                     if(data.eliminado){
                         fecha.remove()
+                        document.getElementById('booking_fechasdelservicio').value = getfechasBookingTbody();
                     }else{
                         alert('No fue posible quitar la fecha s')
                     }
@@ -350,6 +351,7 @@ function quitarFechaBooking(bookingId,fechastring,id){
                 }
             })}else {
             fecha.remove()
+            document.getElementById('booking_fechasdelservicio').value = getfechasBookingTbody();
         }
 
     }
