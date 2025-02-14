@@ -77,7 +77,6 @@ class AdministradorController extends AbstractController
                     return ['filename'=> "",'upload'=>false];
                 }
             }else{
-                dump($mime);
                 switch($mime){
                     case 'image/jpeg':
                         $imagen = imagecreatefromjpeg($file);
@@ -272,7 +271,6 @@ class AdministradorController extends AbstractController
         $contenido = $request->query->all();
         $fechafiltro = null;
         if(isset($contenido) && isset($contenido['ff']) && !empty($contenido['ff']))$fechafiltro = $contenido['ff'];
-        dump($fechafiltro);
         $reservas=[];
         $personas=[];
         $reservas['pagadas'] = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),2,$fechafiltro);
