@@ -1,6 +1,8 @@
 
 if(Notification.permission === 'granted'){
-    document.getElementById('enableNotificacionesBtn').classList = 'btn btn-secondary disabled';
+    btn = document.getElementById('enableNotificacionesBtn')
+    btn.classList = ['btn btn-secondary disabled'];
+    btn.innerHTML = "Las notificaciones estan habilitadas en este dispositivo."
 }
 function registrarSuscripcion(suscripcion){
     var  ruta = Routing.generate('app_notificacion_registrar');
@@ -24,7 +26,9 @@ function enableNotif() {
                         applicationServerKey: "BNnsx1A1k1VRV3twYiAM1onhVk2Jm_xvEoytObUTcjsHwdQsVkAetODIiFGP_F-Vow3uSIpjTuRuZJaOMlFXFfE"
                     }).then((subscription)=> {
                         registrarSuscripcion(JSON.stringify(subscription));
-                        document.getElementById('enableNotificacionesBtn').classList = 'btn btn-secondary disabled';
+                        btn = document.getElementById('enableNotificacionesBtn')
+                        btn.classList = ['btn btn-secondary disabled'];
+                        btn.innerHTML = "Las notificaciones estan habilitadas en este dispositivo."
                     }).catch((err)=>{
                         console.log(err);
                     });
