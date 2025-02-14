@@ -406,5 +406,53 @@ class Booking
         }
 
     }
+    public function getLenguajesDisp():array
+    {
+
+        $lenguajes = [];
+        if(isset($this->lenguaje) && !empty($this->lenguaje)){
+            $lenguajes[ $this->lenguaje->getCodigo()]= $this->lenguaje;
+        }
+        foreach ($this->getTraducciones() as $trad){
+            $lenguajes[$trad->getLenguaje()->getCodigo()]=$trad->getLenguaje();
+        }
+        return $lenguajes;
+    }
+
+
+    public function getTraduccionSiExiste(Lenguaje $lenguaje) :?TraduccionBooking
+    {
+        $traduccion=null;
+        if($this->lenguaje->getId() != $lenguaje->getId()){
+            foreach ($this->traducciones as $item){
+                if($item->getLenguaje() === $lenguaje)$traduccion = $item;
+            }
+        }
+
+        return $traduccion;
+    }
+
+    public function getTraduccionOPorDefecto(string $codLenguaje) :TraduccionBooking
+    {
+        $traduccion = null;
+
+        if ($this->lenguaje->getCodigo() != $codLenguaje){
+            foreach ($this->traducciones as $item){
+                if($item->getLenguaje()->getCodigo() === $codLenguaje)$traduccion = $item;
+            }
+        }
+
+        if(!isset($traduccion) || empty($traduccion)){
+            $traduccion = new TraduccionBooking();
+            $traduccion->setLenguaje($this->lenguaje);
+            $traduccion->setDescripcion($this->descripcion);
+            $traduccion->setDetalles($this->detalles);
+            $traduccion->setNombre($this->nombre);
+        }
+
+        return $traduccion;
+    }
+
+
 
 }

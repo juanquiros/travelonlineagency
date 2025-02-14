@@ -1,15 +1,15 @@
 {% if bookings %}
     {% for booking in bookings %}
         {% set bookingFechas = booking.getfechasdisponibles %}
-
+        {% set tradBooking = booking.getTraduccionOPorDefecto(idiomaPlataforma.codigo) %}
         <div class="card" style="width: 18rem;">
             <img src="/img/booking/{{ booking.getImgPortada }}" class="card-img-top" alt="...">
             <div class="card-body">
-                <h3>{{ booking.nombre }}</h3>
+                <h3>{{ tradBooking.nombre }}</h3>
                 {% if booking.getLugaresDisponibles['total'] == 1  %}
                     <p style="color: darkgreen;">¡Ultimo lugar disponible!</p>
                 {% endif %}
-                <p class="card-text">{{ booking.descripcion }}</p>
+                <p class="card-text">{{ tradBooking.descripcion }}</p>
 
                 {% if bookingFechas %}
                     <div class="d-grid gap-2">

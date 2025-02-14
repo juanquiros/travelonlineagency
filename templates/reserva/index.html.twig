@@ -8,7 +8,7 @@
     {{ parent() }}
 {% endblock %}
 {% block body %}
-
+    {% set tradBooking = booking.getTraduccionOPorDefecto(idiomaPlataforma.codigo) %}
     <section   data-aos="fade-up" data-aos-duration="2000">
         <div class="row">
             <div class="col-md-2"></div>
@@ -21,11 +21,11 @@
             <div class="col-md-2"></div>
             <div class="col-md-8">
                 <div class="center">
-                    <h1>{{ booking.nombre }}</h1>
+                    <h1>{{ tradBooking.nombre }}</h1>
                     <h2>{{ traduccion['titulo'] }}</h2>
                     <hr>
                 </div>
-                <p>{{ booking.detalles | raw }}</p>
+                <p>{{ tradBooking.detalles | raw }}</p>
                 {% for precio in booking.precios %}
                     <h4>{{ precio.moneda.simbolo }} {{ precio.valor | number_format(2, '.', ',')  }} / {{ traduccion['porpersona'] }}</h4>
 

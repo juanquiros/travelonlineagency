@@ -26,6 +26,12 @@
                 {{ form_errors(form) }}
                 <div class="row mb-3">
                     <div class="col-md-12">
+                        {{ form_label(form.lenguaje)}}
+                        {{ form_widget(form.lenguaje) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
                         {{ form_label(form.nombre)}}
                         {{ form_widget(form.nombre) }}
                     </div>
@@ -46,12 +52,6 @@
                     <div class="col-md-12">
                         {{ form_label(form.disponibles)}}
                         {{ form_widget(form.disponibles) }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        {{ form_label(form.lenguaje)}}
-                        {{ form_widget(form.lenguaje) }}
                     </div>
                 </div>
                 <div class="row mb-3">

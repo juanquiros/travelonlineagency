@@ -231,8 +231,10 @@ class InicioController extends AbstractController
         if(isset($content) && !empty($content)){
             $bookings = $this->em->getRepository(Booking::class)->obtenerVálidos($content);
         }
+        $idioma = LanguageService::getLenguaje($this->em,$request);
         $render = $this->render('inicio/bookings.html.twig',[
-            'bookings'=>$bookings
+            'bookings'=>$bookings,
+            'idiomaPlataforma'=>$idioma
             ]);
         return new JsonResponse(['render'=>$render->getContent()],200);
     }

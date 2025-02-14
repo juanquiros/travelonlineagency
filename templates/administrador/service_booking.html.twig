@@ -55,6 +55,7 @@
                         <th scope="col">Nombre</th>
                         <th scope="col">Disponibles</th>
                         <th scope="col">Válido hasta</th>
+                        <th scope="col">Traducciones</th>
                         <th scope="col">Habilitado</th>
                         <th scope="col">Acciones</th>
                     </tr>
@@ -68,6 +69,19 @@
                             <td>{% if booking %}
                                 {{ booking.getLugaresDisponibles['total'] }}{% else %}-{% endif %}</td>
                             <td>{{ booking.validoHasta | date("d/m/Y H:i","America/Argentina/Buenos_Aires")}}</td>
+
+                            <td>
+
+                                {% for leng in  idiomas %}
+                                    <!-- {codLenguaje}/{id}', name: 'app_admin_add_edit_fak')] -->
+                                    {% if(booking.getLenguajesDisp[leng.codigo] is defined) %}
+                                        <a href="{{ path('app_admin_traduccion_booking',{codLenguaje:leng.codigo,id:booking.id}) }}"><img src="{{ asset(icon_language  ~ '/'  ~ booking.getLenguajesDisp[leng.codigo].icono ) }}" alt="" style="height: 1rem"></a>
+                                    {% else %}
+                                        <a href="{{ path('app_admin_traduccion_booking',{codLenguaje:leng.codigo,id:booking.id}) }}">agregar '{{ leng.codigo }}'</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                            </td>
                             <td><input type="checkbox" {% if booking.habilitado  %}checked{% endif  %}></td>
                             <td><a href="{{ path('app_new_service_booking',{id:booking.id }) }}" >editar</a></td>
                         </tr>

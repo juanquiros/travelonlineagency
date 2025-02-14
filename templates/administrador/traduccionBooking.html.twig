@@ -1,0 +1,60 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Traducción{% endblock %}
+
+{% block body %}
+    <div class="mb-5" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3); padding-bottom: 3em">
+        <div class="row mb-3" >
+            <div class="col-md-3"></div>
+            <div class="col-md-6 pt-5" style=" min-width: 410px !important;">
+                <h1>Traducción</h1>
+                <h2>Booking "{{ booking.nombre }}"</h2>
+                <p>Traducción al: {{ lenguajeFormulario.nombre }}  <img src="{{ asset(icon_language  ~ '/'  ~ lenguajeFormulario.icono ) }}" alt="" style="height: 1rem"></p>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+        <hr>
+        <div class="row mb-5">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                {{ form_start(form) }}
+                {{ form_errors(form) }}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <p style="color: gray">Def: {{ booking.nombre }}</p>
+                        {{ form_label(form.nombre)}}
+                        {{ form_widget(form.nombre) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <p style="color: gray">Def: {{ booking.descripcion }}</p>
+                        {{ form_label(form.descripcion)}}(máximo 90 caracteres)
+                        {{ form_widget(form.descripcion) }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        {{ form_label(form.detalles)}}
+                        {{ form_widget(form.detalles) }}
+                    </div>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>
+
+
+    <script>
+        tinymce.remove()
+        tinymce.init({
+            selector: '#traduccion_booking_detalles',
+            branding:false,
+            menubar: false,
+            toolbar: 'undo redo | styles forecolor | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | image'
+        });
+    </script>
+{% endblock %}

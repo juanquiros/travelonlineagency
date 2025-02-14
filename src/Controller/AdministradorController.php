@@ -12,6 +12,7 @@ use App\Entity\Precio;
 use App\Entity\PreguntaFrecuente;
 use App\Entity\RespuestaMensaje;
 use App\Entity\SolicitudReserva;
+use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
 use App\Form\BookingType;
@@ -20,12 +21,14 @@ use App\Form\CredencialesPayPalType;
 use App\Form\PlataformaType;
 use App\Form\PreguntaFrecuenteType;
 use App\Form\RespuestaMensajeType;
+use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -347,6 +350,60 @@ class AdministradorController extends AbstractController
         }
         return new JsonResponse(['eliminado'=>$ret,'id'=>$id,],200);
     }
+
+
+    #[Route('/administrador/servicio/booking/traduccion/{codLenguaje}/{id}', defaults:["id"=> 0], name: 'app_admin_traduccion_booking')]
+    public function app_admin_traduccion_booking(string $codLenguaje,Booking $booking = null,Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $lenguaje = $this->em->getRepository(Lenguaje::class)->findOneBy(['codigo' => $codLenguaje]);
+
+        if (!isset($lenguaje) || empty($lenguaje) || !isset($booking) || empty($booking)) return $this->redirectToRoute('app_service_booking');
+        $this->adminMenu['s_reservas'] = true;
+
+        $traduccion = null;
+
+        if($booking->getLenguaje()->getId() != $lenguaje->getId()) {
+
+            $traduccion = $booking->getTraduccionSiExiste($lenguaje);
+
+            if (!isset($traduccion) || empty($traduccion)) {
+                $traduccion = new TraduccionBooking();
+                $traduccion->setLenguaje($lenguaje);
+                $traduccion->setBooking($booking);
+            }
+
+        }else{
+            //redirect to edit boooking
+            return $this->redirectToRoute('app_new_service_booking',['id'=>$booking->getId()]);
+        }
+
+        $formulario = $this->createForm(TraduccionBookingType::class,$traduccion);
+        $formulario->handleRequest($request);
+        if($formulario->isSubmitted() && $formulario->isValid()){
+            $traduccion->setLenguaje($lenguaje);
+            $this->em->persist($traduccion);
+            $this->em->flush();
+            return $this->redirectToRoute('app_service_booking');
+        }
+        return $this->render('administrador/traduccionBooking.html.twig', [
+            'controller_name' => 'Preguntas de plataforma',
+            'plataforma'=>$plataforma,
+            'booking'=>$booking,
+
+            'usuario'=>$this->getUser(),
+            'menu'=>$this->adminMenu,
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'lenguajeFormulario'=>$lenguaje,
+
+            'form'=>$formulario
+        ]);
+    }
+
+
     #[Route('/administrador/FAKs/agregareditar/{codLenguaje}/{id}', defaults:["id"=> 0], name: 'app_admin_add_edit_fak')]
     public function app_admin_add_edit_fak(string $codLenguaje,PreguntaFrecuente $pregunta = null,Request $request): Response
     {
@@ -357,7 +414,7 @@ class AdministradorController extends AbstractController
         $lenguaje = $this->em->getRepository(Lenguaje::class)->findOneBy(['codigo' => $codLenguaje]);
         $traduccion = null;
         if (!isset($lenguaje) || empty($lenguaje)) return $this->redirectToRoute('app_inicio');
-        $this->adminMenu['configuraciones'] = true;
+        $this->adminMenu['s_preguntas'] = true;
 
 
         if (isset($pregunta) && !empty($pregunta)) {

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TraduccionBookingRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TraduccionBookingRepository::class)]
@@ -13,11 +14,16 @@ class TraduccionBooking
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $keyName = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $traduccion = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nombre = null;
+
+    #[ORM\Column(length: 90, nullable: true)]
+    private ?string $descripcion = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $detalles = null;
+
 
     #[ORM\ManyToOne(inversedBy: 'traduccionesBooking')]
     #[ORM\JoinColumn(nullable: false)]
@@ -32,28 +38,34 @@ class TraduccionBooking
         return $this->id;
     }
 
-    public function getKeyName(): ?string
+    public function getNombre(): ?string
     {
-        return $this->keyName;
+        return $this->nombre;
     }
 
-    public function setKeyName(string $keyName): static
+    public function setNombre(?string $nombre): void
     {
-        $this->keyName = $keyName;
-
-        return $this;
+        $this->nombre = $nombre;
     }
 
-    public function getTraduccion(): ?string
+    public function getDescripcion(): ?string
     {
-        return $this->traduccion;
+        return $this->descripcion;
     }
 
-    public function setTraduccion(string $traduccion): static
+    public function setDescripcion(?string $descripcion): void
     {
-        $this->traduccion = $traduccion;
+        $this->descripcion = $descripcion;
+    }
 
-        return $this;
+    public function getDetalles(): ?string
+    {
+        return $this->detalles;
+    }
+
+    public function setDetalles(?string $detalles): void
+    {
+        $this->detalles = $detalles;
     }
 
     public function getLenguaje(): ?Lenguaje
