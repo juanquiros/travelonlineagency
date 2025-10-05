@@ -43,6 +43,7 @@ class AyudaController extends AbstractController
 
         return $this->render('ayuda/index.html.twig', [
             'titulo' => $titulo,
+            'usuario'=>$this->getUser(),
             'plataforma'=>$plataforma,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,

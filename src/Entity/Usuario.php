@@ -41,6 +41,10 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'usuario', targetEntity: PushEndPoint::class)]
     private Collection $pushEndPoints;
 
+    #[ORM\OneToOne(mappedBy: 'Usuario', cascade: ['persist', 'remove'])]
+    private ?BookingPartner $bPartner = null;
+
+
     public function __construct()
     {
         $this->pushEndPoints = new ArrayCollection();
@@ -161,4 +165,23 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    public function getBPartner(): ?BookingPartner
+    {
+        return $this->bPartner;
+    }
+
+    public function setBPartner(BookingPartner $bPartner): static
+    {
+        // set the owning side of the relation if necessary
+        if ($bPartner->getUsuario() !== $this) {
+            $bPartner->setUsuario($this);
+        }
+
+        $this->bPartner = $bPartner;
+
+        return $this;
+    }
+
+
 }

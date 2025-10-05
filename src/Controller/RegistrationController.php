@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Plataforma;
 use App\Entity\Usuario;
 use App\Form\RegistrationFormType;
+use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,13 +15,21 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class RegistrationController extends AbstractController
 {
+    private $em;
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
     #[Route('/register', name: 'app_register')]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
         $user = new Usuario();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
-
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $usuario = $this->getUser();
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var string $plainPassword */
             $plainPassword = $form->get('plainPassword')->getData();
@@ -37,6 +47,11 @@ class RegistrationController extends AbstractController
 
         return $this->render('registration/register.html.twig', [
             'registrationForm' => $form,
+            'plataforma'=>$plataforma,
+            'idiomas'=>$idiomas,
+            'idiomaPlataforma'=>$idioma,
+            'usuario'=>$usuario
+
         ]);
     }
 }

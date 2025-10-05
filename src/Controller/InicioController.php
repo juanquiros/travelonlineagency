@@ -38,7 +38,7 @@ class InicioController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $bookings = $this->em->getRepository(Booking::class)->obtenerVálidos(new \DateTime());
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-
+        $usuario = $this->getUser();
 
 
         $cfg_bookings['titulo'] = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['key_name'=>'app_inicio:bookings:titulo','lenguaje'=>$idioma->getId()]);
@@ -65,7 +65,8 @@ class InicioController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'now'=> new \DateTime(),
             'cfg_bookings'=>$cfg_bookings,
-            'cfg_traslados'=>$cfg_traslados
+            'cfg_traslados'=>$cfg_traslados,
+            'usuario'=>$usuario
         ]);
     }
     #[Route('/reserva/{id}', name: 'app_reserva')]

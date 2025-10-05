@@ -68,6 +68,9 @@ class Booking
     #[ORM\Column]
     private ?int $horaprevia = null;
 
+    #[ORM\ManyToOne(inversedBy: 'bookings')]
+    private ?BookingPartner $bookingPartner = null;
+
     /**
      * @param bool|null $habilitado
      */
@@ -451,6 +454,18 @@ class Booking
         }
 
         return $traduccion;
+    }
+
+    public function getBookingPartner(): ?BookingPartner
+    {
+        return $this->bookingPartner;
+    }
+
+    public function setBookingPartner(?BookingPartner $bookingPartner): static
+    {
+        $this->bookingPartner = $bookingPartner;
+
+        return $this;
     }
 
 

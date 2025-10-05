@@ -71,8 +71,12 @@ class Plataforma
     #[ORM\Column(length: 1024, nullable: true)]
     private ?string $contactoDireccion = null;
 
+    #[ORM\Column]
+    private ?float $comisionBookingPartner = null;
+
     public function __construct()
     {
+        $this->comisionBookingPartner = 5;
         $this->traslados_OD_libres = false;
         $this->lenguajes = new ArrayCollection();
         $this->traducciones = new ArrayCollection();
@@ -323,6 +327,18 @@ class Plataforma
         if(!isset($trad_menu['menu:reservas']) || empty($trad_menu['menu:reservas']))$trad_menu['menu:reservas']='Booking\'s';
         if(!isset($trad_menu['menu:faks']) || empty($trad_menu['menu:faks']))$trad_menu['menu:faks']='Common questions';
        return $trad_menu;
+    }
+
+    public function getComisionBookingPartner(): ?float
+    {
+        return $this->comisionBookingPartner;
+    }
+
+    public function setComisionBookingPartner(float $comisionBookingPartner): static
+    {
+        $this->comisionBookingPartner = $comisionBookingPartner;
+
+        return $this;
     }
 
 
