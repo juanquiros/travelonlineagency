@@ -10,6 +10,10 @@
 
             {{ form_errors(registrationForm) }}
 
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% endfor %}
+
             {{ form_start(registrationForm) }}
             {{ form_row(registrationForm.nombre) }}
             {{ form_row(registrationForm.email) }}
@@ -17,6 +21,7 @@
                 label: 'Password'
             }) }}
             {{ form_row(registrationForm.agreeTerms) }}
+            {{ form_row(registrationForm.solicitarPartner) }}
 
             <button type="submit" class="btn btn-success  w-100">Register</button>
             {{ form_end(registrationForm) }}
