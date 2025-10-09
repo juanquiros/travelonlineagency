@@ -1,0 +1,81 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Partners{% endblock %}
+
+{% block body %}
+    <div class="p-3" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="row">
+            <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Partners</h1>
+            </div>
+        </div>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label == 'success' ? 'success' : (label == 'error' ? 'danger' : 'info') }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Estado</th>
+                    <th>Comisión plataforma (%)</th>
+                    <th>Servicios</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if partners is empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Aún no hay partners registrados.</td>
+                    </tr>
+                {% else %}
+                    {% for partner in partners %}
+                        <tr>
+                            <td>{{ partner.usuario.nombre ?? '-' }}</td>
+                            <td>{{ partner.usuario.email ?? '-' }}</td>
+                            <td>
+                                {% if partner.habilitado %}
+                                    <span class="badge text-bg-success">Habilitado</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('app_admin_partner_estado', {id: partner.id}) }}" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('partner_status_' ~ partner.id) }}">
+                                    <input type="hidden" name="action" value="update">
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="comision" value="{{ partner.comisionPlataforma ?? '' }}" placeholder="%">
+                                    <button class="btn btn-outline-primary btn-sm" type="submit">Guardar</button>
+                                </form>
+                            </td>
+                            <td>{{ partner.bookings|length }}</td>
+                            <td class="text-end">
+                                {% if partner.habilitado %}
+                                    <form method="post" action="{{ path('app_admin_partner_estado', {id: partner.id}) }}" class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('partner_status_' ~ partner.id) }}">
+                                        <input type="hidden" name="action" value="disable">
+                                        <button class="btn btn-outline-warning btn-sm" type="submit">Suspender</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{{ path('app_admin_partner_estado', {id: partner.id}) }}" class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('partner_status_' ~ partner.id) }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button class="btn btn-success btn-sm" type="submit">Aprobar</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

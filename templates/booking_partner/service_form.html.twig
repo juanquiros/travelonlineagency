@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isNew ? 'Nuevo servicio' : 'Editar servicio' }}{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+                        <h1 class="h4 mb-4">{{ isNew ? 'Crear un nuevo servicio' : 'Editar servicio' }}</h1>
+                        {{ form_start(form) }}
+                        {{ form_errors(form) }}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form_row(form.lenguaje) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.validoHasta) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.nombre) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.descripcion) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.detalles) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.disponibles) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.horaprevia) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.habilitado) }}
+                            </div>
+                        </div>
+                        {{ form_row(form.form_requerido) }}
+                        {{ form_row(form.imagenes) }}
+                        {{ form_row(form.fechasdelservicio) }}
+                        {{ form_row(form.preciosaux) }}
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a class="btn btn-outline-secondary" href="{{ path('app_booking_partner') }}">Cancelar</a>
+                            {{ form_widget(form.Guardar, {'label': isNew ? 'Crear servicio' : 'Guardar cambios', 'attr': {'class': 'btn btn-primary'}}) }}
+                        </div>
+                        {{ form_end(form, {'render_rest': false}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

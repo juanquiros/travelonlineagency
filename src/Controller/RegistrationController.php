@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\BookingPartner;
 use App\Entity\Plataforma;
 use App\Entity\Usuario;
 use App\Form\RegistrationFormType;
@@ -38,6 +39,15 @@ class RegistrationController extends AbstractController
             $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
 
             $entityManager->persist($user);
+
+            if ($form->get('solicitarPartner')->getData()) {
+                $partner = new BookingPartner();
+                $partner->setUsuario($user);
+                $partner->setHabilitado(false);
+                $entityManager->persist($partner);
+                $this->addFlash('success', 'Tu solicitud para ser partner fue enviada y está pendiente de aprobación.');
+            }
+
             $entityManager->flush();
 
             // do anything else you need here, like send an email
