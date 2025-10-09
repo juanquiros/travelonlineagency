@@ -122,6 +122,12 @@
                                 <span>FAK's</span>
                             </a>
                         </li>
+                        <li>
+                            <a {% if menu['partners'] %}id="inbox"{% endif %} href="{{ path('app_admin_partners') }}">
+                                <ion-icon name="people-outline"></ion-icon>
+                                <span>Partners</span>
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                 </li>
