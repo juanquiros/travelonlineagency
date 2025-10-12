@@ -48,6 +48,19 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
    npm run dev -- --watch
    ```
 
+## Datos de prueba para phpMyAdmin
+
+- El archivo [`data/phpmyadmin_seed.sql`](data/phpmyadmin_seed.sql) incluye un set de datos mínimos para probar el flujo de partners con usuarios reales, servicios y precios.
+- Importalo desde phpMyAdmin (o `mysql` CLI) luego de crear la base de datos y ejecutar las migraciones:
+  ```sql
+  SOURCE data/phpmyadmin_seed.sql;
+  ```
+- El script deshabilita temporalmente los `FOREIGN_KEY_CHECKS`, trunca tablas clave (`usuario`, `booking_partner`, `booking`, `precio`, etc.) y vuelve a activarlos al final para asegurar la integridad referencial.
+- Las credenciales de acceso principales son:
+  - **Administrador** → `admin@travelonlineagency.test` / `Password123`
+  - **Partner habilitado** → `sofia.partner@test.com` / `Password123`
+  - **Partner pendiente** → `martin.partner@test.com` / `Password123`
+
 ## Flujo de ramas
 
 - `main`: rama estable para despliegues en producción.
