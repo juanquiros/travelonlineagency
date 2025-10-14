@@ -137,8 +137,47 @@ final class MercadoPagoController extends AbstractController
                     if($reserva->getEstado()->getId() == 2) {
                         $cantidad = count($reserva->getInChargeOfArray()) + 1;
                         mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$reserva,$this->generateUrl('app_status_booking',['tokenId'=> $reserva->getLinkDetalles(),'id'=>$reserva->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
+
                         $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
-                        \App\Services\notificacion::enviarMasivo($administradores, $reserva->getName() . ' reservó (' . $cantidad .') "'. $reserva->getBooking()->getNombre(), 'Nueva reserva', $this->generateUrl('app_administrador_booking', ['id' => $reserva->getBooking()->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
+                        $booking = $reserva->getBooking();
+                        $mensajeAdmin = sprintf(
+                            '%s reservó (%d) "%s".',
+                            $reserva->getName(),
+                            $cantidad,
+                            $booking->getNombre()
+                        );
+
+                        \App\Services\notificacion::enviarMasivo(
+                            $administradores,
+                            $mensajeAdmin,
+                            'Nueva reserva',
+                            $this->generateUrl(
+                                'app_administrador_booking',
+                                ['id' => $booking->getId()],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            )
+                        );
+
+                        $partnerUser = $booking?->getBookingPartner()?->getUsuario();
+                        if ($partnerUser instanceof Usuario) {
+                            $mensajePartner = sprintf(
+                                '%s confirmó una reserva (%d pasajeros) para "%s".',
+                                $reserva->getName(),
+                                $cantidad,
+                                $booking->getNombre()
+                            );
+
+                            \App\Services\notificacion::enviarMasivo(
+                                [$partnerUser],
+                                $mensajePartner,
+                                'Nueva reserva en tu servicio',
+                                $this->generateUrl(
+                                    'app_booking_partner_service_reservations',
+                                    ['id' => $booking->getId()],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
+                            );
+                        }
                     }
                 }
         }

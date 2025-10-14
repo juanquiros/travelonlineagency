@@ -16,6 +16,15 @@
             <div class="col-md-2"></div>
             <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
                 <h3>FAK's</h3>
+                {% if partnerInviteLink is defined %}
+                    <div class="alert alert-info d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2">
+                        <div>
+                            <strong>Enlace privado para partners:</strong>
+                            <span class="small d-block d-lg-inline text-muted">Incluí este enlace en una pregunta frecuente para compartir el registro exclusivo.</span>
+                        </div>
+                        <code class="small text-break mb-0">{{ partnerInviteLink }}</code>
+                    </div>
+                {% endif %}
                 <a class="btn btn-secondary btn-sm mb-5" href="{{ path('app_admin_add_edit_fak',{codLenguaje:plataforma.languageDef.codigo}) }}">Agregar nueva pregunta</a>
                 <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
                     <thead>

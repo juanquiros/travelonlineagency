@@ -1,0 +1,216 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isNew ? 'Nuevo servicio' : 'Editar servicio' }}{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="card border-0 shadow-sm">
+                    <div
+                        class="card-body p-4 p-md-5"
+                        data-controller="partner-service-form"
+                        data-partner-service-form-required-value="{{ datosRequeridos|json_encode|e('html_attr') }}"
+                        data-partner-service-form-images-value="{{ imagenes|json_encode|e('html_attr') }}"
+                        data-partner-service-form-dates-value="{{ fechas|json_encode|e('html_attr') }}"
+                        data-partner-service-form-prices-value="{{ precios|json_encode|e('html_attr') }}"
+                        data-partner-service-form-currencies-value="{{ monedas|json_encode|e('html_attr') }}"
+                        data-partner-service-form-upload-url-value="{{ path('app_booking_partner_service_image_upload') }}"
+                        data-partner-service-form-booking-id-value="{{ booking.id ?? 0 }}"
+                        data-partner-service-form-base-image-path-value="{{ asset('img/booking/') }}"
+                    >
+                        <h1 class="h4 mb-4">{{ isNew ? 'Crear un nuevo servicio' : 'Editar servicio' }}</h1>
+
+                        {{ form_start(form) }}
+                        {{ form_errors(form) }}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form_row(form.lenguaje) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.validoHasta) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.nombre) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.descripcion) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.detalles, {
+                                    attr: {
+                                        'data-controller': 'tinymce',
+                                        'data-tinymce-plugins-value': 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount autoresize',
+                                        'data-tinymce-toolbar-value': 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | removeformat | code fullscreen',
+                                        'data-tinymce-language-value': 'es',
+                                        'data-tinymce-menubar-value': 'false'
+                                    }
+                                }) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.disponibles) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form.horaprevia) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(form.habilitado) }}
+                            </div>
+                        </div>
+
+                        <div class="d-none">
+                            {{ form_widget(form.form_requerido, {'attr': {'data-partner-service-form-target': 'requiredInput'}}) }}
+                            {{ form_widget(form.imagenes, {'attr': {'data-partner-service-form-target': 'imagesInput'}}) }}
+                            {{ form_widget(form.fechasdelservicio, {'attr': {'data-partner-service-form-target': 'datesInput'}}) }}
+                            {{ form_widget(form.preciosaux, {'attr': {'data-partner-service-form-target': 'pricesInput'}}) }}
+                        </div>
+
+                        <section class="mt-5">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h5 mb-0">Datos adicionales solicitados</h2>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-action="partner-service-form#addRequiredField">
+                                    <i class="bi bi-plus-lg"></i> Agregar
+                                </button>
+                            </div>
+                            <p class="text-muted small">Estos campos se mostrarán al pasajero al completar la reserva.</p>
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Etiqueta</th>
+                                            <th>Tipo</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-partner-service-form-target="requiredList"></tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-secondary small mb-0 d-none" data-partner-service-form-target="requiredEmpty">
+                                No se solicitarán datos adicionales.
+                            </div>
+                        </section>
+
+                        <section class="mt-5">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h5 mb-0">Fechas del servicio</h2>
+                                <span class="text-muted small">Definí fechas disponibles y cupos.</span>
+                            </div>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-7">
+                                    <label class="form-label" for="partner-service-date">Fecha y hora</label>
+                                    <input type="datetime-local" class="form-control" id="partner-service-date" data-partner-service-form-target="dateField">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="partner-service-capacity">Cupos disponibles</label>
+                                    <input type="number" min="0" class="form-control" id="partner-service-capacity" data-partner-service-form-target="capacityField">
+                                </div>
+                                <div class="col-md-2 d-grid">
+                                    <button type="button" class="btn btn-outline-primary" data-action="partner-service-form#addDate">
+                                        <i class="bi bi-plus-lg"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-3">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Cupos</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-partner-service-form-target="dateList"></tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-secondary small mb-0 d-none" data-partner-service-form-target="dateEmpty">
+                                Aún no cargaste fechas disponibles.
+                            </div>
+                        </section>
+
+                        <section class="mt-5">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h5 mb-0">Precios</h2>
+                                <span class="text-muted small">Podés sumar tantos valores y monedas como necesites.</span>
+                            </div>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label" for="partner-service-price">Valor</label>
+                                    <input type="number" min="0" step="0.01" class="form-control" id="partner-service-price" data-partner-service-form-target="priceValueField">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label" for="partner-service-currency">Moneda</label>
+                                    <select class="form-select" id="partner-service-currency" data-partner-service-form-target="priceCurrencyField">
+                                        {% for moneda in monedas %}
+                                            <option value="{{ moneda.id }}">{{ moneda.nombre }} ({{ moneda.simbolo }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-grid">
+                                    <button type="button" class="btn btn-outline-primary" data-action="partner-service-form#addPrice" data-partner-service-form-target="addPriceButton">
+                                        <i class="bi bi-plus-lg"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-3">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Valor</th>
+                                            <th>Moneda</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-partner-service-form-target="priceList"></tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-secondary small mb-0 d-none" data-partner-service-form-target="priceEmpty">
+                                Aún no definiste precios para este servicio.
+                            </div>
+                        </section>
+
+                        <section class="mt-5">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h5 mb-0">Galería e imagen de portada</h2>
+                                <span class="text-muted small">Subí imágenes en JPG o PNG de hasta 5&nbsp;MB.</span>
+                            </div>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="partner-service-images">Seleccionar imágenes</label>
+                                    <input type="file" class="form-control" id="partner-service-images" accept="image/*" multiple data-partner-service-form-target="fileInput">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check mt-md-4 pt-md-2">
+                                        <input class="form-check-input" type="checkbox" id="partner-service-cover-toggle" data-partner-service-form-target="coverToggle">
+                                        <label class="form-check-label" for="partner-service-cover-toggle">
+                                            Marcar primera como portada
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-grid">
+                                    <button type="button" class="btn btn-outline-primary mt-md-4" data-action="partner-service-form#uploadImages" data-partner-service-form-target="uploadButton">
+                                        <i class="bi bi-upload"></i> Subir
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3 mt-3" data-partner-service-form-target="gallery"></div>
+                            <div class="alert alert-secondary small mb-0 d-none mt-3" data-partner-service-form-target="galleryEmpty">
+                                Todavía no agregaste imágenes para este servicio.
+                            </div>
+                        </section>
+
+                        <div class="d-none">
+                            {{ form_rest(form) }}
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a class="btn btn-outline-secondary" href="{{ path('app_booking_partner') }}">Cancelar</a>
+                            {{ form_widget(form.Guardar, {'label': isNew ? 'Crear servicio' : 'Guardar cambios', 'attr': {'class': 'btn btn-primary'}}) }}
+                        </div>
+                        {{ form_end(form, {'render_rest': false}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

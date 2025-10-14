@@ -10,6 +10,10 @@
 
             {{ form_errors(registrationForm) }}
 
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% endfor %}
+
             {{ form_start(registrationForm) }}
             {{ form_row(registrationForm.nombre) }}
             {{ form_row(registrationForm.email) }}
@@ -17,6 +21,12 @@
                 label: 'Password'
             }) }}
             {{ form_row(registrationForm.agreeTerms) }}
+            {% if forcePartnerRequest %}
+                <div class="alert alert-info small">Estás completando el formulario exclusivo para partners. El equipo revisará tu solicitud antes de habilitar el acceso al panel.</div>
+            {% endif %}
+            {% if registrationForm.solicitarPartner is defined %}
+                {{ form_row(registrationForm.solicitarPartner) }}
+            {% endif %}
 
             <button type="submit" class="btn btn-success  w-100">Register</button>
             {{ form_end(registrationForm) }}

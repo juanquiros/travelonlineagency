@@ -1,20 +1,108 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello BookingPartnerController!{% endblock %}
+{% block title %}Panel de partners{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Mis servicios de reserva</h1>
+                <p class="text-muted mb-0">Gestioná los servicios publicados en Travel Online Agency.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ path('app_booking_partner_service_new') }}">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo servicio
+            </a>
+        </div>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success" role="alert">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger" role="alert">{{ message }}</div>
+        {% endfor %}
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/wamp64/www/travelonlineagency/travelonlineagency/src/Controller/BookingPartnerController.php</code></li>
-        <li>Your template at <code>C:/wamp64/www/travelonlineagency/travelonlineagency/templates/booking_partner/index.html.twig</code></li>
-    </ul>
-</div>
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h2 class="h5 mb-1">Notificaciones en tiempo real</h2>
+                    <p class="text-muted mb-0 small">Recibí alertas cuando se registren nuevas reservas en tus servicios.</p>
+                </div>
+                <div
+                    data-controller="push-notifications"
+                    data-push-notifications-register-url-value="{{ path('app_notificacion_registrar') }}"
+                    data-push-notifications-worker-path-value="{{ asset('sw.js') }}"
+                    data-push-notifications-application-server-key-value="{{ vapidPublicKey }}"
+                    data-push-notifications-success-label-value="Notificaciones activadas"
+                    data-push-notifications-loading-label-value="Activando notificaciones..."
+                    data-push-notifications-denied-label-value="No se activaron las notificaciones."
+                    data-push-notifications-unsupported-label-value="Las notificaciones no están disponibles en este navegador."
+                >
+                    <button type="button" class="btn btn-outline-primary" data-push-notifications-target="button">
+                        <i class="bi bi-bell me-1"></i> Activar notificaciones
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if bookings is empty %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h2 class="h5 mb-3">Aún no tenés servicios cargados</h2>
+                    <p class="text-muted">Creá tu primer servicio para que el equipo de Travel Online Agency pueda aprobarlo y comenzar a recibir reservas.</p>
+                    <a class="btn btn-outline-primary" href="{{ path('app_booking_partner_service_new') }}">Crear servicio</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table align-middle shadow-sm">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Estado</th>
+                        <th>Disponibles</th>
+                        <th>Vigencia</th>
+                        <th>Reservas</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>
+                                <strong>{{ booking.nombre ?: 'Sin título' }}</strong>
+                                <div class="small text-muted">Código #{{ booking.id }}</div>
+                            </td>
+                            <td>
+                                {% if booking.habilitado %}
+                                    <span class="badge text-bg-success">Publicado</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Borrador</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ booking.disponibles }}</td>
+                            <td>
+                                {% if booking.validoHasta %}
+                                    {{ booking.validoHasta|date('d/m/Y H:i') }}
+                                {% else %}
+                                    <span class="text-muted">Sin fecha límite</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ booking.solicitudesReserva|length }}</td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_booking_partner_service_reservations', {id: booking.id}) }}">
+                                        <i class="bi bi-calendar-week"></i> Reservas
+                                    </a>
+                                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_booking_partner_service_edit', {id: booking.id}) }}">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}

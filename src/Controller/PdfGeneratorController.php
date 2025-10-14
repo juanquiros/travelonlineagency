@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Booking;
 use App\Entity\EstadoReserva;
 use App\Entity\SolicitudReserva;
+use App\Entity\Usuario;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 
 use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
 use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -26,58 +26,89 @@ final class PdfGeneratorController extends AbstractController
     }
 
     #[Route('/administrador/pdf/generator/booking/{id}/{estadoId}', name: 'app_pdf_generator')]
-    public function index(Booking $booking,int $estadoId = null, Request $request,Pdf $pdf): Response
+    public function index(Booking $booking, Request $request, Pdf $pdf, int $estadoId): Response
     {
-        if(!isset($booking) || empty($booking) || !isset($estadoId) || empty($estadoId)) return new JsonResponse(['status'=>'fail'],200);
+        $this->assertPdfAccess($booking);
 
+        return $this->buildPdfResponse($booking, $estadoId, $request, $pdf);
+    }
 
+    #[Route('/booking-partner/pdf/generator/booking/{id}/{estadoId}', name: 'app_booking_partner_pdf')]
+    public function partnerPdf(Booking $booking, Request $request, Pdf $pdf, int $estadoId): Response
+    {
+        $this->assertPdfAccess($booking, true);
+
+        return $this->buildPdfResponse($booking, $estadoId, $request, $pdf);
+    }
+
+    private function buildPdfResponse(Booking $booking, int $estadoId, Request $request, Pdf $pdf): Response
+    {
         $contenido = $request->query->all();
         $fechafiltro = null;
-        if(isset($contenido) && isset($contenido['ff']) && !empty($contenido['ff']))$fechafiltro = $contenido['ff'];
+        if (isset($contenido) && isset($contenido['ff']) && !empty($contenido['ff'])) {
+            $fechafiltro = $contenido['ff'];
+        }
 
-        $reservas = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(),$estadoId,$fechafiltro);
-        $idioma = LanguageService::getLenguaje($this->em,$request);
-        $solicitudesDelBooking = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(),$estadoId,$fechafiltro);
+        $reservas = $this->em->getRepository(SolicitudReserva::class)->reservas($booking->getId(), $estadoId, $fechafiltro);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $solicitudesDelBooking = $this->em->getRepository(SolicitudReserva::class)->solicitudesDeBooking($booking->getId(), $estadoId, $fechafiltro);
         $estado = $this->em->getRepository(EstadoReserva::class)->find($estadoId);
-        $arrContextOptions=array(
-            "ssl"=>array(
-                "verify_peer"=>false,
-                "verify_peer_name"=>false,
-            ),
-        );
-        $html = $this->renderView('pdf_generator/administrador/detallesBooking.html.twig',[
-            'idiomaPlataforma'=>$idioma,
-            'booking'=>$booking,
-            'reservas'=>$reservas,
-            'totalAprobado'=>$solicitudesDelBooking,
-            'estado'=>$estado,
-            'ico'=>'data:image/png;base64, '. base64_encode(file_get_contents($this->generateUrl('app_inicio',[],false).'img/logosinfondo.png' ,false, stream_context_create($arrContextOptions)))
+        $arrContextOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ];
+        $html = $this->renderView('pdf_generator/administrador/detallesBooking.html.twig', [
+            'idiomaPlataforma' => $idioma,
+            'booking' => $booking,
+            'reservas' => $reservas,
+            'totalAprobado' => $solicitudesDelBooking,
+            'estado' => $estado,
+            'ico' => 'data:image/png;base64, ' . base64_encode(file_get_contents($this->generateUrl('app_inicio', [], false) . 'img/logosinfondo.png', false, stream_context_create($arrContextOptions))),
         ]);
         $pdf->setOption('enable-local-file-access', true);
-        $filename = 'Listado de reservas: '. $booking->getNombre().'-'.(new \DateTime())->format('dmYHi').'.pdf';
+        $filename = 'Listado de reservas: ' . $booking->getNombre() . '-' . (new \DateTime())->format('dmYHi') . '.pdf';
+
         return new PdfResponse(
-            $pdf->getOutputFromHtml($html,
-                ['lowquality' => false,
-                    'disable-javascript'=>true,
-                    'page-size'=>'A4',
+            $pdf->getOutputFromHtml(
+                $html,
+                [
+                    'lowquality' => false,
+                    'disable-javascript' => true,
+                    'page-size' => 'A4',
                     'images' => true,
-                    'header-left'=>utf8_decode('Listado de reservas - '.$booking->getNombre()),
-                    'footer-font-size'=>'8',
-                    'footer-right'=>utf8_decode('Usuario:'.$this->getUser()->getNombre().' - generado el '.date('\ d.m.Y\ H:i').' - página [page] de [topage]'),
-                    'footer-left'=>utf8_decode($this->generateUrl('app_inicio',[],false)),
+                    'header-left' => utf8_decode('Listado de reservas - ' . $booking->getNombre()),
+                    'footer-font-size' => '8',
+                    'footer-right' => utf8_decode('Usuario:' . $this->getUser()->getNombre() . ' - generado el ' . date('\ d.m.Y\ H:i') . ' - página [page] de [topage]'),
+                    'footer-left' => utf8_decode($this->generateUrl('app_inicio', [], false)),
                     'print-media-type' => true,
                     'encoding' => 'utf-8',
                     'outline-depth' => 8,
-                    'orientation' => 'Portrait']
+                    'orientation' => 'Portrait',
+                ]
             ),
             $filename
-        );/*
-        return $this->render('pdf_generator/administrador/detallesBooking.html.twig',[
-            'idiomaPlataforma'=>$idioma,
-            'booking'=>$booking,
-            'reservas'=>$reservas,
-            'title'=>'Test'
-        ]);*/
+        );
+    }
+
+    private function assertPdfAccess(Booking $booking, bool $mustBePartnerOwner = false): void
+    {
+        $user = $this->getUser();
+
+        if ($this->isGranted('ROLE_ADMIN') && !$mustBePartnerOwner) {
+            return;
+        }
+
+        if (!$user instanceof Usuario) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $partner = $user->getBPartner();
+
+        if (!$partner || $booking->getBookingPartner()?->getId() !== $partner->getId()) {
+            throw $this->createAccessDeniedException();
+        }
     }
 
 }

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\BookingPartner;
 use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
 use App\Entity\Lenguaje;
@@ -25,6 +26,8 @@ use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
 use App\Services\LanguageService;
+use App\Services\PartnerInvitationService;
+use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,6 +38,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class AdministradorController extends AbstractController
 {
@@ -51,11 +55,12 @@ class AdministradorController extends AbstractController
         's_reservas'=>false,
         'configuraciones'=>false,
         'dashboard'=>false,
-        's_preguntas'=>false
+        's_preguntas'=>false,
+        'partners'=>false
     ];
 
     private $em;
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, private readonly PartnerInvitationService $partnerInvitationService)
     {
         $this->em = $em;
     }
@@ -260,7 +265,8 @@ class AdministradorController extends AbstractController
         'menu'=>$this->adminMenu,
         'idiomas'=>$idiomas,
         'idiomaPlataforma'=>$idioma,
-        'plataforma'=> $plataforma
+        'plataforma'=> $plataforma,
+        'vapidPublicKey' => notificacion::getPublicKey(),
     ]);
 }
     #[Route('/administrador/booking/{id}', name: 'app_administrador_booking', options: ['expose'=>true])]
@@ -318,6 +324,70 @@ class AdministradorController extends AbstractController
             'servicios'=>$servicios
         ]);
     }
+
+    #[Route('/administrador/partners', name: 'app_admin_partners')]
+    public function partners(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['partners'] = true;
+        $partners = $this->em->getRepository(BookingPartner::class)->findAll();
+
+        return $this->render('administrador/partners.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'partners' => $partners,
+        ]);
+    }
+
+    #[Route('/administrador/partner/{id}/estado', name: 'app_admin_partner_estado', methods: ['POST'])]
+    public function updatePartnerStatus(Request $request, BookingPartner $bookingPartner): Response
+    {
+        if (!$this->isCsrfTokenValid('partner_status_'.$bookingPartner->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $action = $request->request->get('action', 'update');
+        $comision = $request->request->get('comision');
+
+        if ($comision !== null && $comision !== '') {
+            if (!is_numeric($comision)) {
+                $this->addFlash('error', 'La comisión debe ser un número válido.');
+                return $this->redirectToRoute('app_admin_partners');
+            }
+            $bookingPartner->setComisionPlataforma((float) $comision);
+        }
+
+        $usuario = $bookingPartner->getUsuario();
+        $roles = $usuario->getRoles();
+
+        if ($action === 'approve') {
+            $bookingPartner->setHabilitado(true);
+            if (!in_array('ROLE_PARTNER', $roles, true)) {
+                $roles[] = 'ROLE_PARTNER';
+            }
+            $this->addFlash('success', 'Partner habilitado correctamente.');
+        } elseif ($action === 'disable') {
+            $bookingPartner->setHabilitado(false);
+            $roles = array_values(array_filter($roles, static fn (string $role) => $role !== 'ROLE_PARTNER'));
+            $this->addFlash('success', 'Partner deshabilitado.');
+        } else {
+            $this->addFlash('success', 'Datos del partner actualizados.');
+        }
+
+        $usuario->setRoles(array_values(array_unique($roles)));
+
+        $this->em->persist($bookingPartner);
+        $this->em->persist($usuario);
+        $this->em->flush();
+
+        return $this->redirectToRoute('app_admin_partners');
+    }
     #[Route('/administrador/FAKs', name: 'app_plataforma_preguntas')]
     public function app_plataforma_preguntas(Request $request): Response
     {
@@ -326,6 +396,11 @@ class AdministradorController extends AbstractController
         $preguntas = $this->em->getRepository(PreguntaFrecuente::class)->findAll();
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['s_preguntas'] = true;
+        $partnerInviteLink = $this->generateUrl(
+            'app_register_partner_invite',
+            ['code' => $this->partnerInvitationService->generateInviteCode()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
         return $this->render('administrador/FAKs.html.twig', [
             'controller_name' => 'AdministradorController',
             'plataforma'=>$plataforma,
@@ -333,7 +408,8 @@ class AdministradorController extends AbstractController
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
-            'preguntas'=>$preguntas
+            'preguntas'=>$preguntas,
+            'partnerInviteLink' => $partnerInviteLink,
         ]);
     }
 
@@ -464,7 +540,12 @@ class AdministradorController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'lenguajeFormulario'=>$lenguaje,
             'formularioPregunta'=>$formularioPregunta,
-            'formularioTraduccion'=>$formularioTraduccion
+            'formularioTraduccion'=>$formularioTraduccion,
+            'partnerInviteLink' => $this->generateUrl(
+                'app_register_partner_invite',
+                ['code' => $this->partnerInvitationService->generateInviteCode()],
+                UrlGeneratorInterface::ABSOLUTE_URL
+            ),
         ]);
     }
 

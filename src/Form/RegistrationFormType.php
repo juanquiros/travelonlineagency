@@ -46,12 +46,22 @@ class RegistrationFormType extends AbstractType
                 ],
             ])
         ;
+
+        if ($options['show_partner_checkbox']) {
+            $builder->add('solicitarPartner', CheckboxType::class, [
+                'label' => 'Quiero ofrecer servicios como partner',
+                'required' => false,
+                'mapped' => false,
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => Usuario::class,
+            'show_partner_checkbox' => true,
         ]);
+        $resolver->setAllowedTypes('show_partner_checkbox', 'bool');
     }
 }

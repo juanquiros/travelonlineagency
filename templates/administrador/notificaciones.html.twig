@@ -15,14 +15,22 @@
         <div class="row">
             <div class="col-md-2"></div>
             <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
-
-                <button class="btn btn-secondary" id="enableNotificacionesBtn"  onclick="enableNotif()" ><box-icon name='bell'></box-icon> Habilitar notificaciones de administrador</button>
+                <div
+                    data-controller="push-notifications"
+                    data-push-notifications-register-url-value="{{ path('app_notificacion_registrar') }}"
+                    data-push-notifications-worker-path-value="{{ asset('sw.js') }}"
+                    data-push-notifications-application-server-key-value="{{ vapidPublicKey }}"
+                    data-push-notifications-success-label-value="Notificaciones habilitadas"
+                    data-push-notifications-loading-label-value="Activando notificaciones..."
+                    data-push-notifications-denied-label-value="No se activaron las notificaciones."
+                    data-push-notifications-unsupported-label-value="Las notificaciones no están disponibles en este navegador."
+                >
+                    <button type="button" class="btn btn-secondary" data-push-notifications-target="button">
+                        <i class="bi bi-bell"></i> Habilitar notificaciones de administrador
+                    </button>
+                </div>
             </div>
             <div class="col-md-2"></div>
         </div>
     </div>
-    {% if usuario %}
-        <script>navigator.serviceWorker.register("{{ asset('sw.js') }}");</script>
-        <script src="{{ asset('notificaciones.js') }}"></script>
-    {% endif %}
 {% endblock %}

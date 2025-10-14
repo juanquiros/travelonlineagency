@@ -19,6 +19,12 @@ class notificacion
     ];
 
 
+    public static function getPublicKey(): string
+    {
+        return self::AUTH['VAPID']['publicKey'];
+    }
+
+
     public static function enviar(string $endpoint, $mensaje, $titulo, $url)
     {
 
