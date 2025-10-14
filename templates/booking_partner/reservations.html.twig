@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Reservas - {{ booking.nombre ?: 'Servicio' }}{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="mb-3">
+            <a class="text-decoration-none" href="{{ path('app_booking_partner') }}">
+                <i class="bi bi-arrow-left"></i> Volver al listado de servicios
+            </a>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h1 class="h3 mb-1">Reservas de {{ booking.nombre ?: 'Servicio sin título' }}</h1>
+                <p class="text-muted mb-0">Controlá el estado de las reservas y descargá reportes en PDF.</p>
+            </div>
+            <div class="d-flex gap-3">
+                <div class="text-center">
+                    <div class="fw-semibold fs-4">{{ reservas.pendientes|length }}</div>
+                    <div class="text-muted small">Pendientes</div>
+                </div>
+                <div class="text-center">
+                    <div class="fw-semibold fs-4 text-success">{{ reservas.pagadas|length }}</div>
+                    <div class="text-muted small">Confirmadas</div>
+                </div>
+                <div class="text-center">
+                    <div class="fw-semibold fs-4 text-secondary">{{ reservas.canceladas|length }}</div>
+                    <div class="text-muted small">Canceladas</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-sm-6 col-md-4">
+                        <label for="ff" class="form-label">Filtrar por fecha de salida</label>
+                        <select id="ff" name="ff" class="form-select" onchange="this.form.submit()">
+                            <option value="">Todas las fechas</option>
+                            {% set fechas = booking.getFechasdelservicioArray ?? [] %}
+                            {% for fecha in fechas %}
+                                {% set value = fecha.fecha ? fecha.fecha|date('d-m-Y H:i', 'America/Argentina/Buenos_Aires') : '' %}
+                                <option value="{{ value }}" {% if value and value == fechaFiltro %}selected{% endif %}>
+                                    {{ fecha.fecha ? fecha.fecha|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') : 'Sin fecha asignada' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if fechaFiltro %}
+                        <div class="col-auto">
+                            <a class="btn btn-outline-secondary" href="{{ path('app_booking_partner_service_reservations', {id: booking.id}) }}">Quitar filtro</a>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        {% set estados = {
+            'pendientes': {'titulo': 'Pendientes', 'descripcion': 'Reservas que aún no confirmaste.' , 'color': 'warning', 'estadoId': 1},
+            'pagadas': {'titulo': 'Confirmadas', 'descripcion': 'Reservas abonadas listas para operar.', 'color': 'success', 'estadoId': 2},
+            'canceladas': {'titulo': 'Canceladas', 'descripcion': 'Reservas que fueron anuladas.', 'color': 'secondary', 'estadoId': 3}
+        } %}
+
+        {% for clave, config in estados %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-{{ config.color }} bg-opacity-10 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                    <div>
+                        <h2 class="h5 mb-1 text-{{ config.color }}">{{ config.titulo }}</h2>
+                        <p class="text-muted mb-0">{{ config.descripcion }}</p>
+                    </div>
+                    <a class="btn btn-outline-{{ config.color }} btn-sm" href="{{ path('app_booking_partner_pdf', {id: booking.id, estadoId: config.estadoId, ff: fechaFiltro}) }}" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% set listado = attribute(reservas, clave) %}
+                    {% if listado is empty %}
+                        <div class="p-4 text-center text-muted">No hay reservas {{ config.titulo|lower }} para mostrar.</div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table mb-0 align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>Personas</th>
+                                    <th>Fecha de servicio</th>
+                                    <th>Solicitado el</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for reserva in listado %}
+                                    <tr>
+                                        <td>{{ reserva.id }}</td>
+                                        <td>
+                                            <strong>{{ reserva.name }} {{ reserva.surname }}</strong>
+                                            <div class="small text-muted">{{ reserva.email }}</div>
+                                        </td>
+                                        <td><i class="bi bi-people-fill me-1"></i>{{ reserva.getInChargeOfArray|length + 1 }}</td>
+                                        <td>
+                                            {% if reserva.fechaSeleccionada %}
+                                                {{ reserva.fechaSeleccionada|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') }}
+                                            {% else %}
+                                                <span class="text-muted">Sin fecha asignada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ reserva.updatedAt|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white">
+                    {% set resumen = attribute(personas, clave) %}
+                    {% if resumen is not empty %}
+                        <div class="small text-muted">Total de pasajeros por fecha:</div>
+                        <ul class="small text-muted mb-0">
+                            {% for dato in resumen %}
+                                <li>{{ dato.fecha ? dato.fecha|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') : 'Sin fecha asignada' }} - {{ dato.solicitudes }} personas</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="small text-muted">Sin movimientos registrados.</div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

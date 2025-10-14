@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Booking;
 use App\Entity\BookingPartner;
 use App\Entity\Plataforma;
+use App\Entity\SolicitudReserva;
 use App\Entity\Usuario;
 use App\Form\BookingType;
 use App\Services\LanguageService;
@@ -54,6 +55,41 @@ final class BookingPartnerController extends AbstractController
         return $this->render('booking_partner/index.html.twig', array_merge($viewData, [
             'partner' => $partner,
             'bookings' => $bookings,
+        ]));
+    }
+
+    #[Route('/booking-partner/servicio/{id}/reservas', name: 'app_booking_partner_service_reservations', requirements: ['id' => '\\d+'])]
+    #[IsGranted('ROLE_PARTNER')]
+    public function serviceReservations(Request $request, Booking $booking): Response
+    {
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner || $booking->getBookingPartner()?->getId() !== $partner->getId()) {
+            throw $this->createNotFoundException();
+        }
+
+        $fechaFiltro = $request->query->get('ff');
+
+        $repository = $this->entityManager->getRepository(SolicitudReserva::class);
+
+        $reservas = [
+            'pendientes' => $repository->reservas($booking->getId(), 1, $fechaFiltro),
+            'pagadas' => $repository->reservas($booking->getId(), 2, $fechaFiltro),
+            'canceladas' => $repository->reservas($booking->getId(), 3, $fechaFiltro),
+        ];
+
+        $personas = [
+            'pendientes' => $repository->solicitudesDeBooking($booking->getId(), 1, $fechaFiltro),
+            'pagadas' => $repository->solicitudesDeBooking($booking->getId(), 2, $fechaFiltro),
+            'canceladas' => $repository->solicitudesDeBooking($booking->getId(), 3, $fechaFiltro),
+        ];
+
+        return $this->render('booking_partner/reservations.html.twig', array_merge($this->baseViewData($request), [
+            'partner' => $partner,
+            'booking' => $booking,
+            'fechaFiltro' => $fechaFiltro,
+            'reservas' => $reservas,
+            'personas' => $personas,
         ]));
     }
 
