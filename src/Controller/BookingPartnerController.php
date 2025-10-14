@@ -4,17 +4,23 @@ namespace App\Controller;
 
 use App\Entity\Booking;
 use App\Entity\BookingPartner;
+use App\Entity\Moneda;
 use App\Entity\Plataforma;
+use App\Entity\Precio;
 use App\Entity\SolicitudReserva;
 use App\Entity\Usuario;
 use App\Form\BookingType;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[IsGranted('ROLE_USER')]
 final class BookingPartnerController extends AbstractController
@@ -147,11 +153,25 @@ final class BookingPartnerController extends AbstractController
 
     private function handleServiceForm(Request $request, Booking $booking, BookingPartner $partner, bool $isNew): Response
     {
+        $currencies = $this->entityManager->getRepository(Moneda::class)->findBy(['habilitada' => true]);
+        $currencyPayload = array_map(
+            static fn (Moneda $moneda) => [
+                'id' => $moneda->getId(),
+                'nombre' => $moneda->getNombre(),
+                'simbolo' => $moneda->getSimbolo(),
+            ],
+            $currencies
+        );
+
         $form = $this->createForm(BookingType::class, $booking);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $booking->setBookingPartner($partner);
+
+            $this->normaliseBookingDates($booking);
+            $this->syncBookingPrices($booking, $form->get('preciosaux')->getData());
+
             $this->entityManager->persist($booking);
             $this->entityManager->flush();
 
@@ -164,7 +184,231 @@ final class BookingPartnerController extends AbstractController
             'form' => $form->createView(),
             'isNew' => $isNew,
             'booking' => $booking,
+            'monedas' => $currencyPayload,
+            'imagenes' => $this->decodeJsonField($booking->getImagenes()),
+            'datosRequeridos' => $this->decodeJsonField($booking->getFormRequerido()),
+            'fechas' => $this->decodeJsonField($booking->getFechasdelservicio()),
+            'precios' => $this->serialiseBookingPrices($booking),
         ]));
+    }
+
+    #[Route('/booking-partner/servicio/imagen', name: 'app_booking_partner_service_image_upload', methods: ['POST'])]
+    #[IsGranted('ROLE_PARTNER')]
+    public function uploadServiceImage(Request $request, SluggerInterface $slugger): Response
+    {
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner) {
+            throw $this->createNotFoundException();
+        }
+
+        $payload = json_decode((string) $request->request->get('data'), true);
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+
+        $bookingId = $payload['bookingid'] ?? null;
+        $isCover = !empty($payload['isportada']);
+        $existingFromForm = $payload['enform'] ?? null;
+
+        $booking = null;
+        if (!empty($bookingId)) {
+            $booking = $this->entityManager->getRepository(Booking::class)->find($bookingId);
+
+            if (!$booking instanceof Booking || $booking->getBookingPartner()?->getId() !== $partner->getId()) {
+                throw $this->createNotFoundException();
+            }
+        }
+
+        $images = [];
+        if (!empty($existingFromForm)) {
+            $decoded = json_decode($existingFromForm, true);
+            $images = is_array($decoded) ? $decoded : [];
+        } elseif ($booking instanceof Booking) {
+            $images = $this->decodeJsonField($booking->getImagenes());
+        }
+
+        $uploadedFiles = $request->files->get('imagen');
+        if (!$uploadedFiles instanceof UploadedFile && !is_array($uploadedFiles)) {
+            return new JsonResponse(['files' => $images], Response::HTTP_OK);
+        }
+
+        $files = is_array($uploadedFiles) ? $uploadedFiles : [$uploadedFiles];
+
+        foreach ($files as $file) {
+            if (!$file instanceof UploadedFile) {
+                continue;
+            }
+
+            $upload = $this->uploadImageFile($file, $slugger);
+            if (!$upload['upload']) {
+                continue;
+            }
+
+            if ($isCover) {
+                foreach ($images as &$image) {
+                    $image['portada'] = false;
+                }
+                unset($image);
+            }
+
+            $images[] = [
+                'imagen' => $upload['filename'],
+                'portada' => $isCover || empty($images),
+            ];
+
+            $isCover = false; // solo la primera imagen subida puede forzar portada
+        }
+
+        return new JsonResponse(['files' => $images], Response::HTTP_OK);
+    }
+
+    private function normaliseBookingDates(Booking $booking): void
+    {
+        $raw = $booking->getFechasdelservicio();
+        if ($raw === null || $raw === '') {
+            return;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || $decoded === []) {
+            $booking->setFechasdelservicio(null);
+            return;
+        }
+
+        $normalised = [];
+        foreach ($decoded as $entry) {
+            if (!is_array($entry) || empty($entry['fecha'])) {
+                continue;
+            }
+
+            $key = (string) $entry['fecha'];
+            $cantidad = isset($entry['cantidad']) ? (int) $entry['cantidad'] : 0;
+
+            if (!array_key_exists($key, $normalised)) {
+                $normalised[$key] = [
+                    'fecha' => $key,
+                    'cantidad' => max(0, $cantidad),
+                ];
+                continue;
+            }
+
+            $normalised[$key]['cantidad'] += $cantidad;
+            if ($normalised[$key]['cantidad'] < 0) {
+                $normalised[$key]['cantidad'] = 0;
+            }
+        }
+
+        $booking->setFechasdelservicio(json_encode(array_values($normalised)) ?: null);
+    }
+
+    private function syncBookingPrices(Booking $booking, ?string $payload): void
+    {
+        $existing = [];
+        foreach ($booking->getPrecios() as $precio) {
+            if ($precio->getId() !== null) {
+                $existing[$precio->getId()] = $precio;
+            }
+        }
+
+        $persistedIds = [];
+        if (!empty($payload)) {
+            $decoded = json_decode($payload, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $entry) {
+                    if (!is_array($entry) || empty($entry['monedaId'])) {
+                        continue;
+                    }
+
+                    $moneda = $this->entityManager->getRepository(Moneda::class)->find((int) $entry['monedaId']);
+                    if (!$moneda instanceof Moneda) {
+                        continue;
+                    }
+
+                    $precioEntity = null;
+                    $entryId = $entry['id'] ?? null;
+                    if ($entryId && isset($existing[(int) $entryId])) {
+                        $precioEntity = $existing[(int) $entryId];
+                    }
+
+                    if (!$precioEntity instanceof Precio) {
+                        $precioEntity = new Precio();
+                        $booking->addPrecio($precioEntity);
+                    }
+
+                    $precioEntity->setMoneda($moneda);
+                    $precioEntity->setValor(isset($entry['valor']) ? (float) $entry['valor'] : 0.0);
+                    $this->entityManager->persist($precioEntity);
+
+                    if ($precioEntity->getId() !== null) {
+                        $persistedIds[] = $precioEntity->getId();
+                    }
+                }
+            }
+        }
+
+        foreach ($booking->getPrecios() as $precio) {
+            $id = $precio->getId();
+            if ($id !== null && !in_array($id, $persistedIds, true)) {
+                $booking->removePrecio($precio);
+                $this->entityManager->remove($precio);
+            }
+        }
+    }
+
+    private function decodeJsonField(?string $value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function serialiseBookingPrices(Booking $booking): array
+    {
+        $prices = [];
+        foreach ($booking->getPrecios() as $precio) {
+            $prices[] = [
+                'id' => $precio->getId(),
+                'valor' => $precio->getValor(),
+                'monedaId' => $precio->getMoneda()?->getId(),
+                'monedaNombre' => $precio->getMoneda()?->getNombre(),
+                'monedaSimbolo' => $precio->getMoneda()?->getSimbolo(),
+            ];
+        }
+
+        return $prices;
+    }
+
+    private function uploadImageFile(UploadedFile $file, SluggerInterface $slugger): array
+    {
+        $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeFilename = $slugger->slug($originalFilename);
+        $newFilename = $safeFilename . '-' . uniqid('', true) . '.' . $file->guessExtension();
+
+        $mime = $file->getMimeType();
+        $quality = $file->getSize() > 1536 ? 70 : 100;
+
+        try {
+            if ($mime === 'image/png' || $mime === 'image/ico' || $mime === 'image/x-icon' || $mime === 'image/vnd.microsoft.icon') {
+                $file->move($this->getParameter('img_booking'), $newFilename);
+            } else {
+                $resource = match ($mime) {
+                    'image/jpeg' => imagecreatefromjpeg($file->getPathname()),
+                    'image/gif' => imagecreatefromgif($file->getPathname()),
+                    default => imagecreatefromjpeg($file->getPathname()),
+                };
+
+                imagejpeg($resource, $this->getParameter('img_booking') . '/' . $newFilename, $quality);
+            }
+        } catch (FileException $exception) {
+            return ['filename' => '', 'upload' => false];
+        }
+
+        return ['filename' => $newFilename, 'upload' => true];
     }
 
     private function baseViewData(Request $request): array

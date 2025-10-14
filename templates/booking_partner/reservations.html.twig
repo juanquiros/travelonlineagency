@@ -4,6 +4,7 @@
 
 {% block body %}
     <div class="container py-5">
+        {% set timezone = 'America/Argentina/Buenos_Aires' %}
         <div class="mb-3">
             <a class="text-decoration-none" href="{{ path('app_booking_partner') }}">
                 <i class="bi bi-arrow-left"></i> Volver al listado de servicios
@@ -78,38 +79,174 @@
                     {% if listado is empty %}
                         <div class="p-4 text-center text-muted">No hay reservas {{ config.titulo|lower }} para mostrar.</div>
                     {% else %}
-                        <div class="table-responsive">
-                            <table class="table mb-0 align-middle">
-                                <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Cliente</th>
-                                    <th>Personas</th>
-                                    <th>Fecha de servicio</th>
-                                    <th>Solicitado el</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for reserva in listado %}
-                                    <tr>
-                                        <td>{{ reserva.id }}</td>
-                                        <td>
-                                            <strong>{{ reserva.name }} {{ reserva.surname }}</strong>
-                                            <div class="small text-muted">{{ reserva.email }}</div>
-                                        </td>
-                                        <td><i class="bi bi-people-fill me-1"></i>{{ reserva.getInChargeOfArray|length + 1 }}</td>
-                                        <td>
-                                            {% if reserva.fechaSeleccionada %}
-                                                {{ reserva.fechaSeleccionada|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') }}
-                                            {% else %}
-                                                <span class="text-muted">Sin fecha asignada</span>
+                        <div class="accordion accordion-flush" id="accordion-{{ clave }}">
+                            {% for reserva in listado %}
+                                {% set collapseId = 'reserva-' ~ clave ~ '-' ~ reserva.id %}
+                                {% set companions = reserva.getInChargeOfArray ?? [] %}
+                                {% set additional = reserva.getFormRequiredArray ?? [] %}
+                                {% set pagosMp = reserva.pagosMercadoPago %}
+                                {% set pagosPaypal = reserva.pagosPayPal %}
+                                {% set estadoNombre = reserva.estado ? (reserva.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion ?? config.titulo) : config.titulo %}
+                                <div class="accordion-item">
+                                    <h3 class="accordion-header" id="heading-{{ collapseId }}">
+                                        <button class="accordion-button collapsed py-3" type="button" data-bs-toggle="collapse" data-bs-target="#{{ collapseId }}" aria-expanded="false" aria-controls="{{ collapseId }}">
+                                            <div class="container-fluid px-0">
+                                                <div class="row align-items-center g-0 w-100">
+                                                    <div class="col-12 col-lg-4">
+                                                        <div class="d-flex flex-column">
+                                                            <span class="fw-semibold">#{{ reserva.id }} · {{ reserva.name }} {{ reserva.surname }}</span>
+                                                            <span class="small text-muted">{{ reserva.email }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-lg-2 text-lg-center mt-2 mt-lg-0">
+                                                        <div class="fw-semibold"><i class="bi bi-people-fill me-1"></i>{{ companions|length + 1 }}</div>
+                                                        <div class="small text-muted">Pasajeros</div>
+                                                    </div>
+                                                    <div class="col-6 col-lg-3 text-lg-center mt-2 mt-lg-0">
+                                                        <div class="fw-semibold">
+                                                            {% if reserva.fechaSeleccionada %}
+                                                                {{ reserva.fechaSeleccionada|date('d/m/Y H:i', timezone) }}
+                                                            {% else %}
+                                                                <span class="text-muted">Sin fecha</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="small text-muted">Servicio</div>
+                                                    </div>
+                                                    <div class="col-12 col-lg-3 text-lg-end mt-2 mt-lg-0">
+                                                        <div class="fw-semibold">{{ reserva.updatedAt|date('d/m/Y H:i', timezone) }}</div>
+                                                        <div class="small text-muted">Actualizado</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </h3>
+                                    <div id="{{ collapseId }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ collapseId }}">
+                                        <div class="accordion-body bg-light">
+                                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                                                <div>
+                                                    <span class="badge text-bg-{{ config.color }} text-uppercase">{{ estadoNombre }}</span>
+                                                    <div class="small text-muted mt-2">
+                                                        Creada el {{ reserva.createdAt|date('d/m/Y H:i', timezone) }}
+                                                        {% if reserva.fechaSeleccionada %}
+                                                            · Servicio {{ reserva.fechaSeleccionada|date('d/m/Y H:i', timezone) }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <a class="btn btn-sm btn-outline-primary" href="mailto:{{ reserva.email }}">
+                                                        <i class="bi bi-envelope"></i> Enviar correo
+                                                    </a>
+                                                    {% if reserva.phone %}
+                                                        <a class="btn btn-sm btn-outline-success" href="https://wa.me/{{ reserva.phone }}" target="_blank" rel="noopener">
+                                                            <i class="bi bi-whatsapp"></i> WhatsApp
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <div class="border rounded p-3 h-100 bg-white">
+                                                        <h3 class="h6 text-uppercase text-muted mb-2">Contacto principal</h3>
+                                                        <p class="mb-1 fw-semibold">{{ reserva.name }} {{ reserva.surname }}</p>
+                                                        <p class="mb-1"><a href="mailto:{{ reserva.email }}" class="text-decoration-none">{{ reserva.email }}</a></p>
+                                                        {% if reserva.phone %}
+                                                            <p class="mb-1"><a href="https://wa.me/{{ reserva.phone }}" class="text-decoration-none" target="_blank" rel="noopener">{{ reserva.phone }}</a></p>
+                                                        {% endif %}
+                                                        {% if reserva.idiomaPreferido %}
+                                                            <p class="mb-0 small text-muted">Idioma preferido: {{ reserva.idiomaPreferido.nombre }}</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <div class="border rounded p-3 h-100 bg-white">
+                                                        <h3 class="h6 text-uppercase text-muted mb-2">Datos proporcionados</h3>
+                                                        {% if additional %}
+                                                            <div class="row g-3">
+                                                                {% for dato in additional %}
+                                                                    <div class="col-sm-6 col-lg-4">
+                                                                        <div class="small text-muted text-uppercase fw-semibold">{{ dato.dato }}</div>
+                                                                        <div>{{ dato.value ?: '-' }}</div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% else %}
+                                                            <p class="text-muted mb-0 small">No se registraron datos adicionales.</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {% if companions %}
+                                                <div class="border rounded p-3 bg-white mt-4">
+                                                    <h3 class="h6 text-uppercase text-muted mb-3">Pasajeros adicionales</h3>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="table-light">
+                                                            <tr>
+                                                                <th>Nombre</th>
+                                                                <th>Apellido</th>
+                                                                {% set companionHeaders = companions[0].form_required ?? [] %}
+                                                                {% for extra in companionHeaders %}
+                                                                    <th>{{ extra.dato }}</th>
+                                                                {% endfor %}
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            {% for companion in companions %}
+                                                                <tr>
+                                                                    <td>{{ companion.name }}</td>
+                                                                    <td>{{ companion.surname }}</td>
+                                                                    {% for extra in companion.form_required ?? [] %}
+                                                                        <td>{{ extra.value ?: '-' }}</td>
+                                                                    {% endfor %}
+                                                                </tr>
+                                                            {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
                                             {% endif %}
-                                        </td>
-                                        <td>{{ reserva.updatedAt|date('d/m/Y H:i', 'America/Argentina/Buenos_Aires') }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
+
+                                            {% if pagosMp|length or pagosPaypal|length %}
+                                                <div class="border rounded p-3 bg-white mt-4">
+                                                    <h3 class="h6 text-uppercase text-muted mb-3">Pagos registrados</h3>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="table-light">
+                                                            <tr>
+                                                                <th>Fecha</th>
+                                                                <th>Referencia</th>
+                                                                <th>Estado</th>
+                                                                <th>Monto</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            {% for pago in pagosMp %}
+                                                                <tr>
+                                                                    <td>{{ pago.updatedAt ? pago.updatedAt|date('d/m/Y H:i', timezone) : '-' }}</td>
+                                                                    <td>{{ pago.paymentId }}</td>
+                                                                    <td>{{ pago.status }}</td>
+                                                                    <td>ARS ${{ (pago.transactionAmount - pago.transactionAmountRefunded)|number_format(2, ',', '.') }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            {% for pago in pagosPaypal %}
+                                                                <tr>
+                                                                    <td>{{ pago.updatedAt ? pago.updatedAt|date('d/m/Y H:i', timezone) : '-' }}</td>
+                                                                    <td>{{ pago.ordersId }}</td>
+                                                                    <td>{{ pago.estado }}</td>
+                                                                    <td>USD {{ pago.total|number_format(2, ',', '.') }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
                     {% endif %}
                 </div>
