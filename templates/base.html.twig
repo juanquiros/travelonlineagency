@@ -60,6 +60,7 @@
         {% endblock %}
     </head>
     <body>
+    {% set usuario = usuario is defined ? usuario : app.user %}
     {% set tradMenu = plataforma.getTraduccionMenu(idiomaPlataforma.codigo) %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light" style="padding-left: 1rem; padding-right: 1rem; ">
         <a class="navbar-brand" href="{{ path('app_inicio') }}"><img src="{{ asset('img/'~ plataforma.logo) }}" style="height: 2em" alt=""></a>

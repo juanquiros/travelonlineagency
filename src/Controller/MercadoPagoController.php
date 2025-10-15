@@ -130,6 +130,7 @@ final class MercadoPagoController extends AbstractController
             'id' => $preference->id,
             'plataforma' => $plataforma,
             'publicKey' => $this->credencialesPlataforma?->getPublicKey(),
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/pay/mercadopago/booking-return', name: 'mercadopago_pay_booking_return')]
@@ -165,7 +166,8 @@ final class MercadoPagoController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'pago'=>$pagoDB,
             'plataforma'=>$plataforma,
-            'linkDetalles'=>$linkDetalles,
+            'linkDetalles' => $linkDetalles,
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/pay/mercadopago/ipn', name: 'mercadopago_ipn', methods: ['POST'])]

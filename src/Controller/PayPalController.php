@@ -156,7 +156,8 @@ class PayPalController extends AbstractController
             'total'=>$total,
             'adicionales'=>$adicionales,
             'plataforma'=>$plataforma,
-            'link'=>$link
+            'link' => $link,
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/paypal/booking', name: 'paypal_return_booking')]
@@ -181,7 +182,8 @@ class PayPalController extends AbstractController
             'plataforma'=>$plataforma,
             'idiomaPlataforma'=>$idioma,
             'pago'=>$pago,
-            'linkDetalles'=> $this->generateUrl('app_status_booking',['tokenId'=>$pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()])
+            'linkDetalles' => $this->generateUrl('app_status_booking',['tokenId'=>$pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()]),
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/paypal/webhook', name: 'app_paypal_webhook', methods: ['POST'])]
