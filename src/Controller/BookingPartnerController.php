@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Booking;
 use App\Entity\BookingPartner;
+use App\Entity\CredencialesMercadoPago;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
@@ -11,6 +12,7 @@ use App\Entity\SolicitudReserva;
 use App\Entity\Usuario;
 use App\Form\BookingType;
 use App\Services\LanguageService;
+use App\Services\MercadoPagoOnboardingService;
 use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,12 +24,15 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[IsGranted('ROLE_USER')]
 final class BookingPartnerController extends AbstractController
 {
-    public function __construct(private readonly EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding
+    ) {
     }
 
     #[Route('/booking-partner', name: 'app_booking_partner')]
@@ -59,9 +64,15 @@ final class BookingPartnerController extends AbstractController
             'bookingPartner' => $partner,
         ]);
 
+        $cuentaMp = $partner->getMercadoPagoCuenta();
+        $conectadoMp = $cuentaMp instanceof CredencialesMercadoPago && $cuentaMp->getAccessToken();
+
         return $this->render('booking_partner/index.html.twig', array_merge($viewData, [
             'partner' => $partner,
             'bookings' => $bookings,
+            'navigation' => $this->partnerNavigation('services'),
+            'mercadoPagoCuenta' => $cuentaMp,
+            'mercadoPagoConectado' => $conectadoMp,
         ]));
     }
 
@@ -97,7 +108,200 @@ final class BookingPartnerController extends AbstractController
             'fechaFiltro' => $fechaFiltro,
             'reservas' => $reservas,
             'personas' => $personas,
+            'navigation' => $this->partnerNavigation('services'),
         ]));
+    }
+
+    #[Route('/booking-partner/balance', name: 'app_booking_partner_balance')]
+    #[IsGranted('ROLE_PARTNER')]
+    public function balance(Request $request): Response
+    {
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner) {
+            $this->addFlash('error', 'Tu cuenta no está configurada como partner.');
+
+            return $this->redirectToRoute('app_booking_partner');
+        }
+
+        $viewData = $this->baseViewData($request);
+        $plataforma = $this->entityManager->getRepository(Plataforma::class)->find(1);
+        $credencialesPlataforma = $plataforma?->getCredencialesMercadoPago();
+        $credencialesPartner = $partner->getMercadoPagoCuenta();
+        $cuenta = null;
+        $balance = null;
+        $credencialesActualizadas = false;
+
+        if ($credencialesPartner instanceof CredencialesMercadoPago && $credencialesPartner->getAccessToken()) {
+            try {
+                if ($this->mercadoPagoOnboarding->ensureValidAccessToken($credencialesPartner)) {
+                    $credencialesActualizadas = true;
+                }
+
+                $cuenta = $this->mercadoPagoOnboarding->syncAccountInformation($credencialesPartner);
+                $balance = $this->mercadoPagoOnboarding->fetchBalance($credencialesPartner);
+                $credencialesActualizadas = true;
+            } catch (\Throwable $exception) {
+                $this->addFlash('error', 'No se pudo actualizar tu información de Mercado Pago: ' . $exception->getMessage());
+            }
+        }
+
+        if ($credencialesActualizadas && $credencialesPartner instanceof CredencialesMercadoPago) {
+            $this->entityManager->persist($credencialesPartner);
+            $this->entityManager->flush();
+        }
+
+        $puedeConectar = $credencialesPlataforma instanceof CredencialesMercadoPago
+            && $credencialesPlataforma->getClientId()
+            && $credencialesPlataforma->getClientSecret();
+
+        return $this->render('booking_partner/balance.html.twig', array_merge($viewData, [
+            'partner' => $partner,
+            'navigation' => $this->partnerNavigation('balance'),
+            'mercadoPagoCuenta' => $credencialesPartner,
+            'mercadoPagoConectado' => $credencialesPartner instanceof CredencialesMercadoPago && $credencialesPartner->getAccessToken(),
+            'mercadoPagoPuedeConectar' => $puedeConectar,
+            'mercadoPagoBalance' => $balance,
+            'mercadoPagoPerfil' => $cuenta,
+        ]));
+    }
+
+    #[Route('/booking-partner/pagos/conectar', name: 'app_booking_partner_mp_connect')]
+    #[IsGranted('ROLE_PARTNER')]
+    public function connectMercadoPago(Request $request): Response
+    {
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner) {
+            $this->addFlash('error', 'Tu cuenta no está configurada como partner.');
+
+            return $this->redirectToRoute('app_booking_partner');
+        }
+
+        $plataforma = $this->entityManager->getRepository(Plataforma::class)->find(1);
+        $credencialesPlataforma = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credencialesPlataforma instanceof CredencialesMercadoPago || !$credencialesPlataforma->getClientId() || !$credencialesPlataforma->getClientSecret()) {
+            $this->addFlash('error', 'Contactá al administrador para configurar las credenciales de Mercado Pago.');
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $request->getSession()->set('mp_partner_state', $state);
+
+        try {
+            $authorizationUrl = $this->mercadoPagoOnboarding->createAuthorizationUrl(
+                $credencialesPlataforma,
+                $this->generateUrl('app_booking_partner_mp_callback', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                $state,
+                ['offline_access', 'read', 'write']
+            );
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo generar el enlace de Mercado Pago: ' . $exception->getMessage());
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        return $this->redirect($authorizationUrl);
+    }
+
+    #[Route('/booking-partner/pagos/callback', name: 'app_booking_partner_mp_callback')]
+    #[IsGranted('ROLE_PARTNER')]
+    public function callbackMercadoPago(Request $request): Response
+    {
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner) {
+            $this->addFlash('error', 'Tu cuenta no está configurada como partner.');
+
+            return $this->redirectToRoute('app_booking_partner');
+        }
+
+        $session = $request->getSession();
+        $expectedState = $session->get('mp_partner_state');
+        $session->remove('mp_partner_state');
+        $state = $request->query->get('state');
+
+        if (!$state || !$expectedState || $state !== $expectedState) {
+            $this->addFlash('error', 'El proceso de autorización caducó o no es válido.');
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        if ($request->query->has('error')) {
+            $this->addFlash('error', 'Mercado Pago rechazó la vinculación: ' . $request->query->get('error_description', ''));
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        $authorizationCode = $request->query->get('code');
+        if (!$authorizationCode) {
+            $this->addFlash('error', 'Mercado Pago no devolvió el código de autorización.');
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        $plataforma = $this->entityManager->getRepository(Plataforma::class)->find(1);
+        $credencialesPlataforma = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credencialesPlataforma instanceof CredencialesMercadoPago || !$credencialesPlataforma->getClientId() || !$credencialesPlataforma->getClientSecret()) {
+            $this->addFlash('error', 'La plataforma no tiene credenciales configuradas.');
+
+            return $this->redirectToRoute('app_booking_partner_balance');
+        }
+
+        $credencialesPartner = $partner->getMercadoPagoCuenta() ?? new CredencialesMercadoPago();
+        $credencialesPartner->setClientId($credencialesPlataforma->getClientId());
+        $credencialesPartner->setClientSecret($credencialesPlataforma->getClientSecret());
+
+        try {
+            $this->mercadoPagoOnboarding->exchangeAuthorizationCode(
+                $credencialesPartner,
+                (string) $authorizationCode,
+                $this->generateUrl('app_booking_partner_mp_callback', [], UrlGeneratorInterface::ABSOLUTE_URL)
+            );
+
+            $this->mercadoPagoOnboarding->syncAccountInformation($credencialesPartner);
+
+            $partner->setMercadoPagoCuenta($credencialesPartner);
+            $this->entityManager->persist($credencialesPartner);
+            $this->entityManager->persist($partner);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'Conectaste tu cuenta de Mercado Pago correctamente.');
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo vincular Mercado Pago: ' . $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('app_booking_partner_balance');
+    }
+
+    #[Route('/booking-partner/pagos/desconectar', name: 'app_booking_partner_mp_disconnect', methods: ['POST'])]
+    #[IsGranted('ROLE_PARTNER')]
+    public function disconnectMercadoPago(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('partner_mp_disconnect', $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $partner = $this->getCurrentPartner();
+
+        if (!$partner instanceof BookingPartner) {
+            return $this->redirectToRoute('app_booking_partner');
+        }
+
+        $credenciales = $partner->getMercadoPagoCuenta();
+        if ($credenciales instanceof CredencialesMercadoPago) {
+            $partner->setMercadoPagoCuenta(null);
+            $this->entityManager->persist($partner);
+            $this->entityManager->remove($credenciales);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'Desconectaste Mercado Pago de tu cuenta.');
+        }
+
+        return $this->redirectToRoute('app_booking_partner_balance');
     }
 
     #[Route('/booking-partner/servicio/nuevo', name: 'app_booking_partner_service_new')]
@@ -190,6 +394,7 @@ final class BookingPartnerController extends AbstractController
             'datosRequeridos' => $this->decodeJsonField($booking->getFormRequerido()),
             'fechas' => $this->decodeJsonField($booking->getFechasdelservicio()),
             'precios' => $this->serialiseBookingPrices($booking),
+            'navigation' => $this->partnerNavigation('services'),
         ]));
     }
 
@@ -410,6 +615,14 @@ final class BookingPartnerController extends AbstractController
         }
 
         return ['filename' => $newFilename, 'upload' => true];
+    }
+
+    private function partnerNavigation(string $active): array
+    {
+        return [
+            'services' => $active === 'services',
+            'balance' => $active === 'balance',
+        ];
     }
 
     private function baseViewData(Request $request): array

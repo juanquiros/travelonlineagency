@@ -4,6 +4,7 @@
 
 {% block body %}
     <div class="container py-5">
+        {% include 'booking_partner/_navigation.html.twig' with {navigation: navigation|default({})} %}
         {% set timezone = 'America/Argentina/Buenos_Aires' %}
         <div class="mb-3">
             <a class="text-decoration-none" href="{{ path('app_booking_partner') }}">

@@ -138,6 +138,12 @@
                         <span>Configuraciones</span>
                     </a>
                 </li>
+                <li>
+                    <a {% if menu['balance'] %}id="inbox"{% endif %} href="{{ path('app_admin_balance') }}">
+                        <ion-icon name="wallet-outline"></ion-icon>
+                        <span>Balance</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 

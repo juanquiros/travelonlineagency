@@ -54,6 +54,9 @@ class MercadoPagoPago
     #[ORM\Column(type: Types::TEXT)]
     private ?string $feeDetails = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?float $applicationFee = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -238,6 +241,19 @@ class MercadoPagoPago
     {
         $this->feeDetails = $feeDetails;
         $this->updatedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function getApplicationFee(): ?float
+    {
+        return $this->applicationFee;
+    }
+
+    public function setApplicationFee(?float $applicationFee): static
+    {
+        $this->applicationFee = $applicationFee;
+        $this->updatedAt = new \DateTimeImmutable();
+
         return $this;
     }
 

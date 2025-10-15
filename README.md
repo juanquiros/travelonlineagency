@@ -74,3 +74,10 @@ Los partners que todavía no están habilitados o a quienes les falta el rol rec
 
 - Desde la sección de **Preguntas Frecuentes** del panel de administrador se expone un enlace privado de invitación (`/register/partner/{code}`) que podés copiar y pegar en una pregunta para compartir el registro exclusivo con proveedores externos. Solo quienes accedan mediante ese enlace podrán enviar la solicitud de partner.
 - Los partners y administradores pueden habilitar notificaciones push (botón “Activar notificaciones”) para recibir avisos cuando se confirmen reservas vinculadas a sus servicios.
+
+## Pagos con Mercado Pago y split de comisiones
+
+- **Administrador**: debe completar el `client_id`, `client_secret`, `public_key` y `access_token` de la aplicación en **Administrador → Configuraciones → Mercado Pago**. Una vez cargados, desde la nueva pestaña **Balance** puede vincular su propia cuenta (OAuth), consultar el saldo disponible/pending, ver las últimas operaciones y desconectar el acceso si fuera necesario.
+- **Partners**: cada partner habilitado encuentra la pestaña **Balance** en `/booking-partner/balance`. Desde allí puede generar el enlace de vinculación, autorizar a la plataforma para operar en su nombre y revisar sus saldos (disponible, pendiente y total). También dispone de la opción para revocar la conexión.
+- **Flujo de cobro**: cuando un servicio pertenece a un partner con cuenta conectada, la preferencia de pago se genera con el `access_token` del partner y la plataforma cobra automáticamente su comisión vía `application_fee`. Si el partner no está vinculado, el cobro se realiza con las credenciales de la plataforma como hasta ahora.
+- **Migraciones requeridas**: `php bin/console doctrine:migrations:migrate` agrega los campos `nickname`/`email` a `credenciales_mercado_pago`, crea la relación entre partners y sus credenciales de Mercado Pago, y almacena el `application_fee` de cada pago para el panel del administrador.

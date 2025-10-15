@@ -46,6 +46,12 @@ class CredencialesMercadoPago
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $refreshToken = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nickname = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $email = null;
+
     #[ORM\Column]
     private ?\DateTime $createdAt = null;
 
@@ -164,11 +170,13 @@ class CredencialesMercadoPago
         return $this;
     }
 
-    public function tokenisvalid():bool
+    public function tokenisvalid(): bool
     {
-        $aux = true;
-        if($this->fechavence <= new \DateTime()) $aux = false;
-        return $aux;
+        if (!$this->fechavence instanceof \DateTimeInterface) {
+            return false;
+        }
+
+        return $this->fechavence > new \DateTime();
     }
 
     public function getScope(): ?string
@@ -207,6 +215,32 @@ class CredencialesMercadoPago
         return $this;
     }
 
+    public function getNickname(): ?string
+    {
+        return $this->nickname;
+    }
+
+    public function setNickname(?string $nickname): static
+    {
+        $this->nickname = $nickname;
+        $this->updatedAt = new \DateTime();
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+        $this->updatedAt = new \DateTime();
+
+        return $this;
+    }
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
@@ -238,6 +272,21 @@ class CredencialesMercadoPago
     public function setFechavence(?\DateTimeInterface $fechavence): static
     {
         $this->fechavence = $fechavence;
+
+        return $this;
+    }
+
+    public function clearTokens(): static
+    {
+        $this->accessToken = null;
+        $this->refreshToken = null;
+        $this->tokenType = null;
+        $this->scope = null;
+        $this->userId = null;
+        $this->fechavence = null;
+        $this->nickname = null;
+        $this->email = null;
+        $this->updatedAt = new \DateTime();
 
         return $this;
     }

@@ -4,6 +4,7 @@
 
 {% block body %}
     <div class="container py-5">
+        {% include 'booking_partner/_navigation.html.twig' with {navigation: navigation|default({})} %}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-1">Mis servicios de reserva</h1>
@@ -20,6 +21,27 @@
         {% for message in app.flashes('error') %}
             <div class="alert alert-danger" role="alert">{{ message }}</div>
         {% endfor %}
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h2 class="h5 mb-1">Pagos con Mercado Pago</h2>
+                    {% if mercadoPagoConectado %}
+                        <p class="text-muted mb-0 small">Tu cuenta está conectada{% if mercadoPagoCuenta and mercadoPagoCuenta.nickname %} como <strong>{{ mercadoPagoCuenta.nickname }}</strong>{% endif %}. Administrá tus cobros desde la pestaña de balance.</p>
+                    {% else %}
+                        <p class="text-muted mb-0 small">Conectá tu cuenta para activar el split de pagos con la plataforma y recibir los fondos automáticamente.</p>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge {{ mercadoPagoConectado ? 'text-bg-success' : 'text-bg-secondary' }}">
+                        {{ mercadoPagoConectado ? 'Conectado' : 'Sin conectar' }}
+                    </span>
+                    <a class="btn {{ mercadoPagoConectado ? 'btn-outline-primary' : 'btn-primary' }}" href="{{ path('app_booking_partner_balance') }}">
+                        {{ mercadoPagoConectado ? 'Ver balance' : 'Configurar Mercado Pago' }}
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">

@@ -4,6 +4,7 @@
 
 {% block body %}
     <div class="container py-5">
+        {% include 'booking_partner/_navigation.html.twig' with {navigation: navigation|default({})} %}
         <div class="row justify-content-center">
             <div class="col-lg-9">
                 <div class="card border-0 shadow-sm">
