@@ -116,11 +116,13 @@
                                 <li><a class="dropdown-item" href="{{ path('app_register') }}">Registro</a></li>
                             {% else %}
                                 {% if 'ROLE_ADMIN' in usuario.roles  %}
-                                    <li><a class="dropdown-item" href="{{ path('app_administrador_home') }}">Administrar</a></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_administrador_home') }}">Panel de administración</a></li>
                                 {% endif %}
-                                <li><a class="dropdown-item" href="#">Another action</a></li>
-                                <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                <li><a class="dropdown-item" href="{{path('app_logout')}}">LogOut</a></li>
+                                {% if 'ROLE_PARTNER' in usuario.roles %}
+                                    <li><a class="dropdown-item" href="{{ path('app_booking_partner') }}">Panel de partner</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ path('app_logout') }}">Cerrar sesión</a></li>
                             {% endif %}
 
 
