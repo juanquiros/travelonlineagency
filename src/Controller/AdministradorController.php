@@ -387,7 +387,7 @@ class AdministradorController extends AbstractController
         $pagos = $this->em->getRepository(MercadoPagoPago::class)
             ->createQueryBuilder('p')
             ->leftJoin('p.solicitudReserva', 'sr')->addSelect('sr')
-            ->leftJoin('sr.booking', 'b')->addSelect('b')
+            ->leftJoin('sr.Booking', 'b')->addSelect('b')
             ->leftJoin('b.bookingPartner', 'bp')->addSelect('bp')
             ->leftJoin('bp.Usuario', 'u')->addSelect('u')
             ->orderBy('p.createdAt', 'DESC')
