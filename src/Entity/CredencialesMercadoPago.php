@@ -52,14 +52,14 @@ class CredencialesMercadoPago
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $email = null;
 
-    #[ORM\Column]
-    private ?\DateTime $createdAt = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column]
-    private ?\DateTime $updatedAt = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTime $fechavence = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $fechavence = null;
 
     /**
      * @var Collection<int, MercadoPagoPago>
@@ -67,13 +67,10 @@ class CredencialesMercadoPago
     #[ORM\OneToMany(targetEntity: MercadoPagoPago::class, mappedBy: 'credencialesMercadoPago')]
     private Collection $mercadoPagoPagos;
 
-    /**
-     * @param \DateTime|null $updatedAt
-     */
     public function __construct()
     {
-        $this->createdAt = new \DateTime();
-        $this->updatedAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
         $this->mercadoPagoPagos = new ArrayCollection();
     }
 
@@ -91,7 +88,7 @@ class CredencialesMercadoPago
     public function setClientId(?string $clientId): static
     {
         $this->clientId = $clientId;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -103,7 +100,7 @@ class CredencialesMercadoPago
     public function setAccessToken(?string $accessToken): static
     {
         $this->accessToken = $accessToken;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -115,7 +112,7 @@ class CredencialesMercadoPago
     public function setPublicKey(?string $publicKey): static
     {
         $this->publicKey = $publicKey;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -127,7 +124,7 @@ class CredencialesMercadoPago
     public function setClientSecret(?string $clientSecret): static
     {
         $this->clientSecret = $clientSecret;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -139,7 +136,7 @@ class CredencialesMercadoPago
     public function setCode(?string $code): static
     {
         $this->code = $code;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -151,7 +148,7 @@ class CredencialesMercadoPago
     public function setTokenType(?string $tokenType): static
     {
         $this->tokenType = $tokenType;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -162,11 +159,18 @@ class CredencialesMercadoPago
 
     public function setExpiresIn(?int $expiresIn): static
     {
-        $this->expiresIn = $expiresIn - 60;
-        $this->updatedAt = new \DateTime();
-        $this->fechavence = \DateTime::createFromImmutable($this->updatedAt);
-        $expirein = $expiresIn . ' seconds';
-        date_add($this->fechavence, date_interval_create_from_date_string($expirein));
+        if ($expiresIn === null) {
+            $this->expiresIn = null;
+            $this->updatedAt = new \DateTimeImmutable();
+            $this->fechavence = null;
+
+            return $this;
+        }
+
+        $this->expiresIn = max($expiresIn - 60, 0);
+        $this->updatedAt = new \DateTimeImmutable();
+        $interval = new \DateInterval('PT' . max($expiresIn, 0) . 'S');
+        $this->fechavence = $this->updatedAt->add($interval);
         return $this;
     }
 
@@ -176,7 +180,7 @@ class CredencialesMercadoPago
             return false;
         }
 
-        return $this->fechavence > new \DateTime();
+        return $this->fechavence > new \DateTimeImmutable();
     }
 
     public function getScope(): ?string
@@ -187,7 +191,7 @@ class CredencialesMercadoPago
     public function setScope(?string $scope): static
     {
         $this->scope = $scope;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -199,7 +203,7 @@ class CredencialesMercadoPago
     public function setUserId(?int $userId): static
     {
         $this->userId = $userId;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -211,7 +215,7 @@ class CredencialesMercadoPago
     public function setRefreshToken(?string $refreshToken): static
     {
         $this->refreshToken = $refreshToken;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -223,7 +227,7 @@ class CredencialesMercadoPago
     public function setNickname(?string $nickname): static
     {
         $this->nickname = $nickname;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
     }
@@ -236,7 +240,7 @@ class CredencialesMercadoPago
     public function setEmail(?string $email): static
     {
         $this->email = $email;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
     }
@@ -249,7 +253,7 @@ class CredencialesMercadoPago
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
         return $this;
     }
 
@@ -264,12 +268,12 @@ class CredencialesMercadoPago
         return $this;
     }
 
-    public function getFechavence(): ?\DateTimeInterface
+    public function getFechavence(): ?\DateTimeImmutable
     {
         return $this->fechavence;
     }
 
-    public function setFechavence(?\DateTimeInterface $fechavence): static
+    public function setFechavence(?\DateTimeImmutable $fechavence): static
     {
         $this->fechavence = $fechavence;
 
@@ -286,7 +290,7 @@ class CredencialesMercadoPago
         $this->fechavence = null;
         $this->nickname = null;
         $this->email = null;
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
     }

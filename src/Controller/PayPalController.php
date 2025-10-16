@@ -54,10 +54,8 @@ class PayPalController extends AbstractController
         $token = null;
         $accesToken = $credenciales->getAccessToken();
         if(isset($accesToken) && !empty($accesToken)) {
-            $fechavence = \DateTime::createFromImmutable($credenciales->getUpdatedAt());
-            $expirein = $credenciales->getExpiresIn() . ' seconds';
-            date_add($fechavence, date_interval_create_from_date_string($expirein));
-            if(new \DateTime() >= $fechavence){
+            $fechavence = $credenciales->getFechavence();
+            if(!$fechavence instanceof \DateTimeInterface || new \DateTimeImmutable() >= $fechavence){
                 $token = $this->getTokenPaypal($credenciales->getClientId(),$credenciales->getClientSecret())['token'];
             }
         }else{
@@ -252,10 +250,8 @@ class PayPalController extends AbstractController
         $token = null;
         $accesToken = $credenciales->getAccessToken();
         if(isset($accesToken) && !empty($accesToken)) {
-            $fechavence = \DateTime::createFromImmutable($credenciales->getUpdatedAt());
-            $expirein = $credenciales->getExpiresIn() . ' seconds';
-            date_add($fechavence, date_interval_create_from_date_string($expirein));
-            if(new \DateTime() >= $fechavence){
+            $fechavence = $credenciales->getFechavence();
+            if(!$fechavence instanceof \DateTimeInterface || new \DateTimeImmutable() >= $fechavence){
                 $token = $this->getTokenPaypal($credenciales->getClientId(),$credenciales->getClientSecret())['token'];
             }
         }else{
