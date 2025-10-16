@@ -123,13 +123,21 @@ final class MercadoPagoController extends AbstractController
                 'solicitud_reserva_id' => $solicitudReserva->getId(),
             ],
         ]);
+        $publicKey = $credencial->getPublicKey() ?: $this->credencialesPlataforma?->getPublicKey();
+
+        if (!$publicKey) {
+            $this->addFlash('error', 'No se pudo iniciar el flujo de pago porque faltan las llaves públicas de Mercado Pago.');
+
+            return $this->redirectToRoute('app_inicio');
+        }
+
         return $this->render('mercado_pago/index.html.twig', [
             'controller_name' => 'MercadoPagoController',
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'id' => $preference->id,
             'plataforma' => $plataforma,
-            'publicKey' => $this->credencialesPlataforma?->getPublicKey(),
+            'publicKey' => $publicKey,
             'usuario' => $this->getUser(),
         ]);
     }
