@@ -40,8 +40,8 @@ class CredencialesMercadoPago
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $scope = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $userId = null;
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $userId = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $refreshToken = null;
@@ -195,12 +195,12 @@ class CredencialesMercadoPago
         return $this;
     }
 
-    public function getUserId(): ?int
+    public function getUserId(): ?string
     {
         return $this->userId;
     }
 
-    public function setUserId(?int $userId): static
+    public function setUserId(?string $userId): static
     {
         $this->userId = $userId;
         $this->updatedAt = new \DateTimeImmutable();

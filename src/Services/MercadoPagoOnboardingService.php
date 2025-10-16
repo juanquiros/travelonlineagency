@@ -106,7 +106,7 @@ final class MercadoPagoOnboardingService
             throw new \RuntimeException('No se pudo obtener la información de la cuenta de Mercado Pago: ' . $exception->getMessage(), 0, $exception);
         }
 
-        $credentials->setUserId(isset($data['id']) ? (int) $data['id'] : $credentials->getUserId());
+        $credentials->setUserId(isset($data['id']) ? (string) $data['id'] : $credentials->getUserId());
         $credentials->setNickname($data['nickname'] ?? $credentials->getNickname());
         $credentials->setEmail($data['email'] ?? $credentials->getEmail());
         if (isset($data['public_key'])) {
@@ -164,7 +164,7 @@ final class MercadoPagoOnboardingService
         }
 
         if (isset($payload['user_id'])) {
-            $credentials->setUserId((int) $payload['user_id']);
+            $credentials->setUserId((string) $payload['user_id']);
         }
 
         if (isset($payload['public_key'])) {
