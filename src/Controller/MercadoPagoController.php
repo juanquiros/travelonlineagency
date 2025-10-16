@@ -18,6 +18,7 @@ use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use MercadoPago\Resources\Payment;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -33,7 +34,8 @@ final class MercadoPagoController extends AbstractController
 
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding
+        private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding,
+        #[Autowire('%kernel.environment%')] private readonly string $environment
     ) {
         $this->credencialesPlataforma = $this->em->getRepository(Plataforma::class)->find(1)?->getCredencialesMercadoPago();
     }
@@ -76,7 +78,7 @@ final class MercadoPagoController extends AbstractController
             return $this->redirectToRoute('app_inicio');
         }
 
-        MercadoPagoConfig::setAccessToken($credencial->getAccessToken());
+        $this->configureMercadoPago($credencial);
 
         $total = (float) $precioBoking->getValor() * $cantidad;
         $comision = $partner?->getComisionPlataforma();
@@ -138,6 +140,7 @@ final class MercadoPagoController extends AbstractController
             'id' => $preference->id,
             'plataforma' => $plataforma,
             'publicKey' => $publicKey,
+            'isSandbox' => $this->environment === 'dev',
             'usuario' => $this->getUser(),
         ]);
     }
@@ -188,11 +191,9 @@ final class MercadoPagoController extends AbstractController
         $respuesta = '';
         $pagoDB = null;
         foreach ($credenciales as $credencial){
-            if (!$credencial->getAccessToken()) {
+            if (!$this->configureMercadoPago($credencial)) {
                 continue;
             }
-
-            MercadoPagoConfig::setAccessToken($credencial->getAccessToken());
             $pago = new PaymentClient();
             try {
                 $pagoMP = $pago->get($contenido['id']);
@@ -273,6 +274,20 @@ final class MercadoPagoController extends AbstractController
         return $this->credencialesPlataforma;
     }
 
+    private function configureMercadoPago(?CredencialesMercadoPago $credencial): bool
+    {
+        if (!$credencial instanceof CredencialesMercadoPago || !$credencial->getAccessToken()) {
+            return false;
+        }
+
+        MercadoPagoConfig::setRuntimeEnviroment(
+            $this->environment === 'dev' ? MercadoPagoConfig::LOCAL : MercadoPagoConfig::SERVER
+        );
+        MercadoPagoConfig::setAccessToken($credencial->getAccessToken());
+
+        return true;
+    }
+
     /**
      * @return array{0: ?Payment, 1: ?CredencialesMercadoPago}
      */
@@ -281,11 +296,9 @@ final class MercadoPagoController extends AbstractController
         $credenciales = $this->em->getRepository(CredencialesMercadoPago::class)->findAll();
 
         foreach ($credenciales as $credencial) {
-            if (!$credencial instanceof CredencialesMercadoPago || !$credencial->getAccessToken()) {
+            if (!$this->configureMercadoPago($credencial)) {
                 continue;
             }
-
-            MercadoPagoConfig::setAccessToken($credencial->getAccessToken());
             $pago = new PaymentClient();
 
             try {
