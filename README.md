@@ -50,12 +50,17 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
 
 ## Datos de prueba para phpMyAdmin
 
-- El archivo [`data/phpmyadmin_seed.sql`](data/phpmyadmin_seed.sql) incluye un set de datos mínimos para probar el flujo de partners con usuarios reales, servicios y precios.
+- El archivo [`data/phpmyadmin_seed.sql`](data/phpmyadmin_seed.sql) ahora carga un set amplio para **todas** las entidades del dominio: usuarios, partners, servicios, precios, traducciones, estados de reserva, solicitudes, pagos (Mercado Pago y PayPal), preguntas frecuentes, mensajes de contacto y suscripciones push.
 - Importalo desde phpMyAdmin (o `mysql` CLI) luego de crear la base de datos y ejecutar las migraciones:
   ```sql
   SOURCE data/phpmyadmin_seed.sql;
   ```
-- El script deshabilita temporalmente los `FOREIGN_KEY_CHECKS`, trunca tablas clave (`usuario`, `booking_partner`, `booking`, `precio`, etc.) y vuelve a activarlos al final para asegurar la integridad referencial.
+- El script deshabilita temporalmente los `FOREIGN_KEY_CHECKS`, trunca tablas clave (`usuario`, `booking_partner`, `booking`, `precio`, `solicitud_reserva`, `mercado_pago_pago`, etc.) y vuelve a activarlos al final para asegurar la integridad referencial.
+- Encontrarás ejemplos concretos para:
+  - Partners habilitados y pendientes (con cuentas vinculadas a Mercado Pago en modo split).
+  - Reservas en distintos estados (pendiente, confirmada, cancelada) con pagos asociados en Mercado Pago y PayPal.
+  - Traducciones de plataforma, servicios y preguntas frecuentes en español, inglés y portugués.
+  - Mensajes de contacto respondidos desde la administración y suscripciones a notificaciones push.
 - Las credenciales de acceso principales son:
   - **Administrador** → `admin@travelonlineagency.test` / `Password123`
   - **Partner habilitado** → `sofia.partner@test.com` / `Password123`
