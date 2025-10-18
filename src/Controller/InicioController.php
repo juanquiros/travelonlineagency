@@ -215,7 +215,8 @@ class InicioController extends AbstractController
             'fechas'=>$fechasDatetime,
             'formulario'=>$formulario,
             'plataforma'=>$plataforma,
-            'traduccion'=>$reserva_pagina
+            'traduccion' => $reserva_pagina,
+            'usuario' => $this->getUser(),
         ]);
     }
     private function comprobarFormularioRequerido($datosdeusuario,$formulario):bool
@@ -276,7 +277,8 @@ class InicioController extends AbstractController
             'idiomas'=>$idiomas,
             'plataforma'=>$plataforma,
             'idiomaPlataforma'=>$idioma,
-            'render'=>$render
+            'render' => $render,
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/buscar/status/booking', name: 'app_status_booking_search', methods: ['POST'], options: ['expose'=>true])]
@@ -308,7 +310,8 @@ class InicioController extends AbstractController
             'controller_name' => 'InicioController',
             'idiomas'=>$idiomas,
             'plataforma'=>$plataforma,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma' => $idioma,
+            'usuario' => $this->getUser(),
         ]);
     }
 

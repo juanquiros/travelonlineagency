@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\BookingPartner;
 use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
 use App\Entity\Lenguaje;
+use App\Entity\MercadoPagoPago;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
@@ -25,6 +27,9 @@ use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
 use App\Services\LanguageService;
+use App\Services\MercadoPagoOnboardingService;
+use App\Services\PartnerInvitationService;
+use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,6 +40,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class AdministradorController extends AbstractController
 {
@@ -51,11 +57,17 @@ class AdministradorController extends AbstractController
         's_reservas'=>false,
         'configuraciones'=>false,
         'dashboard'=>false,
-        's_preguntas'=>false
+        's_preguntas'=>false,
+        'partners'=>false,
+        'balance'=>false
     ];
 
     private $em;
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(
+        EntityManagerInterface $em,
+        private readonly PartnerInvitationService $partnerInvitationService,
+        private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding
+    )
     {
         $this->em = $em;
     }
@@ -260,7 +272,8 @@ class AdministradorController extends AbstractController
         'menu'=>$this->adminMenu,
         'idiomas'=>$idiomas,
         'idiomaPlataforma'=>$idioma,
-        'plataforma'=> $plataforma
+        'plataforma'=> $plataforma,
+        'vapidPublicKey' => notificacion::getPublicKey(),
     ]);
 }
     #[Route('/administrador/booking/{id}', name: 'app_administrador_booking', options: ['expose'=>true])]
@@ -318,6 +331,251 @@ class AdministradorController extends AbstractController
             'servicios'=>$servicios
         ]);
     }
+
+    #[Route('/administrador/partners', name: 'app_admin_partners')]
+    public function partners(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['partners'] = true;
+        $partners = $this->em->getRepository(BookingPartner::class)->findAll();
+
+        return $this->render('administrador/partners.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'partners' => $partners,
+        ]);
+    }
+
+    #[Route('/administrador/balance', name: 'app_admin_balance')]
+    public function balance(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['balance'] = true;
+
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+        $cuenta = null;
+        $balance = null;
+        $credencialesActualizadas = false;
+
+        if ($credenciales instanceof CredencialesMercadoPago && $credenciales->getAccessToken()) {
+            try {
+                if ($this->mercadoPagoOnboarding->ensureValidAccessToken($credenciales)) {
+                    $credencialesActualizadas = true;
+                }
+
+                $cuenta = $this->mercadoPagoOnboarding->syncAccountInformation($credenciales);
+                $balance = $this->mercadoPagoOnboarding->fetchBalance($credenciales);
+                $credencialesActualizadas = true;
+            } catch (\Throwable $exception) {
+                $this->addFlash('error', 'No se pudo actualizar la información de Mercado Pago: ' . $exception->getMessage());
+            }
+        }
+
+        if ($credencialesActualizadas && $credenciales instanceof CredencialesMercadoPago) {
+            $this->em->persist($credenciales);
+            $this->em->flush();
+        }
+
+        $pagos = $this->em->getRepository(MercadoPagoPago::class)
+            ->createQueryBuilder('p')
+            ->leftJoin('p.solicitudReserva', 'sr')->addSelect('sr')
+            ->leftJoin('sr.Booking', 'b')->addSelect('b')
+            ->leftJoin('b.bookingPartner', 'bp')->addSelect('bp')
+            ->leftJoin('bp.Usuario', 'u')->addSelect('u')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getResult();
+
+        $totalComision = 0.0;
+        foreach ($pagos as $pago) {
+            if ($pago instanceof MercadoPagoPago && $pago->getStatus() === 'approved') {
+                $totalComision += (float) ($pago->getApplicationFee() ?? 0.0);
+            }
+        }
+
+        $puedeConectar = $credenciales instanceof CredencialesMercadoPago
+            && $credenciales->getClientId()
+            && $credenciales->getClientSecret();
+
+        return $this->render('administrador/balance.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'credencialesMercadoPago' => $credenciales,
+            'cuentaMercadoPago' => $cuenta,
+            'balanceMercadoPago' => $balance,
+            'puedeConectarMercadoPago' => $puedeConectar,
+            'pagosMercadoPago' => $pagos,
+            'totalComisionMercadoPago' => $totalComision,
+        ]);
+    }
+
+    #[Route('/administrador/mercadopago/conectar', name: 'app_admin_mercadopago_connect')]
+    public function mercadopagoConnect(Request $request): Response
+    {
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credenciales instanceof CredencialesMercadoPago || !$credenciales->getClientId() || !$credenciales->getClientSecret()) {
+            $this->addFlash('error', 'Configurá el Client ID y Client Secret antes de vincular Mercado Pago.');
+
+            return $this->redirectToRoute('app_admin_configuraciones');
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $request->getSession()->set('mp_admin_state', $state);
+
+        try {
+            $authorizationUrl = $this->mercadoPagoOnboarding->createAuthorizationUrl(
+                $credenciales,
+                $this->generateUrl('app_admin_mercadopago_callback', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                $state,
+                ['offline_access', 'read', 'write']
+            );
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo generar el enlace de autorización: ' . $exception->getMessage());
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        return $this->redirect($authorizationUrl);
+    }
+
+    #[Route('/administrador/mercadopago/callback', name: 'app_admin_mercadopago_callback')]
+    public function mercadopagoCallback(Request $request): Response
+    {
+        $session = $request->getSession();
+        $expectedState = $session->get('mp_admin_state');
+        $session->remove('mp_admin_state');
+
+        $state = $request->query->get('state');
+        if (!$state || !$expectedState || $state !== $expectedState) {
+            $this->addFlash('error', 'El proceso de autorización caducó o es inválido.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        if ($request->query->has('error')) {
+            $this->addFlash('error', 'Mercado Pago rechazó la vinculación: ' . $request->query->get('error_description', '')); 
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        $authorizationCode = $request->query->get('code');
+        if (!$authorizationCode) {
+            $this->addFlash('error', 'Mercado Pago no devolvió el código de autorización.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credenciales instanceof CredencialesMercadoPago) {
+            $this->addFlash('error', 'La plataforma no tiene credenciales configuradas.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        try {
+            $this->mercadoPagoOnboarding->exchangeAuthorizationCode(
+                $credenciales,
+                (string) $authorizationCode,
+                $this->generateUrl('app_admin_mercadopago_callback', [], UrlGeneratorInterface::ABSOLUTE_URL)
+            );
+
+            $this->mercadoPagoOnboarding->syncAccountInformation($credenciales);
+
+            $this->em->persist($credenciales);
+            if ($plataforma instanceof Plataforma) {
+                $this->em->persist($plataforma);
+            }
+            $this->em->flush();
+
+            $this->addFlash('success', 'Cuenta de Mercado Pago conectada correctamente.');
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo vincular Mercado Pago: ' . $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('app_admin_balance');
+    }
+
+    #[Route('/administrador/mercadopago/desconectar', name: 'app_admin_mercadopago_disconnect', methods: ['POST'])]
+    public function mercadopagoDisconnect(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_mp_disconnect', $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if ($credenciales instanceof CredencialesMercadoPago) {
+            $credenciales->clearTokens();
+            $this->em->persist($credenciales);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Se desconectó Mercado Pago de la plataforma.');
+        }
+
+        return $this->redirectToRoute('app_admin_balance');
+    }
+
+    #[Route('/administrador/partner/{id}/estado', name: 'app_admin_partner_estado', methods: ['POST'])]
+    public function updatePartnerStatus(Request $request, BookingPartner $bookingPartner): Response
+    {
+        if (!$this->isCsrfTokenValid('partner_status_'.$bookingPartner->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $action = $request->request->get('action', 'update');
+        $comision = $request->request->get('comision');
+
+        if ($comision !== null && $comision !== '') {
+            if (!is_numeric($comision)) {
+                $this->addFlash('error', 'La comisión debe ser un número válido.');
+                return $this->redirectToRoute('app_admin_partners');
+            }
+            $bookingPartner->setComisionPlataforma((float) $comision);
+        }
+
+        $usuario = $bookingPartner->getUsuario();
+        $roles = $usuario->getRoles();
+
+        if ($action === 'approve') {
+            $bookingPartner->setHabilitado(true);
+            if (!in_array('ROLE_PARTNER', $roles, true)) {
+                $roles[] = 'ROLE_PARTNER';
+            }
+            $this->addFlash('success', 'Partner habilitado correctamente.');
+        } elseif ($action === 'disable') {
+            $bookingPartner->setHabilitado(false);
+            $roles = array_values(array_filter($roles, static fn (string $role) => $role !== 'ROLE_PARTNER'));
+            $this->addFlash('success', 'Partner deshabilitado.');
+        } else {
+            $this->addFlash('success', 'Datos del partner actualizados.');
+        }
+
+        $usuario->setRoles(array_values(array_unique($roles)));
+
+        $this->em->persist($bookingPartner);
+        $this->em->persist($usuario);
+        $this->em->flush();
+
+        return $this->redirectToRoute('app_admin_partners');
+    }
     #[Route('/administrador/FAKs', name: 'app_plataforma_preguntas')]
     public function app_plataforma_preguntas(Request $request): Response
     {
@@ -326,6 +584,11 @@ class AdministradorController extends AbstractController
         $preguntas = $this->em->getRepository(PreguntaFrecuente::class)->findAll();
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['s_preguntas'] = true;
+        $partnerInviteLink = $this->generateUrl(
+            'app_register_partner_invite',
+            ['code' => $this->partnerInvitationService->generateInviteCode()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
         return $this->render('administrador/FAKs.html.twig', [
             'controller_name' => 'AdministradorController',
             'plataforma'=>$plataforma,
@@ -333,7 +596,8 @@ class AdministradorController extends AbstractController
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
-            'preguntas'=>$preguntas
+            'preguntas'=>$preguntas,
+            'partnerInviteLink' => $partnerInviteLink,
         ]);
     }
 
@@ -464,7 +728,12 @@ class AdministradorController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'lenguajeFormulario'=>$lenguaje,
             'formularioPregunta'=>$formularioPregunta,
-            'formularioTraduccion'=>$formularioTraduccion
+            'formularioTraduccion'=>$formularioTraduccion,
+            'partnerInviteLink' => $this->generateUrl(
+                'app_register_partner_invite',
+                ['code' => $this->partnerInvitationService->generateInviteCode()],
+                UrlGeneratorInterface::ABSOLUTE_URL
+            ),
         ]);
     }
 

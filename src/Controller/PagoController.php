@@ -42,7 +42,8 @@ class PagoController extends AbstractController
             'PayPalLink'=>$this->generateUrl('paypal_pay_booking',['id'=>$solicitudReserva->getId()]),
             'MercadoPagoLink'=>$this->generateUrl('mercadopago_pay_booking',['id'=>$solicitudReserva->getId()]),
             'habilitado'=>['mp'=>$precioBokingMp,'pp'=>$precioBokingPP],
-            'cantidad'=>$cantidad
+            'cantidad' => $cantidad,
+            'usuario' => $this->getUser(),
         ]);
     }
 }
