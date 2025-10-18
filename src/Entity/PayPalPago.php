@@ -21,6 +21,9 @@ class PayPalPago
     #[ORM\ManyToOne(inversedBy: 'pagosPayPal')]
     private ?SolicitudReserva $solicitudReserva = null;
 
+    #[ORM\ManyToOne]
+    private ?TransferRequest $transferRequest = null;
+
     #[ORM\ManyToOne(inversedBy: 'pagos')]
     #[ORM\JoinColumn(nullable: false)]
     private ?CredencialesPayPal $credencialesPayPal = null;
@@ -78,6 +81,18 @@ class PayPalPago
     public function setSolicitudReserva(?SolicitudReserva $solicitudReserva): static
     {
         $this->solicitudReserva = $solicitudReserva;
+
+        return $this;
+    }
+
+    public function getTransferRequest(): ?TransferRequest
+    {
+        return $this->transferRequest;
+    }
+
+    public function setTransferRequest(?TransferRequest $transferRequest): static
+    {
+        $this->transferRequest = $transferRequest;
 
         return $this;
     }

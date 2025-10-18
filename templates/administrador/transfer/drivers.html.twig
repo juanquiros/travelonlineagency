@@ -1,0 +1,76 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Gestión de choferes{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Solicitudes pendientes</h2>
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Contacto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for driver in pendientes %}
+                        <tr>
+                            <td>{{ driver.nombreCompleto }}</td>
+                            <td>{{ driver.documento }}</td>
+                            <td>{{ driver.telefono }}</td>
+                            <td class="text-end">
+                                <form method="post" action="{{ path('app_admin_driver_state', {id: driver.id}) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button class="btn btn-sm btn-success" type="submit">Aprobar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">No hay choferes pendientes.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Choferes habilitados</h2>
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Vehículo</th>
+                            <th>Contacto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for driver in habilitados %}
+                        <tr>
+                            <td>{{ driver.nombreCompleto }}</td>
+                            <td>{{ driver.modeloVehiculo }} ({{ driver.patente }})</td>
+                            <td>{{ driver.telefono }}</td>
+                            <td class="text-end">
+                                <form method="post" action="{{ path('app_admin_driver_state', {id: driver.id}) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="suspend">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Suspender</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Aún no hay choferes aprobados.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

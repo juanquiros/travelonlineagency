@@ -27,6 +27,17 @@
             {% if registrationForm.solicitarPartner is defined %}
                 {{ form_row(registrationForm.solicitarPartner) }}
             {% endif %}
+            {% if driverMode %}
+                <div class="alert alert-info small">
+                    Completa tus datos de chofer. Un administrador revisará tu solicitud antes de habilitar el acceso al panel de viajes.
+                </div>
+                {{ form_row(registrationForm.driverDocumento) }}
+                {{ form_row(registrationForm.driverTelefono) }}
+                {{ form_row(registrationForm.driverPatente) }}
+                {{ form_row(registrationForm.driverModeloVehiculo) }}
+                {{ form_row(registrationForm.driverNotas) }}
+                {{ form_row(registrationForm.driverFoto) }}
+            {% endif %}
 
             <button type="submit" class="btn btn-success  w-100">Register</button>
             {{ form_end(registrationForm) }}

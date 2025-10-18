@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Seguimiento del traslado{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <h1 class="mb-4">Seguimiento del traslado</h1>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Datos del pasajero</h2>
+                    <ul class="list-unstyled mb-4">
+                        <li><strong>Nombre:</strong> {{ solicitud.nombrePasajero }}</li>
+                        <li><strong>Correo:</strong> {{ solicitud.emailPasajero }}</li>
+                        {% if solicitud.telefonoPasajero %}
+                            <li><strong>Teléfono:</strong> {{ solicitud.telefonoPasajero }}</li>
+                        {% endif %}
+                        <li><strong>Arribo:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        <li><strong>Salida:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        <li><strong>Estado:</strong> {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}</li>
+                    </ul>
+
+                    <h2 class="h5">Itinerario</h2>
+                    <ol class="list-group list-group-numbered mb-4">
+                        {% for destino in solicitud.destinos %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center {% if asignacion and loop.index <= asignacion.paradaActual %}list-group-item-success{% endif %}">
+                                {{ destino.destino.nombre }}
+                                {% if asignacion and loop.index <= asignacion.paradaActual %}
+                                    <span class="badge bg-success">Completado</span>
+                                {% endif %}
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">El administrador agregará las paradas del viaje en breve.</li>
+                        {% endfor %}
+                    </ol>
+
+                    {% if solicitud.datosExtra %}
+                        <h2 class="h6">Datos adicionales</h2>
+                        <dl class="row small">
+                            {% for clave, valor in solicitud.datosExtra %}
+                                <dt class="col-sm-5 text-capitalize">{{ clave|replace({'_':' '}) }}</dt>
+                                <dd class="col-sm-7">{{ valor }}</dd>
+                            {% endfor %}
+                        </dl>
+                    {% endif %}
+
+                    {% if asignacion %}
+                        <div class="alert alert-success mt-4">
+                            <h2 class="h6 mb-2">Chofer asignado</h2>
+                            <p class="mb-1"><strong>{{ asignacion.chofer.nombreCompleto }}</strong></p>
+                            <p class="mb-1">Contacto: {{ asignacion.chofer.telefono }}</p>
+                            <p class="mb-0">Vehículo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mt-4 mb-0">
+                            El traslado aún no fue capturado por un chofer. Te avisaremos por correo cuando esté asignado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 text-center">
+                <div class="card-body">
+                    <h2 class="h6">Código de seguimiento</h2>
+                    <p class="fw-bold">{{ solicitud.tokenSeguimiento }}</p>
+                    <div class="d-flex justify-content-center mb-3">
+                        {{ qr_code(trackingUrl, { size: 180 }) }}
+                    </div>
+                    <p class="small text-muted">Mostrá este código al chofer para que acceda rápidamente al detalle del viaje.</p>
+                    <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_transfer_pdf', {token: solicitud.tokenSeguimiento}) }}" target="_blank">Descargar PDF</a>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6">Estado del pago</h2>
+                    <p class="mb-1">Monto total: ${{ solicitud.precioTotal }}</p>
+                    <p class="small text-muted">Conservá este enlace para completar el pago o seguir tu traslado.</p>
+                    <a class="btn btn-primary w-100 mb-2" href="{{ path('mercadopago_pay_transfer', {id: solicitud.id}) }}">Pagar con Mercado Pago</a>
+                    <a class="btn btn-outline-secondary w-100" href="{{ path('paypal_pay_transfer', {id: solicitud.id}) }}">Pagar con PayPal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

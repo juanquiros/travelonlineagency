@@ -66,6 +66,9 @@ class MercadoPagoPago
     #[ORM\ManyToOne(inversedBy: 'pagosMercadoPago')]
     private ?SolicitudReserva $solicitudReserva = null;
 
+    #[ORM\ManyToOne]
+    private ?TransferRequest $transferRequest = null;
+
 
 
     /**
@@ -289,6 +292,18 @@ class MercadoPagoPago
     public function setSolicitudReserva(?SolicitudReserva $solicitudReserva): static
     {
         $this->solicitudReserva = $solicitudReserva;
+
+        return $this;
+    }
+
+    public function getTransferRequest(): ?TransferRequest
+    {
+        return $this->transferRequest;
+    }
+
+    public function setTransferRequest(?TransferRequest $transferRequest): static
+    {
+        $this->transferRequest = $transferRequest;
 
         return $this;
     }

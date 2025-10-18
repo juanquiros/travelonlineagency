@@ -59,12 +59,14 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
 - Encontrarás ejemplos concretos para:
   - Partners habilitados y pendientes (con cuentas vinculadas a Mercado Pago en modo split).
   - Reservas en distintos estados (pendiente, confirmada, cancelada) con pagos asociados en Mercado Pago y PayPal.
+  - Traslados configurados (destinos, combos, campos dinámicos) con solicitudes activas, asignaciones de chofer y pagos de prueba.
   - Traducciones de plataforma, servicios y preguntas frecuentes en español, inglés y portugués.
   - Mensajes de contacto respondidos desde la administración y suscripciones a notificaciones push.
 - Las credenciales de acceso principales son:
   - **Administrador** → `admin@travelonlineagency.test` / `Password123`
   - **Partner habilitado** → `sofia.partner@test.com` / `Password123`
   - **Partner pendiente** → `martin.partner@test.com` / `Password123`
+  - **Chofer habilitado** → `driver@travelonlineagency.test` / `Password123`
 
 ## Flujo de ramas
 
@@ -79,6 +81,14 @@ Los partners que todavía no están habilitados o a quienes les falta el rol rec
 
 - Desde la sección de **Preguntas Frecuentes** del panel de administrador se expone un enlace privado de invitación (`/register/partner/{code}`) que podés copiar y pegar en una pregunta para compartir el registro exclusivo con proveedores externos. Solo quienes accedan mediante ese enlace podrán enviar la solicitud de partner.
 - Los partners y administradores pueden habilitar notificaciones push (botón “Activar notificaciones”) para recibir avisos cuando se confirmen reservas vinculadas a sus servicios.
+
+## Gestión de traslados y choferes
+
+- El administrador dispone de un nuevo módulo en **Administrador → Traslados** para crear destinos individuales, armar combos preestablecidos, definir campos dinámicos (número de vuelo, cantidad de pasajeros, etc.) y monitorear todas las solicitudes. Desde el listado puede asignar un viaje a un chofer aprobado o cambiar manualmente su estado.
+- Los formularios públicos de `/traslados` permiten solicitar un combo o armar un itinerario personalizado. Cada solicitud genera un token de seguimiento, un PDF con QR descargable y un email automático para el pasajero con el enlace directo al tracking.
+- Los choferes se registran desde un enlace privado (`/register/driver/{code}`) que el administrador puede publicar en las preguntas frecuentes. Al aprobarlos en **Administrador → Choferes**, reciben el rol `ROLE_DRIVER` y acceden al panel `/chofer` donde pueden capturar viajes, avanzar paradas, agregar notas, cancelar o finalizar un traslado.
+- El panel de chofer muestra las paradas completadas, los datos del pasajero y el acceso al seguimiento público para coordinar con el turista o el administrador. Todas las acciones están protegidas con tokens CSRF.
+- Tanto el resumen como el tracking de cada traslado ofrecen los botones para pagar con Mercado Pago o PayPal reutilizando las credenciales configuradas en la plataforma. En entornos de desarrollo se aplica automáticamente el modo sandbox de Mercado Pago.
 
 ## Pagos con Mercado Pago y split de comisiones
 

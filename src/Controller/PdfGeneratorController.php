@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Booking;
 use App\Entity\EstadoReserva;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferRequest;
 use App\Entity\Usuario;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,6 +40,39 @@ final class PdfGeneratorController extends AbstractController
         $this->assertPdfAccess($booking, true);
 
         return $this->buildPdfResponse($booking, $estadoId, $request, $pdf);
+    }
+
+    #[Route('/transfer/pdf/{token}', name: 'app_transfer_pdf')]
+    public function transferPdf(string $token, Request $request, Pdf $pdf): Response
+    {
+        $solicitud = $this->em->getRepository(TransferRequest::class)->findOneBy(['tokenSeguimiento' => $token]);
+
+        if (!$solicitud instanceof TransferRequest) {
+            throw $this->createNotFoundException();
+        }
+
+        $trackingUrl = $this->generateUrl('app_transfer_tracking', ['token' => $token], true);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+
+        $html = $this->renderView('pdf_generator/transfer/solicitud.html.twig', [
+            'solicitud' => $solicitud,
+            'trackingUrl' => $trackingUrl,
+            'plataforma' => $plataforma,
+            'generadoEn' => new \DateTimeImmutable(),
+        ]);
+
+        $pdf->setOption('enable-local-file-access', true);
+
+        return new PdfResponse(
+            $pdf->getOutputFromHtml($html, [
+                'page-size' => 'A4',
+                'orientation' => 'Portrait',
+                'encoding' => 'utf-8',
+                'margin-top' => 10,
+                'margin-bottom' => 15,
+            ]),
+            sprintf('traslado-%s.pdf', $solicitud->getTokenSeguimiento())
+        );
     }
 
     private function buildPdfResponse(Booking $booking, int $estadoId, Request $request, Pdf $pdf): Response

@@ -6,7 +6,9 @@ use App\Entity\Usuario;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\IsTrue;
@@ -54,6 +56,49 @@ class RegistrationFormType extends AbstractType
                 'mapped' => false,
             ]);
         }
+
+        if ($options['driver_mode']) {
+            $builder
+                ->add('driverDocumento', TextType::class, [
+                    'label' => 'Documento',
+                    'mapped' => false,
+                    'constraints' => [
+                        new NotBlank(['message' => 'Ingresa tu documento']),
+                    ],
+                ])
+                ->add('driverTelefono', TextType::class, [
+                    'label' => 'Teléfono de contacto',
+                    'mapped' => false,
+                    'constraints' => [
+                        new NotBlank(['message' => 'Ingresa un teléfono de contacto']),
+                    ],
+                ])
+                ->add('driverPatente', TextType::class, [
+                    'label' => 'Patente del vehículo',
+                    'mapped' => false,
+                    'constraints' => [
+                        new NotBlank(['message' => 'Ingresa la patente del vehículo']),
+                    ],
+                ])
+                ->add('driverModeloVehiculo', TextType::class, [
+                    'label' => 'Modelo del vehículo',
+                    'mapped' => false,
+                    'constraints' => [
+                        new NotBlank(['message' => 'Ingresa el modelo del vehículo']),
+                    ],
+                ])
+                ->add('driverNotas', TextareaType::class, [
+                    'label' => 'Notas adicionales',
+                    'mapped' => false,
+                    'required' => false,
+                    'attr' => ['rows' => 3],
+                ])
+                ->add('driverFoto', FileType::class, [
+                    'label' => 'Foto del vehículo (JPG o PNG)',
+                    'mapped' => false,
+                    'required' => false,
+                ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -61,7 +106,9 @@ class RegistrationFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Usuario::class,
             'show_partner_checkbox' => true,
+            'driver_mode' => false,
         ]);
         $resolver->setAllowedTypes('show_partner_checkbox', 'bool');
+        $resolver->setAllowedTypes('driver_mode', 'bool');
     }
 }

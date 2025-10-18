@@ -25,6 +25,15 @@
                         <code class="small text-break mb-0">{{ partnerInviteLink }}</code>
                     </div>
                 {% endif %}
+                {% if driverInviteLink is defined %}
+                    <div class="alert alert-warning d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2">
+                        <div>
+                            <strong>Enlace privado para choferes:</strong>
+                            <span class="small d-block d-lg-inline text-muted">Comparte este enlace sólo con candidatos confiables para habilitar su registro.</span>
+                        </div>
+                        <code class="small text-break mb-0">{{ driverInviteLink }}</code>
+                    </div>
+                {% endif %}
                 <a class="btn btn-secondary btn-sm mb-5" href="{{ path('app_admin_add_edit_fak',{codLenguaje:plataforma.languageDef.codigo}) }}">Agregar nueva pregunta</a>
                 <table class="table" style="box-shadow: 1px 1px 4px rgba(0,0,0,0.4 )">
                     <thead>

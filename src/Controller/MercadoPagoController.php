@@ -9,6 +9,7 @@ use App\Entity\MercadoPagoPago;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferRequest;
 use App\Entity\Usuario;
 use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
@@ -38,6 +39,99 @@ final class MercadoPagoController extends AbstractController
         #[Autowire('%kernel.environment%')] private readonly string $environment
     ) {
         $this->credencialesPlataforma = $this->em->getRepository(Plataforma::class)->find(1)?->getCredencialesMercadoPago();
+    }
+
+    #[Route('/pay/mercadopago/transfer/{id}', name: 'mercadopago_pay_transfer')]
+    public function transfer(Request $request, TransferRequest $solicitud): Response
+    {
+        if ($solicitud->getEstado() === TransferRequest::ESTADO_CANCELADO) {
+            $this->addFlash('error', 'El traslado fue cancelado y no puede pagarse.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+
+        $credencial = $this->credencialesPlataforma;
+
+        if (!$credencial instanceof CredencialesMercadoPago || !$credencial->getAccessToken()) {
+            $this->addFlash('error', 'No se encontraron credenciales activas de Mercado Pago para la plataforma.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        try {
+            if ($this->mercadoPagoOnboarding->ensureValidAccessToken($credencial)) {
+                $this->em->persist($credencial);
+                $this->em->flush();
+            }
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo validar el acceso a Mercado Pago: ' . $exception->getMessage());
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        if (!$this->configureMercadoPago($credencial)) {
+            $this->addFlash('error', 'No se pudo preparar el entorno de Mercado Pago.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        $total = (float) $solicitud->getPrecioTotal();
+        if ($total <= 0) {
+            $this->addFlash('error', 'El traslado no tiene un monto configurado.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        $client = new PreferenceClient();
+        $preference = $client->create([
+            'items' => [
+                [
+                    'id' => sprintf('transfer-%d', $solicitud->getId()),
+                    'title' => 'Traslado Iguazú',
+                    'quantity' => 1,
+                    'currency_id' => 'ARG',
+                    'unit_price' => $total,
+                ],
+            ],
+            'payer' => [
+                'name' => $solicitud->getNombrePasajero(),
+                'email' => $solicitud->getEmailPasajero(),
+            ],
+            'back_urls' => [
+                'success' => $this->generateUrl('mercadopago_pay_transfer_return', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'pending' => $this->generateUrl('mercadopago_pay_transfer_return', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'failure' => $this->generateUrl('mercadopago_pay_transfer_return', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            ],
+            'notification_url' => $this->generateUrl('mercadopago_ipn', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            'auto_return' => 'approved',
+            'external_reference' => sprintf('transfer-%d', $solicitud->getId()),
+            'metadata' => [
+                'transfer_request_id' => $solicitud->getId(),
+            ],
+        ]);
+
+        $publicKey = $credencial->getPublicKey() ?: $this->credencialesPlataforma?->getPublicKey();
+
+        if (!$publicKey) {
+            $this->addFlash('error', 'No se pudo iniciar el flujo de pago porque faltan las llaves públicas de Mercado Pago.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        return $this->render('mercado_pago/index.html.twig', [
+            'controller_name' => 'MercadoPagoController',
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'id' => $preference->id,
+            'plataforma' => $plataforma,
+            'publicKey' => $publicKey,
+            'isSandbox' => $this->environment === 'dev',
+            'usuario' => $this->getUser(),
+        ]);
     }
     #[Route('/pay/mercadopago/booking/{id}', name: 'mercadopago_pay_booking')]
     public function index(Request $request, SolicitudReserva $solicitudReserva): Response
@@ -178,6 +272,41 @@ final class MercadoPagoController extends AbstractController
             'pago'=>$pagoDB,
             'plataforma'=>$plataforma,
             'linkDetalles' => $linkDetalles,
+            'usuario' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/pay/mercadopago/transfer-return', name: 'mercadopago_pay_transfer_return')]
+    public function mercadopagoPayTransferReturn(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+
+        $paymentId = $request->query->get('payment_id');
+        if (!$paymentId) {
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        [$pagoMP, $credencial] = $this->fetchPaymentUsingAnyCredential((string) $paymentId);
+        if (!$pagoMP || !$credencial) {
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        $pagoDB = $this->loadPayment($pagoMP, $credencial, $request->query->all());
+        if (!$pagoDB || !$pagoDB->getTransferRequest()) {
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        $solicitud = $pagoDB->getTransferRequest();
+
+        return $this->render('pago/returnTransfer.html.twig', [
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'pago' => $pagoDB,
+            'solicitud' => $solicitud,
+            'trackingUrl' => $this->generateUrl('app_transfer_tracking', ['token' => $solicitud->getTokenSeguimiento()], UrlGeneratorInterface::ABSOLUTE_URL),
             'usuario' => $this->getUser(),
         ]);
     }
@@ -381,6 +510,7 @@ final class MercadoPagoController extends AbstractController
         }
 
         $solicitudReserva = null;
+        $transferRequest = null;
         if (!empty($pagoMP->external_reference)) {
             $referencia = explode('-', (string) $pagoMP->external_reference);
             if (count($referencia) === 3 && $referencia[0] === 'booking') {
@@ -388,14 +518,13 @@ final class MercadoPagoController extends AbstractController
                     'Booking' => $referencia[1],
                     'id' => $referencia[2],
                 ]);
+            } elseif (count($referencia) === 2 && $referencia[0] === 'transfer') {
+                $transferRequest = $this->em->getRepository(TransferRequest::class)->find($referencia[1]);
             }
         }
 
-        if (!$solicitudReserva instanceof SolicitudReserva) {
-            return null;
-        }
-
-        $pagoDB->setSolicitudReserva($solicitudReserva);
+        if ($solicitudReserva instanceof SolicitudReserva) {
+            $pagoDB->setSolicitudReserva($solicitudReserva);
 
         $precioBoking = $this->em->getRepository(Precio::class)->findOneBy([
             'moneda' => 2,
@@ -415,6 +544,13 @@ final class MercadoPagoController extends AbstractController
             }
 
             $this->em->persist($solicitudReserva);
+        }
+
+        } elseif ($transferRequest instanceof TransferRequest) {
+            $pagoDB->setTransferRequest($transferRequest);
+            $this->em->persist($transferRequest);
+        } else {
+            return null;
         }
 
         $this->em->persist($pagoDB);

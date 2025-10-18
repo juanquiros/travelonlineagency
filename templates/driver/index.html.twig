@@ -1,0 +1,125 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Panel de chofer{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <h1 class="mb-4">Panel de chofer</h1>
+
+    {% for flashSuccess in app.flashes('success') %}
+        <div class="alert alert-success">{{ flashSuccess }}</div>
+    {% endfor %}
+    {% for flashError in app.flashes('error') %}
+        <div class="alert alert-danger">{{ flashError }}</div>
+    {% endfor %}
+    {% for flashInfo in app.flashes('info') %}
+        <div class="alert alert-info">{{ flashInfo }}</div>
+    {% endfor %}
+    {% for flashWarning in app.flashes('warning') %}
+        <div class="alert alert-warning">{{ flashWarning }}</div>
+    {% endfor %}
+
+    {% if not perfil %}
+        <div class="alert alert-warning">
+            Todavía no completaste tu registro de chofer. Solicitá el enlace privado al administrador para cargar tus datos.
+        </div>
+    {% elseif not perfil.aprobado %}
+        <div class="alert alert-info">
+            Tu perfil está en revisión. Te avisaremos cuando el administrador lo apruebe para que puedas capturar traslados.
+        </div>
+    {% else %}
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5 mb-3">Mis traslados activos</h2>
+                        {% if asignaciones %}
+                            <div class="list-group list-group-flush">
+                                {% for asignacion in asignaciones %}
+                                    {% set solicitud = asignacion.solicitud %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                            <div>
+                                                <h3 class="h6 mb-1">{{ solicitud.nombrePasajero }}</h3>
+                                                <div class="small text-muted">Código: {{ solicitud.tokenSeguimiento }}</div>
+                                                <div class="small">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Salida: {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Total: ${{ solicitud.precioTotal }}</div>
+                                                <div class="mt-2">
+                                                    <a class="btn btn-link p-0" href="{{ path('app_transfer_tracking', {token: solicitud.tokenSeguimiento}) }}" target="_blank">Ver seguimiento público</a>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-secondary text-uppercase">{{ asignacion.estado|replace({'_':' '}) }}</span>
+                                                <div class="small text-muted">Paradas completadas: {{ asignacion.paradaActual }}/{{ solicitud.destinos|length }}</div>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <h4 class="h6">Paradas del viaje</h4>
+                                        <ol class="small ps-3">
+                                            {% for destino in solicitud.destinos %}
+                                                <li class="mb-1{% if loop.index <= asignacion.paradaActual %} text-decoration-line-through text-success{% endif %}">
+                                                    {{ destino.destino.nombre }}
+                                                </li>
+                                            {% else %}
+                                                <li class="text-muted">Sin destinos registrados.</li>
+                                            {% endfor %}
+                                        </ol>
+                                        <div class="mt-3 d-flex flex-wrap gap-2">
+                                            <form method="post" action="{{ path('app_driver_assignment_next', {id: asignacion.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('next_stop_' ~ asignacion.id) }}">
+                                                <button class="btn btn-outline-primary btn-sm" type="submit">Siguiente parada</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_driver_assignment_complete', {id: asignacion.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('complete_transfer_' ~ asignacion.id) }}">
+                                                <button class="btn btn-success btn-sm" type="submit">Finalizar viaje</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_driver_assignment_cancel', {id: asignacion.id}) }}" onsubmit="return confirm('¿Seguro que querés liberar este traslado?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('cancel_transfer_' ~ asignacion.id) }}">
+                                                <button class="btn btn-outline-danger btn-sm" type="submit">Cancelar</button>
+                                            </form>
+                                        </div>
+                                        <form method="post" action="{{ path('app_driver_assignment_notes', {id: asignacion.id}) }}" class="mt-3">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('notes_transfer_' ~ asignacion.id) }}">
+                                            <label class="form-label small">Notas internas</label>
+                                            <textarea name="nota" class="form-control" rows="2">{{ asignacion.notas }}</textarea>
+                                            <button class="btn btn-link btn-sm px-0" type="submit">Guardar notas</button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">Todavía no capturaste ningún traslado. Elegí uno disponible a la derecha.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5 mb-3">Traslados disponibles</h2>
+                        {% if disponibles %}
+                            <div class="list-group list-group-flush">
+                                {% for solicitud in disponibles %}
+                                    <div class="list-group-item">
+                                        <div class="fw-semibold">{{ solicitud.nombrePasajero }}</div>
+                                        <div class="small text-muted">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                        <div class="small">Paradas: {{ solicitud.destinos|length }}</div>
+                                        <div class="small mb-2">Total: ${{ solicitud.precioTotal }}</div>
+                                        <form method="post" action="{{ path('app_driver_capture', {id: solicitud.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('capture_transfer_' ~ solicitud.id) }}">
+                                            <button class="btn btn-outline-primary btn-sm w-100" type="submit">Capturar viaje</button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">No hay traslados pendientes por ahora.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

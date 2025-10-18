@@ -1,0 +1,130 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Solicitar traslado{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <h1 class="mb-4">Planificá tu traslado</h1>
+    {% for flashError in app.flashes('error') %}
+        <div class="alert alert-danger">{{ flashError }}</div>
+    {% endfor %}
+    {% for flashSuccess in app.flashes('success') %}
+        <div class="alert alert-success">{{ flashSuccess }}</div>
+    {% endfor %}
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <form method="post" class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">Datos del pasajero</h2>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre y apellido</label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Correo electrónico</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" name="telefono">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Arribo a Iguazú</label>
+                            <input type="datetime-local" class="form-control" name="arribo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Salida</label>
+                            <input type="datetime-local" class="form-control" name="salida">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas para el equipo</label>
+                        <textarea class="form-control" name="notas" rows="3"></textarea>
+                    </div>
+                    <h2 class="h5 mt-4">Tipo de traslado</h2>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="tipo" id="tipo_combo" value="combo" checked>
+                        <label class="form-check-label" for="tipo_combo">Usar combo preestablecido</label>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" name="combo_id">
+                            {% for combo in combos %}
+                                <option value="{{ combo.id }}">{{ combo.nombre }} - ${{ combo.precio }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="tipo" id="tipo_custom" value="custom">
+                        <label class="form-check-label" for="tipo_custom">Armar mi recorrido</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Destinos disponibles</label>
+                        <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
+                            {% for destino in destinos %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
+                                    <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - ${{ destino.tarifaBase }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if campos %}
+                        <h2 class="h5 mt-4">Información adicional</h2>
+                        {% for campo in campos %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ campo.etiqueta }}{% if campo.requerido %} *{% endif %}</label>
+                                {% set fieldName = 'campo_' ~ campo.clave %}
+                                {% if campo.tipo == constant('App\\Entity\\TransferFormField::TYPE_TEXTAREA') %}
+                                    <textarea class="form-control" name="{{ fieldName }}" rows="3" {% if campo.requerido %}required{% endif %}></textarea>
+                                {% elseif campo.tipo == constant('App\\Entity\\TransferFormField::TYPE_EMAIL') %}
+                                    <input type="email" class="form-control" name="{{ fieldName }}" {% if campo.requerido %}required{% endif %}>
+                                {% elseif campo.tipo == constant('App\\Entity\\TransferFormField::TYPE_PHONE') %}
+                                    <input type="tel" class="form-control" name="{{ fieldName }}" {% if campo.requerido %}required{% endif %}>
+                                {% elseif campo.tipo == constant('App\\Entity\\TransferFormField::TYPE_DATETIME') %}
+                                    <input type="datetime-local" class="form-control" name="{{ fieldName }}" {% if campo.requerido %}required{% endif %}>
+                                {% elseif campo.tipo == constant('App\\Entity\\TransferFormField::TYPE_NUMBER') %}
+                                    <input type="number" class="form-control" name="{{ fieldName }}" {% if campo.requerido %}required{% endif %}>
+                                {% else %}
+                                    <input type="text" class="form-control" name="{{ fieldName }}" {% if campo.requerido %}required{% endif %}>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <button class="btn btn-success w-100" type="submit">Enviar solicitud</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5">Combos destacados</h2>
+                    <ul class="list-group list-group-flush">
+                        {% for combo in combos %}
+                            <li class="list-group-item">
+                                <div class="fw-bold">{{ combo.nombre }}</div>
+                                {% if combo.descripcion %}
+                                    <div class="text-muted small">{{ combo.descripcion }}</div>
+                                {% endif %}
+                                <div class="small">Tarifa: ${{ combo.precio }}</div>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">No hay combos disponibles actualmente.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">¿Cómo funciona?</h2>
+                    <ol class="small">
+                        <li>Completá los datos y elegí un combo o tus destinos personalizados.</li>
+                        <li>Confirmá la solicitud y realizá el pago desde el resumen.</li>
+                        <li>Recibí en tu correo el código de seguimiento para compartir con el chofer.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

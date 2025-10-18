@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de traslado</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; }
+        h1 { font-size: 22px; margin-bottom: 5px; }
+        h2 { font-size: 16px; margin-top: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { padding: 8px; border: 1px solid #ddd; }
+        .qr { text-align: center; margin-top: 20px; }
+        .muted { color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Detalle de traslado</h1>
+    <p class="muted">Generado el {{ generadoEn|date('d/m/Y H:i') }}</p>
+
+    <h2>Pasajero</h2>
+    <table>
+        <tr><th>Nombre</th><td>{{ solicitud.nombrePasajero }}</td></tr>
+        <tr><th>Correo</th><td>{{ solicitud.emailPasajero }}</td></tr>
+        <tr><th>Teléfono</th><td>{{ solicitud.telefonoPasajero ?: 'No informado' }}</td></tr>
+        <tr><th>Arribo</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Salida</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Total</th><td>${{ solicitud.precioTotal }}</td></tr>
+        <tr><th>Código de seguimiento</th><td>{{ solicitud.tokenSeguimiento }}</td></tr>
+    </table>
+
+    <h2>Paradas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Destino</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for destino in solicitud.destinos %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ destino.destino.nombre }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="2">El administrador completará los destinos en breve.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if solicitud.datosExtra %}
+        <h2>Datos adicionales</h2>
+        <table>
+            {% for clave, valor in solicitud.datosExtra %}
+                <tr>
+                    <th>{{ clave|replace({'_':' '})|capitalize }}</th>
+                    <td>{{ valor }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    <div class="qr">
+        <img src="{{ qr_code_data_uri(trackingUrl, { size: 200 }) }}" alt="QR seguimiento" />
+        <p class="muted">Escaneá el código para seguir el viaje: {{ trackingUrl }}</p>
+    </div>
+
+    {% if plataforma %}
+        <p class="muted">Emitido por {{ plataforma.nombre }}</p>
+    {% endif %}
+</body>
+</html>

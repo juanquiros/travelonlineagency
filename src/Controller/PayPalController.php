@@ -8,6 +8,7 @@ use App\Entity\PayPalPago;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferRequest;
 use App\Entity\Usuario;
 use App\Services\LanguageService;
 use App\Services\mailerServer;
@@ -158,6 +159,143 @@ class PayPalController extends AbstractController
             'usuario' => $this->getUser(),
         ]);
     }
+
+    #[Route('/pay/paypal/transfer/{id}', name: 'paypal_pay_transfer')]
+    public function transfer(TransferRequest $solicitud, Request $request): Response
+    {
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+
+        $credenciales = $plataforma?->getCredencialesPayPal();
+        if (!$credenciales) {
+            $this->addFlash('error', 'La plataforma no tiene credenciales de PayPal configuradas.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy([
+            'estado' => 'PAYER_ACTION_REQUIRED',
+            'transferRequest' => $solicitud,
+        ]);
+
+        if (!$pago) {
+            $pago = new PayPalPago();
+            $pago->setCredencialesPayPal($credenciales);
+            $pago->setTransferRequest($solicitud);
+        }
+
+        $total = (float) $solicitud->getPrecioTotal();
+        if ($total <= 0) {
+            $this->addFlash('error', 'El traslado no tiene un monto configurado.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
+        $token = null;
+        $accessToken = $credenciales->getAccessToken();
+        if ($accessToken) {
+            $fechavence = $credenciales->getFechavence();
+            if (!$fechavence instanceof \DateTimeInterface || new \DateTimeImmutable() >= $fechavence) {
+                $token = $this->getTokenPaypal($credenciales->getClientId(), $credenciales->getClientSecret())['token'] ?? null;
+            }
+        } else {
+            $token = $this->getTokenPaypal($credenciales->getClientId(), $credenciales->getClientSecret())['token'] ?? null;
+        }
+
+        if ($token && isset($token['access_token'])) {
+            $credenciales->setAccessToken($token['access_token']);
+            $credenciales->setTokenType($token['token_type']);
+            $credenciales->setAppId($token['app_id']);
+            $credenciales->setExpiresIn((int) $token['expires_in']);
+            $credenciales->setNonce($token['nonce']);
+            $credenciales->setScope($token['scope']);
+            $this->em->persist($credenciales);
+            $this->em->flush();
+        }
+
+        $url = 'https://api-m.sandbox.paypal.com/v2/checkout/orders';
+        $params = [
+            'intent' => 'CAPTURE',
+            'payment_source' => [
+                'paypal' => [
+                    'experience_context' => [
+                        'payment_method_preference' => 'IMMEDIATE_PAYMENT_REQUIRED',
+                        'user_action' => 'PAY_NOW',
+                        'return_url' => $this->generateUrl('paypal_return_transfer', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                        'cancel_url' => $this->generateUrl('paypal_return_transfer', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                    ],
+                ],
+            ],
+            'purchase_units' => [[
+                'amount' => [
+                    'currency_code' => 'USD',
+                    'value' => number_format($total, 2, '.', ''),
+                    'breakdown' => [
+                        'item_total' => [
+                            'currency_code' => 'USD',
+                            'value' => number_format($total, 2, '.', ''),
+                        ],
+                    ],
+                ],
+                'items' => [[
+                    'name' => 'Traslado Iguazú',
+                    'description' => 'Servicio de traslado personalizado',
+                    'unit_amount' => [
+                        'currency_code' => 'USD',
+                        'value' => number_format($total, 2, '.', ''),
+                    ],
+                    'quantity' => '1',
+                    'sku' => 'TRANSFER' . $solicitud->getId(),
+                ]],
+            ]],
+        ];
+
+        $ch = curl_init();
+        $authorization = 'Bearer ' . $credenciales->getAccessToken();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'content-type: application/json',
+            'Authorization:' . $authorization,
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        $response = curl_exec($ch);
+        $link = '#';
+        if (!curl_errno($ch)) {
+            $decodedResponse = json_decode($response, true);
+            if ($decodedResponse !== null && isset($decodedResponse['links'])) {
+                foreach ($decodedResponse['links'] as $linkresponse) {
+                    if (($linkresponse['rel'] ?? null) === 'payer-action') {
+                        $link = $linkresponse['href'];
+                        $pago->setOrdersId($decodedResponse['id'] ?? null);
+                        $pago->setEstado($decodedResponse['status'] ?? 'PAYER_ACTION_REQUIRED');
+                        $pago->setTotal($total);
+                    }
+                }
+            }
+        }
+        curl_close($ch);
+
+        $pago->setTransferRequest($solicitud);
+        $this->em->persist($pago);
+        $this->em->flush();
+
+        return $this->render('pay_pal/transfer.html.twig', [
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'solicitud' => $solicitud,
+            'total' => $total,
+            'link' => $link,
+            'usuario' => $this->getUser(),
+        ]);
+    }
     #[Route('/paypal/booking', name: 'paypal_return_booking')]
     public function paypal_return_booking(Request $request,MailerInterface $mailer): Response
     {
@@ -181,6 +319,37 @@ class PayPalController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'pago'=>$pago,
             'linkDetalles' => $this->generateUrl('app_status_booking',['tokenId'=>$pago->getSolicitudReserva()->getLinkDetalles(),'id'=>$pago->getSolicitudReserva()->getId()]),
+            'usuario' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/paypal/transfer', name: 'paypal_return_transfer')]
+    public function paypalReturnTransfer(Request $request, MailerInterface $mailer): Response
+    {
+        $ordersId = $request->get('token');
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        if (!$ordersId) {
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        $this->comprobarPago($ordersId, $mailer);
+
+        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId' => $ordersId]);
+        if (!$pago || !$pago->getTransferRequest()) {
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $solicitud = $pago->getTransferRequest();
+
+        return $this->render('pago/returnTransfer.html.twig', [
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'pago' => $pago,
+            'solicitud' => $solicitud,
+            'trackingUrl' => $this->generateUrl('app_transfer_tracking', ['token' => $solicitud->getTokenSeguimiento()], UrlGeneratorInterface::ABSOLUTE_URL),
             'usuario' => $this->getUser(),
         ]);
     }
@@ -242,7 +411,7 @@ class PayPalController extends AbstractController
     {
         $jsonReturn = new JsonResponse(['status'=>'success'],200);;
         if(!isset($ordersId) || empty($ordersId)) $jsonReturn = new JsonResponse(['status'=>'fail'],500);
-        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId,'estado'=>'PAYER_ACTION_REQUIRED']);
+        $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['ordersId'=>$ordersId]);
         if(!isset($pago) || empty($pago)) $jsonReturn = new JsonResponse(['status'=>'fail'],500);
 
         $credenciales = $pago->getCredencialesPayPal();
@@ -319,62 +488,70 @@ class PayPalController extends AbstractController
         if($total >= $pago->getTotal() ) {
             $pago->setEstado('COMPLETED');
 
-            $pago->getSolicitudReserva()->setEstado($this->em->getRepository(EstadoReserva::class)->find(2));
-            $cantidad = count($pago->getSolicitudReserva()->getInChargeOfArray()) + 1;
+            if ($pago->getSolicitudReserva()) {
+                $pago->getSolicitudReserva()->setEstado($this->em->getRepository(EstadoReserva::class)->find(2));
+                $cantidad = count($pago->getSolicitudReserva()->getInChargeOfArray()) + 1;
 
-
-            $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
-            $booking = $pago->getSolicitudReserva()->getBooking();
-            $mensajeAdmin = sprintf(
-                '%s reservó (%d) "%s".',
-                $pago->getSolicitudReserva()->getName(),
-                $cantidad,
-                $booking->getNombre()
-            );
-
-            \App\Services\notificacion::enviarMasivo(
-                $administradores,
-                $mensajeAdmin,
-                'Nueva reserva',
-                $this->generateUrl(
-                    'app_administrador_booking',
-                    ['id' => $booking->getId()],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                )
-            );
-
-            $partnerUser = $booking?->getBookingPartner()?->getUsuario();
-            if ($partnerUser instanceof Usuario) {
-                $mensajePartner = sprintf(
-                    '%s confirmó una reserva (%d pasajeros) para "%s".',
+                $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
+                $booking = $pago->getSolicitudReserva()->getBooking();
+                $mensajeAdmin = sprintf(
+                    '%s reservó (%d) "%s".',
                     $pago->getSolicitudReserva()->getName(),
                     $cantidad,
                     $booking->getNombre()
                 );
 
                 \App\Services\notificacion::enviarMasivo(
-                    [$partnerUser],
-                    $mensajePartner,
-                    'Nueva reserva en tu servicio',
+                    $administradores,
+                    $mensajeAdmin,
+                    'Nueva reserva',
                     $this->generateUrl(
-                        'app_booking_partner_service_reservations',
+                        'app_administrador_booking',
                         ['id' => $booking->getId()],
                         UrlGeneratorInterface::ABSOLUTE_URL
                     )
                 );
+
+                $partnerUser = $booking?->getBookingPartner()?->getUsuario();
+                if ($partnerUser instanceof Usuario) {
+                    $mensajePartner = sprintf(
+                        '%s confirmó una reserva (%d pasajeros) para "%s".',
+                        $pago->getSolicitudReserva()->getName(),
+                        $cantidad,
+                        $booking->getNombre()
+                    );
+
+                    \App\Services\notificacion::enviarMasivo(
+                        [$partnerUser],
+                        $mensajePartner,
+                        'Nueva reserva en tu servicio',
+                        $this->generateUrl(
+                            'app_booking_partner_service_reservations',
+                            ['id' => $booking->getId()],
+                            UrlGeneratorInterface::ABSOLUTE_URL
+                        )
+                    );
+                }
+
+                mailerServer::enviarPagoAprobadoReserva(
+                    $this->em,
+                    $mailer,
+                    $pago->getSolicitudReserva(),
+                    $this->generateUrl(
+                        'app_status_booking',
+                        ['tokenId' => $pago->getSolicitudReserva()->getLinkDetalles(), 'id' => $pago->getSolicitudReserva()->getId()],
+                        UrlGeneratorInterface::ABSOLUTE_URL
+                    )
+                );
+                $this->em->persist($pago->getSolicitudReserva());
+            } elseif ($pago->getTransferRequest()) {
+                $transfer = $pago->getTransferRequest();
+                if ($transfer->getEstado() === TransferRequest::ESTADO_CANCELADO) {
+                    $transfer->setEstado(TransferRequest::ESTADO_PENDIENTE);
+                }
+                $this->em->persist($transfer);
             }
 
-            mailerServer::enviarPagoAprobadoReserva(
-                $this->em,
-                $mailer,
-                $pago->getSolicitudReserva(),
-                $this->generateUrl(
-                    'app_status_booking',
-                    ['tokenId' => $pago->getSolicitudReserva()->getLinkDetalles(), 'id' => $pago->getSolicitudReserva()->getId()],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                )
-            );
-            $this->em->persist($pago->getSolicitudReserva());
             $this->em->persist($pago);
             $this->em->flush();
         }

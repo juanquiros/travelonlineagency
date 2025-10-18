@@ -1,0 +1,62 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Destinos de traslado{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ editing ? 'Editar destino' : 'Nuevo destino' }}</h2>
+                {{ form_start(form) }}
+                {{ form_row(form.nombre) }}
+                {{ form_row(form.descripcion) }}
+                {{ form_row(form.tarifaBase) }}
+                {{ form_row(form.activo) }}
+                <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear destino' }}</button>
+                {{ form_end(form) }}
+                {% if editing %}
+                    <a class="btn btn-link mt-2" href="{{ path('app_admin_transfer_destinations') }}">Crear un nuevo destino</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Listado</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tarifa base</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for destino in destinos %}
+                        <tr>
+                            <td>{{ destino.nombre }}</td>
+                            <td>${{ destino.tarifaBase }}</td>
+                            <td>
+                                {% if destino.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_destination_edit', {id: destino.id}) }}">Editar</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Aún no hay destinos configurados.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

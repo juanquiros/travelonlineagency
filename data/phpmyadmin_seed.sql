@@ -8,6 +8,24 @@ DELETE FROM pay_pal_pago;
 ALTER TABLE pay_pal_pago AUTO_INCREMENT = 1;
 DELETE FROM mercado_pago_pago;
 ALTER TABLE mercado_pago_pago AUTO_INCREMENT = 1;
+DELETE FROM transfer_assignment;
+ALTER TABLE transfer_assignment AUTO_INCREMENT = 1;
+DELETE FROM transfer_request_field_value;
+ALTER TABLE transfer_request_field_value AUTO_INCREMENT = 1;
+DELETE FROM transfer_request_destination;
+ALTER TABLE transfer_request_destination AUTO_INCREMENT = 1;
+DELETE FROM transfer_request;
+ALTER TABLE transfer_request AUTO_INCREMENT = 1;
+DELETE FROM transfer_combo_destination;
+ALTER TABLE transfer_combo_destination AUTO_INCREMENT = 1;
+DELETE FROM transfer_combo;
+ALTER TABLE transfer_combo AUTO_INCREMENT = 1;
+DELETE FROM transfer_destination;
+ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
+DELETE FROM transfer_form_field;
+ALTER TABLE transfer_form_field AUTO_INCREMENT = 1;
+DELETE FROM driver_profile;
+ALTER TABLE driver_profile AUTO_INCREMENT = 1;
 DELETE FROM solicitud_reserva;
 ALTER TABLE solicitud_reserva AUTO_INCREMENT = 1;
 DELETE FROM traduccion_estado;
@@ -173,7 +191,8 @@ INSERT INTO usuario (id, email, roles, password, nombre) VALUES
   (1, 'admin@travelonlineagency.test', '["ROLE_ADMIN"]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Admin General'),
   (2, 'sofia.partner@test.com', '["ROLE_PARTNER"]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Sofía Partner'),
   (3, 'martin.partner@test.com', '[]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Martín Pending'),
-  (4, 'cliente@travelonlineagency.test', '[]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Carla Cliente');
+  (4, 'cliente@travelonlineagency.test', '[]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Carla Cliente'),
+  (5, 'driver@travelonlineagency.test', '["ROLE_DRIVER"]', '$2y$12$VBCo/LlELFHPMDJZpchcKO6ArWDWXvEtjOtV4qcsbzLfUMfEg3xRm', 'Diego Chofer');
 
 -- Suscripciones push registradas
 INSERT INTO push_end_point (id, usuario_id, suscripcion, created_at) VALUES
@@ -184,6 +203,14 @@ INSERT INTO push_end_point (id, usuario_id, suscripcion, created_at) VALUES
 INSERT INTO booking_partner (id, habilitado, usuario_id, comision_plataforma, mercado_pago_cuenta_id) VALUES
   (1, 1, 2, 20.0, 2),
   (2, 0, 3, NULL, NULL);
+
+-- Choferes registrados
+INSERT INTO driver_profile (
+  id, usuario_id, nombre_completo, documento, telefono, patente, modelo_vehiculo,
+  foto_vehiculo, aprobado, notas, creado_en, actualizado_en
+) VALUES
+  (1, 5, 'Diego Chofer', '32.123.456', '+54 9 3757 111222', 'AB123CD', 'Toyota Corolla 2022',
+   'driver-diego.jpg', 1, 'Disponible para traslados aeropuerto-hotel.', '2024-11-20 09:00:00', '2024-11-20 09:00:00');
 
 -- Servicios disponibles
 INSERT INTO booking (
@@ -302,7 +329,7 @@ INSERT INTO solicitud_reserva (
    1,
    2
   ),
-  (3,
+(3,
    'María',
    'Souza',
    'maria@example.com',
@@ -317,6 +344,57 @@ INSERT INTO solicitud_reserva (
    2,
    3
   );
+
+-- Catálogo de destinos de traslado
+INSERT INTO transfer_destination (id, nombre, descripcion, tarifa_base, activo, metadata) VALUES
+  (1, 'Aeropuerto Internacional Cataratas', 'Punto de partida habitual para los traslados.', 25.00, 1, '{"tipo":"aeropuerto"}'),
+  (2, 'Hotel Gran Meliá Iguazú', 'Ingreso principal sobre la Ruta 101.', 18.50, 1, '{"tipo":"hotel"}'),
+  (3, 'Hito Tres Fronteras', 'Mirador panorámico con vista a los tres países.', 15.00, 1, '{"tipo":"punto_turistico"}');
+
+-- Combos preconfigurados por el administrador
+INSERT INTO transfer_combo (id, nombre, descripcion, precio, activo, imagen_portada) VALUES
+  (1, 'Aeropuerto a Hotel ida', 'Servicio directo desde el aeropuerto hasta el hotel seleccionado.', 40.00, 1, 'combo-airport.jpg'),
+  (2, 'Aeropuerto + City Tour', 'Traslado combinado al hotel y visita al Hito Tres Fronteras.', 55.00, 1, 'combo-city.jpg');
+
+INSERT INTO transfer_combo_destination (id, combo_id, destino_id, posicion) VALUES
+  (1, 1, 1, 1),
+  (2, 1, 2, 2),
+  (3, 2, 1, 1),
+  (4, 2, 3, 2);
+
+-- Campos adicionales configurables
+INSERT INTO transfer_form_field (id, clave, etiqueta, tipo, requerido, opciones, orden) VALUES
+  (1, 'vuelo', 'Número de vuelo', 'text', 1, NULL, 1),
+  (2, 'pasajeros', 'Cantidad de pasajeros', 'number', 0, NULL, 2);
+
+-- Solicitudes de traslado de ejemplo
+INSERT INTO transfer_request (
+  id, combo_id, usuario_id, tipo, precio_total, moneda,
+  nombre_pasajero, email_pasajero, telefono_pasajero,
+  arribo, salida, estado, datos_extra, token_seguimiento,
+  notas_cliente, creado_en, actualizado_en
+) VALUES
+  (1, 1, 4, 'combo', 40.00, 'ARS', 'Carla Cliente', 'carla@example.com', '+54 9 3757 333444',
+   '2024-12-01 14:30:00', '2024-12-05 11:00:00', 'en_curso', '{"vuelo":"AR1820"}', 'TRK123ABCDEF', 'Llega con equipaje voluminoso.',
+   '2024-11-20 08:30:00', '2024-11-20 10:00:00'),
+  (2, NULL, 4, 'custom', 40.00, 'ARS', 'Lucas Pereyra', 'lucas@example.com', '+54 9 3757 555666',
+   '2024-12-10 09:00:00', '2024-12-12 18:00:00', 'pendiente', '{"pasajeros":"3"}', 'TRK456DEFABC', 'Agregar silla para niño.',
+   '2024-11-21 09:45:00', '2024-11-21 09:45:00');
+
+INSERT INTO transfer_request_destination (id, solicitud_id, destino_id, posicion) VALUES
+  (1, 1, 1, 1),
+  (2, 1, 2, 2),
+  (3, 2, 1, 1),
+  (4, 2, 3, 2);
+
+INSERT INTO transfer_request_field_value (id, solicitud_id, campo_id, valor) VALUES
+  (1, 1, 1, 'AR1820'),
+  (2, 2, 2, '3');
+
+INSERT INTO transfer_assignment (
+  id, solicitud_id, chofer_id, estado, parada_actual, notas, creado_en, actualizado_en, finalizado_en
+) VALUES
+  (1, 1, 1, 'en_curso', 1, 'Pasajero ya abordó en el aeropuerto.', '2024-11-20 09:10:00', '2024-11-20 10:05:00', NULL);
 
 -- Pagos de Mercado Pago asociados
 INSERT INTO mercado_pago_pago (
@@ -360,8 +438,35 @@ INSERT INTO mercado_pago_pago (
    '[{"type":"application_fee","amount":15.00}]',
    15.00,
    '2024-11-20 10:40:00',
-   '2024-11-20 10:40:00',
-   2
+  '2024-11-20 10:40:00',
+  2
+  );
+
+INSERT INTO mercado_pago_pago (
+  id, payment_id, preference_id, credenciales_mercado_pago_id, status, collector_id,
+  payer, transaction_amount, transaction_amount_refunded, payment_method_id,
+  payment_type_id, card, net_received_amount, fee_details, application_fee,
+  created_at, updated_at, solicitud_reserva_id, transfer_request_id
+) VALUES
+  (3,
+   778899001155,
+   'PREF-TR-003',
+   1,
+   'approved',
+   '9999999999999999',
+   '{"email":"carla@example.com","first_name":"Carla"}',
+   40.00,
+   0.00,
+   'visa',
+   'credit_card',
+   NULL,
+   40.00,
+   '[]',
+   NULL,
+   '2024-11-20 10:15:00',
+   '2024-11-20 10:15:00',
+   NULL,
+   1
   );
 
 -- Pagos de PayPal y sus detalles
@@ -377,6 +482,21 @@ INSERT INTO pay_pal_pago (
    '2024-11-18 09:10:00',
    'COMPLETED',
    210.50
+  );
+
+INSERT INTO pay_pal_pago (
+  id, orders_id, solicitud_reserva_id, transfer_request_id, credenciales_pay_pal_id,
+  created_at, updated_at, estado, total
+) VALUES
+  (2,
+   'ORDER-TRANSFER-001',
+   NULL,
+   2,
+   1,
+   '2024-11-21 10:00:00',
+   '2024-11-21 10:05:00',
+   'PAYER_ACTION_REQUIRED',
+   40.00
   );
 
 INSERT INTO detalle_pago_pay_pal (

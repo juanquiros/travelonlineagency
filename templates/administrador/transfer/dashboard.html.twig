@@ -1,0 +1,73 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Panel - Traslados{% endblock %}
+
+{% block body %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-4">Resumen de traslados</h1>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="p-3 bg-primary text-white rounded">
+                    <div class="fw-bold">Solicitudes totales</div>
+                    <div class="display-6">{{ stats.totalSolicitudes }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-warning text-dark rounded">
+                    <div class="fw-bold">Pendientes</div>
+                    <div class="display-6">{{ stats.porEstado.pendientes }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-info text-white rounded">
+                    <div class="fw-bold">En curso</div>
+                    <div class="display-6">{{ stats.porEstado.en_curso }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-success text-white rounded">
+                    <div class="fw-bold">Completados</div>
+                    <div class="display-6">{{ stats.porEstado.completados }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-4 mt-1">
+            <div class="col-md-3">
+                <div class="p-3 bg-secondary text-white rounded">
+                    <div class="fw-bold">Cancelados</div>
+                    <div class="display-6">{{ stats.porEstado.cancelados }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light border rounded">
+                    <div class="fw-bold">Destinos activos</div>
+                    <div class="display-6">{{ stats.destinos }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light border rounded">
+                    <div class="fw-bold">Combos configurados</div>
+                    <div class="display-6">{{ stats.combos }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light border rounded">
+                    <div class="fw-bold">Choferes</div>
+                    <div class="small text-muted">Pendientes</div>
+                    <div class="h5 mb-1">{{ stats.choferesPendientes }}</div>
+                    <div class="small text-muted">Habilitados</div>
+                    <div class="h5">{{ stats.choferesActivos }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-4">
+    <a class="btn btn-primary" href="{{ path('app_admin_transfer_destinations') }}">Gestionar destinos</a>
+    <a class="btn btn-primary" href="{{ path('app_admin_transfer_combos') }}">Gestionar combos</a>
+    <a class="btn btn-primary" href="{{ path('app_admin_transfer_fields') }}">Formulario dinámico</a>
+    <a class="btn btn-outline-secondary" href="{{ path('app_admin_transfer_requests') }}">Ver solicitudes</a>
+    <a class="btn btn-outline-secondary" href="{{ path('app_admin_drivers') }}">Panel de choferes</a>
+</div>
+{% endblock %}

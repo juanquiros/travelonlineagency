@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pago de traslado - PayPal{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm text-center">
+                <div class="card-header">Pago de traslado</div>
+                <div class="card-body">
+                    <h2 class="h5">{{ solicitud.nombrePasajero }}</h2>
+                    <p class="text-muted">Completa el pago para confirmar tu traslado. Serás redirigido a PayPal para finalizar.</p>
+                    <a class="btn btn-primary" href="{{ link }}" target="_blank">Ir a PayPal</a>
+                </div>
+                <div class="card-footer">
+                    USD {{ total|number_format(2, '.', ',') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

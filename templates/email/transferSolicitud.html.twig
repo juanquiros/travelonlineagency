@@ -1,0 +1,6 @@
+{% set plataformaNombre = plataforma ? plataforma.nombre : 'Travel Online Agency' %}
+<p>Hola {{ solicitud.nombrePasajero }},</p>
+<p>Recibimos tu solicitud de traslado. Para revisar los detalles y completar el pago podés usar el siguiente enlace:</p>
+<p><a href="{{ trackingUrl }}">Ver detalles del traslado</a></p>
+<p>El código de seguimiento es <strong>{{ solicitud.tokenSeguimiento }}</strong>. Podés compartirlo con tu chofer para que visualice el itinerario.</p>
+<p>¡Gracias por confiar en {{ plataformaNombre }}!</p>

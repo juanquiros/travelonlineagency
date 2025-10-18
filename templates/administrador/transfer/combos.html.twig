@@ -1,0 +1,68 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Combos de traslado{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ editing ? 'Editar combo' : 'Nuevo combo' }}</h2>
+                {{ form_start(form) }}
+                {{ form_row(form.nombre) }}
+                {{ form_row(form.descripcion) }}
+                {{ form_row(form.precio) }}
+                {{ form_row(form.imagenPortada) }}
+                {{ form_row(form.destinos) }}
+                {{ form_row(form.activo) }}
+                <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear combo' }}</button>
+                {{ form_end(form) }}
+                {% if editing %}
+                    <a class="btn btn-link mt-2" href="{{ path('app_admin_transfer_combos') }}">Crear un nuevo combo</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Listado</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for combo in combos %}
+                        <tr>
+                            <td>{{ combo.nombre }}</td>
+                            <td>${{ combo.precio }}</td>
+                            <td>
+                                {% if combo.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Oculto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_combo_edit', {id: combo.id}) }}">Editar</a>
+                                <form method="post" action="{{ path('app_admin_transfer_combo_toggle', {id: combo.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_combo_' ~ combo.id) }}">
+                                    <button class="btn btn-sm btn-outline-secondary" type="submit">{{ combo.activo ? 'Ocultar' : 'Mostrar' }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Sin combos configurados.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
