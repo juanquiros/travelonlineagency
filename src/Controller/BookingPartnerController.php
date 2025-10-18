@@ -599,8 +599,10 @@ final class BookingPartnerController extends AbstractController
         $quality = $file->getSize() > 1536 ? 70 : 100;
 
         try {
+            $targetDirectory = $this->resolveBookingImageDirectory();
+
             if ($mime === 'image/png' || $mime === 'image/ico' || $mime === 'image/x-icon' || $mime === 'image/vnd.microsoft.icon') {
-                $file->move($this->getParameter('img_booking'), $newFilename);
+                $file->move($targetDirectory, $newFilename);
             } else {
                 $resource = match ($mime) {
                     'image/jpeg' => imagecreatefromjpeg($file->getPathname()),
@@ -608,13 +610,43 @@ final class BookingPartnerController extends AbstractController
                     default => imagecreatefromjpeg($file->getPathname()),
                 };
 
-                imagejpeg($resource, $this->getParameter('img_booking') . '/' . $newFilename, $quality);
+                if (!$resource instanceof \GdImage) {
+                    throw new FileException('No se pudo procesar la imagen subida.');
+                }
+
+                $outputPath = $targetDirectory . DIRECTORY_SEPARATOR . $newFilename;
+
+                if (!imagejpeg($resource, $outputPath, $quality)) {
+                    throw new FileException(sprintf('No se pudo guardar la imagen en "%s".', $outputPath));
+                }
+
+                imagedestroy($resource);
             }
-        } catch (FileException $exception) {
+        } catch (\Throwable $exception) {
             return ['filename' => '', 'upload' => false];
         }
 
         return ['filename' => $newFilename, 'upload' => true];
+    }
+
+    private function resolveBookingImageDirectory(): string
+    {
+        $rawPath = (string) $this->getParameter('img_booking');
+
+        if ($rawPath === '') {
+            throw new FileException('La ruta de imágenes de servicios no está configurada.');
+        }
+
+        $normalised = preg_replace('#[\\\\/]+#', DIRECTORY_SEPARATOR, $rawPath) ?? $rawPath;
+        $normalised = rtrim($normalised, DIRECTORY_SEPARATOR);
+
+        if (!is_dir($normalised)) {
+            if (!@mkdir($normalised, 0775, true) && !is_dir($normalised)) {
+                throw new FileException(sprintf('No se pudo crear el directorio "%s".', $normalised));
+            }
+        }
+
+        return $normalised;
     }
 
     private function partnerNavigation(string $active): array
