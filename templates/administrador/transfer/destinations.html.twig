@@ -35,6 +35,8 @@
                     <div class="small text-muted mt-2" data-transfer-destination-map-target="output">
                         Hacé clic en el mapa para seleccionar un punto de encuentro.
                     </div>
+                    {{ form_widget(form.latitud) }}
+                    {{ form_widget(form.longitud) }}
                 </div>
                 {{ form_row(form.activo) }}
                 <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear destino' }}</button>
