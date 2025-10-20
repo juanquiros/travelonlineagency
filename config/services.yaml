@@ -33,5 +33,6 @@ services:
     App\Services\SnappyBinaryResolver:
         arguments:
             $projectDir: '%kernel.project_dir%'
+            $executableFinder: '@Symfony\\Component\\Process\\ExecutableFinder'
             $pdfBinaryOverride: '%env(string:WKHTMLTOPDF_PATH)%'
             $imageBinaryOverride: '%env(string:WKHTMLTOIMAGE_PATH)%'

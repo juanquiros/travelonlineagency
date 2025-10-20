@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Symfony\Component\Process\ExecutableFinder;
+
 class SnappyBinaryResolver
 {
     private const WINDOWS_PDF = '\\vendor\\wemersonjanuario\\wkhtmltopdf-windows\\bin\\64bit\\wkhtmltopdf.exe';
@@ -19,6 +21,7 @@ class SnappyBinaryResolver
 
     public function __construct(
         private readonly string $projectDir,
+        private readonly ExecutableFinder $executableFinder,
         private readonly ?string $pdfBinaryOverride = null,
         private readonly ?string $imageBinaryOverride = null,
     ) {
@@ -57,12 +60,25 @@ class SnappyBinaryResolver
 
     private function resolveUnixBinary(array $candidates, string $binaryName): string
     {
+        $detected = $this->executableFinder->find($binaryName);
+        if ($this->isUsableBinary($detected)) {
+            return $detected;
+        }
+
         foreach ($candidates as $candidate) {
-            if (@is_executable($candidate)) {
+            if ($this->isUsableBinary($candidate)) {
                 return $candidate;
             }
         }
 
         return $binaryName;
+    }
+
+    private function isUsableBinary(?string $path): bool
+    {
+        return is_string($path)
+            && $path !== ''
+            && file_exists($path)
+            && @is_executable($path);
     }
 }
