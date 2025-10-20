@@ -67,7 +67,7 @@
                     <h2 class="h6">Código de seguimiento</h2>
                     <p class="fw-bold">{{ solicitud.tokenSeguimiento }}</p>
                     <div class="d-flex justify-content-center mb-3">
-                        {{ qr_code(trackingUrl, { size: 180 }) }}
+                        <img src="{{ qr_code_data_uri(trackingUrl, { size: 180 }) }}" alt="Código QR de seguimiento" class="img-fluid" style="max-width: 180px;" />
                     </div>
                     <p class="small text-muted">Mostrá este código al chofer para que acceda rápidamente al detalle del viaje.</p>
                     <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_transfer_pdf', {token: solicitud.tokenSeguimiento}) }}" target="_blank">Descargar PDF</a>
