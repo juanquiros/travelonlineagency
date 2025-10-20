@@ -54,6 +54,9 @@ class MercadoPagoPago
     #[ORM\Column(type: Types::TEXT)]
     private ?string $feeDetails = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?float $applicationFee = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -62,6 +65,9 @@ class MercadoPagoPago
 
     #[ORM\ManyToOne(inversedBy: 'pagosMercadoPago')]
     private ?SolicitudReserva $solicitudReserva = null;
+
+    #[ORM\ManyToOne]
+    private ?TransferRequest $transferRequest = null;
 
 
 
@@ -241,6 +247,19 @@ class MercadoPagoPago
         return $this;
     }
 
+    public function getApplicationFee(): ?float
+    {
+        return $this->applicationFee;
+    }
+
+    public function setApplicationFee(?float $applicationFee): static
+    {
+        $this->applicationFee = $applicationFee;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
@@ -273,6 +292,18 @@ class MercadoPagoPago
     public function setSolicitudReserva(?SolicitudReserva $solicitudReserva): static
     {
         $this->solicitudReserva = $solicitudReserva;
+
+        return $this;
+    }
+
+    public function getTransferRequest(): ?TransferRequest
+    {
+        return $this->transferRequest;
+    }
+
+    public function setTransferRequest(?TransferRequest $transferRequest): static
+    {
+        $this->transferRequest = $transferRequest;
 
         return $this;
     }

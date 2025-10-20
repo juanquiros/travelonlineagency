@@ -44,6 +44,9 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToOne(mappedBy: 'Usuario', cascade: ['persist', 'remove'])]
     private ?BookingPartner $bPartner = null;
 
+    #[ORM\OneToOne(mappedBy: 'usuario', cascade: ['persist', 'remove'])]
+    private ?DriverProfile $driverProfile = null;
+
 
     public function __construct()
     {
@@ -179,6 +182,22 @@ class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         $this->bPartner = $bPartner;
+
+        return $this;
+    }
+
+    public function getDriverProfile(): ?DriverProfile
+    {
+        return $this->driverProfile;
+    }
+
+    public function setDriverProfile(DriverProfile $driverProfile): static
+    {
+        if ($driverProfile->getUsuario() !== $this) {
+            $driverProfile->setUsuario($this);
+        }
+
+        $this->driverProfile = $driverProfile;
 
         return $this;
     }

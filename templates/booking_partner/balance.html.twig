@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Balance y pagos{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        {% include 'booking_partner/_navigation.html.twig' with {navigation: navigation|default({})} %}
+
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h1 class="h3 mb-1">Balance de Mercado Pago</h1>
+                        <p class="text-muted mb-0">Consultá el estado de tu cuenta y administrá la conexión con la plataforma.</p>
+                    </div>
+                    <div>
+                        {% if mercadoPagoConectado %}
+                            <span class="badge text-bg-success">Cuenta conectada</span>
+                        {% else %}
+                            <span class="badge text-bg-secondary">Cuenta desconectada</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% for message in app.flashes('success') %}
+                    <div class="alert alert-success" role="alert">{{ message }}</div>
+                {% endfor %}
+                {% for message in app.flashes('error') %}
+                    <div class="alert alert-danger" role="alert">{{ message }}</div>
+                {% endfor %}
+
+                {% if not mercadoPagoConectado %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">Conectá tu cuenta de Mercado Pago</h2>
+                                <p class="text-muted mb-0">Necesitás vincularte para que los pagos de tus reservas se acrediten automáticamente en tu cuenta.</p>
+                            </div>
+                            <div>
+                                {% if mercadoPagoPuedeConectar %}
+                                    <a class="btn btn-primary" href="{{ path('app_booking_partner_mp_connect') }}">Conectar Mercado Pago</a>
+                                {% else %}
+                                    <span class="text-muted small">El administrador debe configurar las credenciales de la plataforma.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    {% set perfil = mercadoPagoPerfil ?? {} %}
+                    {% set cuenta = mercadoPagoCuenta ?? null %}
+                    {% set disponible = mercadoPagoBalance.available_balance ?? {} %}
+                    {% set pendiente = mercadoPagoBalance.pending_balance ?? {} %}
+                    {% set total = mercadoPagoBalance.total_balance ?? {} %}
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">Cuenta conectada</h2>
+                                <p class="text-muted mb-0 small">
+                                    {{ perfil.nickname ?? cuenta.nickname ?? 'Cuenta de Mercado Pago' }} · {{ perfil.email ?? cuenta.email ?? 'Email no informado' }}
+                                </p>
+                            </div>
+                            <form method="post" action="{{ path('app_booking_partner_mp_disconnect') }}" onsubmit="return confirm('¿Seguro que querés desconectar Mercado Pago?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('partner_mp_disconnect') }}">
+                                <button type="submit" class="btn btn-outline-danger">Desconectar cuenta</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h3 class="h6 text-muted text-uppercase">Saldo disponible</h3>
+                                    <div class="fs-3 fw-semibold">{{ disponible.amount is defined ? disponible.amount|number_format(2, ',', '.') : '0,00' }} {{ disponible.currency_id ?? 'ARS' }}</div>
+                                    <p class="text-muted small mb-0">Listo para retirar o usar en pagos.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h3 class="h6 text-muted text-uppercase">Saldo pendiente</h3>
+                                    <div class="fs-3 fw-semibold">{{ pendiente.amount is defined ? pendiente.amount|number_format(2, ',', '.') : '0,00' }} {{ pendiente.currency_id ?? 'ARS' }}</div>
+                                    <p class="text-muted small mb-0">En proceso de liberación por Mercado Pago.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h3 class="h6 text-muted text-uppercase">Balance total</h3>
+                                    <div class="fs-3 fw-semibold">{{ total.amount is defined ? total.amount|number_format(2, ',', '.') : '0,00' }} {{ total.currency_id ?? 'ARS' }}</div>
+                                    <p class="text-muted small mb-0">Suma de montos disponibles y pendientes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        Recordá que cada pago acreditado se ve reflejado aquí. Podés revisar el detalle de las reservas confirmadas desde la pestaña <strong>Reservas</strong> del servicio correspondiente.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -15,14 +15,24 @@
         <div class="col-md-4 text-center">
             <h1>Mercadopago</h1>
             <div id="wallet_container"></div>
+            {% if isSandbox %}
+                <div class="alert alert-info mt-3" role="alert">
+                    Estás operando en el modo <strong>Sandbox</strong> de Mercado Pago. Utilizá credenciales y tarjetas de prueba.
+                </div>
+            {% endif %}
         </div>
         <div class="col-md-4"></div>
     </div>
 
     <script>
-        const mp = new MercadoPago("{{ publicKey }}");
-        const bricksBuilder = mp.bricks();
-        mp.bricks().create("wallet", "wallet_container", {
+        const mpOptions = {
+            locale: "{{ idiomaPlataforma.codigo ?? 'es-AR' }}"
+        };
+        {% if isSandbox %}
+        mpOptions.advancedFraudPrevention = false;
+        {% endif %}
+        const mp = new MercadoPago("{{ publicKey }}", mpOptions);
+        const walletOptions = {
             initialization: {
                 preferenceId: "{{ id }}",
             },
@@ -31,6 +41,10 @@
                     valueProp: 'smart_option',
                 },
             },
-        });
+        };
+        {% if isSandbox %}
+        walletOptions.onReady = () => console.info('Mercado Pago Wallet en modo sandbox');
+        {% endif %}
+        mp.bricks().create("wallet", "wallet_container", walletOptions);
     </script>
 {% endblock %}

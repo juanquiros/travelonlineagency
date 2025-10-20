@@ -7,6 +7,8 @@ use App\Entity\EstadoReserva;
 use App\Entity\PayPalPago;
 use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferCombo;
+use App\Entity\TransferDestination;
 use App\Entity\TraduccionPlataforma;
 use App\Form\SolicitudReservaType;
 use App\Services\LanguageService;
@@ -39,6 +41,8 @@ class InicioController extends AbstractController
         $bookings = $this->em->getRepository(Booking::class)->obtenerVálidos(new \DateTime());
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $usuario = $this->getUser();
+        $transferCombos = $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
+        $transferDestinations = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
 
 
         $cfg_bookings['titulo'] = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['key_name'=>'app_inicio:bookings:titulo','lenguaje'=>$idioma->getId()]);
@@ -66,7 +70,10 @@ class InicioController extends AbstractController
             'now'=> new \DateTime(),
             'cfg_bookings'=>$cfg_bookings,
             'cfg_traslados'=>$cfg_traslados,
-            'usuario'=>$usuario
+            'usuario'=>$usuario,
+            'transferCombos'=>$transferCombos,
+            'transferDestinations'=>$transferDestinations,
+            'customTransfersEnabled' => (bool) $plataforma->isTrasladosODLibres(),
         ]);
     }
     #[Route('/reserva/{id}', name: 'app_reserva')]
@@ -215,7 +222,8 @@ class InicioController extends AbstractController
             'fechas'=>$fechasDatetime,
             'formulario'=>$formulario,
             'plataforma'=>$plataforma,
-            'traduccion'=>$reserva_pagina
+            'traduccion' => $reserva_pagina,
+            'usuario' => $this->getUser(),
         ]);
     }
     private function comprobarFormularioRequerido($datosdeusuario,$formulario):bool
@@ -276,7 +284,8 @@ class InicioController extends AbstractController
             'idiomas'=>$idiomas,
             'plataforma'=>$plataforma,
             'idiomaPlataforma'=>$idioma,
-            'render'=>$render
+            'render' => $render,
+            'usuario' => $this->getUser(),
         ]);
     }
     #[Route('/buscar/status/booking', name: 'app_status_booking_search', methods: ['POST'], options: ['expose'=>true])]
@@ -308,7 +317,8 @@ class InicioController extends AbstractController
             'controller_name' => 'InicioController',
             'idiomas'=>$idiomas,
             'plataforma'=>$plataforma,
-            'idiomaPlataforma'=>$idioma
+            'idiomaPlataforma' => $idioma,
+            'usuario' => $this->getUser(),
         ]);
     }
 
