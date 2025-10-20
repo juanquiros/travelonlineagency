@@ -1,9 +1,89 @@
-const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-const LEAFLET_JS_INTEGRITY = 'sha256-o9N1j7kGStIo3h4nLz96Ftx9qfFz8j6DmyFfZ7XALHU=';
-const LEAFLET_CSS_INTEGRITY = 'sha256-sA+4psu6Y8VJbR8iicsDkbxU7G3ohoN6LKa5YShdP0M=';
+const SOURCES = [
+    {
+        js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+        css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+        jsIntegrity: 'sha256-o9N1j7kGStIo3h4nLz96Ftx9qfFz8j6DmyFfZ7XALHU=',
+        cssIntegrity: 'sha256-sA+4psu6Y8VJbR8iicsDkbxU7G3ohoN6LKa5YShdP0M=',
+    },
+    {
+        js: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+        css: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',
+    },
+];
 
 let loader = null;
+
+function appendStylesheet({ css, cssIntegrity }) {
+    if (!css) {
+        return null;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = css;
+    link.dataset.leafletLoader = 'true';
+
+    if (cssIntegrity) {
+        link.integrity = cssIntegrity;
+        link.crossOrigin = 'anonymous';
+        link.referrerPolicy = 'no-referrer';
+    }
+
+    document.head.appendChild(link);
+    return link;
+}
+
+function appendScript({ js, jsIntegrity }) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = js;
+        script.dataset.leafletLoader = 'true';
+        script.async = true;
+
+        if (jsIntegrity) {
+            script.integrity = jsIntegrity;
+            script.crossOrigin = 'anonymous';
+            script.referrerPolicy = 'no-referrer';
+        }
+
+        script.addEventListener('load', () => {
+            if (window.L) {
+                resolve(window.L);
+            } else {
+                reject(new Error('Leaflet global not available after load'));
+            }
+        });
+
+        script.addEventListener('error', () => {
+            reject(new Error('Leaflet failed to load'));
+        });
+
+        document.head.appendChild(script);
+    });
+}
+
+function cleanupTempAssets() {
+    document.querySelectorAll('script[data-leaflet-loader="true"], link[data-leaflet-loader="true"]').forEach((element) => {
+        element.remove();
+    });
+}
+
+async function loadFromSources(sources) {
+    for (const source of sources) {
+        try {
+            appendStylesheet(source);
+            const leaflet = await appendScript(source);
+            return leaflet;
+        } catch (error) {
+            cleanupTempAssets();
+            // Try the next source
+            // eslint-disable-next-line no-console
+            console.warn(`No se pudo cargar Leaflet desde ${source.js}`, error);
+        }
+    }
+
+    throw new Error('Leaflet failed to load from any source');
+}
 
 export async function loadLeaflet() {
     if (typeof window === 'undefined') {
@@ -15,30 +95,9 @@ export async function loadLeaflet() {
     }
 
     if (!loader) {
-        loader = new Promise((resolve, reject) => {
-            const css = document.createElement('link');
-            css.rel = 'stylesheet';
-            css.href = LEAFLET_CSS;
-            css.integrity = LEAFLET_CSS_INTEGRITY;
-            css.crossOrigin = 'anonymous';
-            document.head.appendChild(css);
-
-            const script = document.createElement('script');
-            script.src = LEAFLET_JS;
-            script.integrity = LEAFLET_JS_INTEGRITY;
-            script.crossOrigin = 'anonymous';
-            script.defer = true;
-            script.addEventListener('load', () => {
-                if (window.L) {
-                    resolve(window.L);
-                } else {
-                    reject(new Error('Leaflet global not available after load'));
-                }
-            });
-            script.addEventListener('error', () => {
-                reject(new Error('Leaflet failed to load'));
-            });
-            document.head.appendChild(script);
+        loader = loadFromSources(SOURCES).catch((error) => {
+            loader = null;
+            throw error;
         });
     }
 
