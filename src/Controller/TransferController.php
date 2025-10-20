@@ -36,9 +36,10 @@ final class TransferController extends AbstractController
         $combos = $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
         $destinos = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
         $campos = $this->em->getRepository(TransferFormField::class)->findForForm();
+        $customEnabled = (bool) $plataforma->isTrasladosODLibres();
 
         if ($request->isMethod('POST')) {
-            $solicitud = $this->crearSolicitud($request, $campos);
+            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled);
             if ($solicitud instanceof TransferRequest) {
                 $this->em->persist($solicitud);
                 $this->em->flush();
@@ -63,6 +64,7 @@ final class TransferController extends AbstractController
             'combos' => $combos,
             'destinos' => $destinos,
             'campos' => $campos,
+            'customEnabled' => $customEnabled,
         ]);
     }
 
@@ -124,12 +126,18 @@ final class TransferController extends AbstractController
         ]);
     }
 
-    private function crearSolicitud(Request $request, array $campos): ?TransferRequest
+    private function crearSolicitud(Request $request, array $campos, bool $customEnabled): ?TransferRequest
     {
         $tipo = $request->request->get('tipo', 'combo');
         $combo = null;
         $destinosSeleccionados = [];
         $errores = [];
+
+        if ($tipo === 'custom' && !$customEnabled) {
+            $this->addFlash('error', 'Los traslados personalizados no están disponibles en este momento.');
+
+            return null;
+        }
 
         if ($tipo === 'combo') {
             $comboId = (int) $request->request->get('combo_id');

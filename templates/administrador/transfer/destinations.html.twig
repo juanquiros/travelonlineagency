@@ -12,6 +12,30 @@
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.descripcion) }}
                 {{ form_row(form.tarifaBase) }}
+                <div class="mb-3">
+                    <label class="form-label">Imagen de portada</label>
+                    {{ form_widget(form.imagenPortadaFile, {'attr': {'class': 'form-control'}}) }}
+                    {{ form_errors(form.imagenPortadaFile) }}
+                    <div class="form-text">Se usará en el sitio público para destacar el destino.</div>
+                    {% if editing and editingDestination is defined and editingDestination.imagenPortada %}
+                        <div class="mt-3">
+                            <span class="d-block text-muted small">Actual:</span>
+                            <img src="{{ asset('img/transfer/' ~ editingDestination.imagenPortada) }}" alt="Portada destino" class="img-fluid rounded border">
+                        </div>
+                    {% endif %}
+                </div>
+                {% set hasCoords = editing and editingDestination is defined and editingDestination.latitude is not null and editingDestination.longitude is not null %}
+                <div class="mb-3"
+                     data-controller="transfer-destination-map"
+                     {% if hasCoords %}data-transfer-destination-map-lat-value="{{ editingDestination.latitude }}"{% endif %}
+                     {% if hasCoords %}data-transfer-destination-map-lng-value="{{ editingDestination.longitude }}"{% endif %}
+                     data-transfer-destination-map-zoom-value="{{ mapDefaults.zoom }}">
+                    <label class="form-label">Ubicación en el mapa</label>
+                    <div class="border rounded" data-transfer-destination-map-target="map" style="height: 280px;"></div>
+                    <div class="small text-muted mt-2" data-transfer-destination-map-target="output">
+                        Hacé clic en el mapa para seleccionar un punto de encuentro.
+                    </div>
+                </div>
                 {{ form_row(form.activo) }}
                 <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear destino' }}</button>
                 {{ form_end(form) }}
@@ -28,8 +52,10 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
+                            <th>Portada</th>
                             <th>Nombre</th>
                             <th>Tarifa base</th>
+                            <th>Ubicación</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
@@ -37,8 +63,22 @@
                     <tbody>
                     {% for destino in destinos %}
                         <tr>
+                            <td class="align-middle" style="width: 80px;">
+                                {% if destino.imagenPortada %}
+                                    <img src="{{ asset('img/transfer/' ~ destino.imagenPortada) }}" alt="{{ destino.nombre }}" class="img-thumbnail" style="max-width: 72px;">
+                                {% else %}
+                                    <span class="text-muted small">Sin imagen</span>
+                                {% endif %}
+                            </td>
                             <td>{{ destino.nombre }}</td>
                             <td>${{ destino.tarifaBase }}</td>
+                            <td>
+                                {% if destino.latitude is not null and destino.longitude is not null %}
+                                    <span class="small">{{ destino.latitude|number_format(4, '.', '') }}, {{ destino.longitude|number_format(4, '.', '') }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Sin coordenadas</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if destino.activo %}
                                     <span class="badge bg-success">Activo</span>
@@ -51,7 +91,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="4" class="text-center text-muted">Aún no hay destinos configurados.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted">Aún no hay destinos configurados.</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>

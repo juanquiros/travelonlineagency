@@ -29,6 +29,9 @@ class TransferDestination
     #[ORM\Column]
     private bool $activo = true;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imagenPortada = null;
+
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $metadata = null;
 
@@ -103,6 +106,18 @@ class TransferDestination
         return $this;
     }
 
+    public function getImagenPortada(): ?string
+    {
+        return $this->imagenPortada;
+    }
+
+    public function setImagenPortada(?string $imagenPortada): self
+    {
+        $this->imagenPortada = $imagenPortada;
+
+        return $this;
+    }
+
     public function getMetadata(): ?array
     {
         return $this->metadata;
@@ -111,6 +126,40 @@ class TransferDestination
     public function setMetadata(?array $metadata): self
     {
         $this->metadata = $metadata;
+
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        if (!is_array($this->metadata) || !array_key_exists('lat', $this->metadata)) {
+            return null;
+        }
+
+        return (float) $this->metadata['lat'];
+    }
+
+    public function getLongitude(): ?float
+    {
+        if (!is_array($this->metadata) || !array_key_exists('lng', $this->metadata)) {
+            return null;
+        }
+
+        return (float) $this->metadata['lng'];
+    }
+
+    public function withLocation(?float $lat, ?float $lng): self
+    {
+        $metadata = $this->metadata ?? [];
+
+        if ($lat === null || $lng === null) {
+            unset($metadata['lat'], $metadata['lng']);
+        } else {
+            $metadata['lat'] = $lat;
+            $metadata['lng'] = $lng;
+        }
+
+        $this->metadata = !empty($metadata) ? $metadata : null;
 
         return $this;
     }

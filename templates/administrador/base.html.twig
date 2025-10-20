@@ -70,6 +70,12 @@
                     </a>
                 </li>
                 <li>
+                    <a {% if menu['traslados'] and not (menu['transfer_requests'] or menu['transfer_combos'] or menu['transfer_destinations'] or menu['transfer_campos'] or menu['drivers']) %}id="inbox"{% endif %} href="{{ path('app_admin_transfers_dashboard') }}">
+                        <ion-icon name="trail-sign-outline"></ion-icon>
+                        <span>Panel traslados</span>
+                    </a>
+                </li>
+                <li>
                     <a {% if menu['notificaciones'] %}id="inbox"{% endif %} href="{{ path('app_administrador_notificaciones') }}">
                         <ion-icon name="notifications-outline"></ion-icon>
                         <span>Notificaciones</span>
@@ -91,10 +97,10 @@
                                 <span>Booking</span>
                             </a>
                         </li>
-                        <li hidden>
-                            <a {% if menu['traslados'] %}id="inbox"{% endif %} href="{{ path('app_reservas') }}">
-                                <ion-icon name="trail-sign-outline"></ion-icon>
-                                <span>Traslado</span>
+                        <li>
+                            <a {% if menu['transfer_requests'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_requests') }}">
+                                <ion-icon name="car-outline"></ion-icon>
+                                <span>Traslados</span>
                             </a>
                         </li>
                     </ul>
@@ -104,12 +110,6 @@
                     <hr>
                     <span>Servicios</span>
                     <ul>
-                        <li hidden>
-                            <a {% if menu['s_traslados'] %}id="inbox"{% endif %} href="#">
-                                <ion-icon name="car-outline"></ion-icon>
-                                <span>Traslado</span>
-                            </a>
-                        </li>
                         <li>
                             <a {% if menu['s_reservas'] %}id="inbox"{% endif %} href="{{ path('app_service_booking') }}">
                                 <ion-icon name="document-text-outline"></ion-icon>
@@ -126,6 +126,33 @@
                             <a {% if menu['partners'] %}id="inbox"{% endif %} href="{{ path('app_admin_partners') }}">
                                 <ion-icon name="people-outline"></ion-icon>
                                 <span>Partners</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <span class="mt-3">Traslados</span>
+                    <ul>
+                        <li>
+                            <a {% if menu['transfer_combos'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_combos') }}">
+                                <ion-icon name="albums-outline"></ion-icon>
+                                <span>Combos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['transfer_destinations'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destinations') }}">
+                                <ion-icon name="location-outline"></ion-icon>
+                                <span>Destinos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['transfer_campos'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_fields') }}">
+                                <ion-icon name="list-outline"></ion-icon>
+                                <span>Campos personalizados</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['drivers'] %}id="inbox"{% endif %} href="{{ path('app_admin_drivers') }}">
+                                <ion-icon name="person-outline"></ion-icon>
+                                <span>Choferes</span>
                             </a>
                         </li>
                     </ul>

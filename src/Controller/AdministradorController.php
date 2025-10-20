@@ -46,6 +46,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -74,6 +75,7 @@ class AdministradorController extends AbstractController
         's_preguntas'=>false,
         'partners'=>false,
         'balance'=>false,
+        'transfer_requests'=>false,
         'transfer_destinations'=>false,
         'transfer_combos'=>false,
         'transfer_campos'=>false,
@@ -93,6 +95,10 @@ class AdministradorController extends AbstractController
 
     private function upload($file,$path, SluggerInterface $slugger){
         if(isset($file) && !empty($file)){
+            $targetDirectory = $this->getParameter($path);
+            if (!is_dir($targetDirectory) && !@mkdir($targetDirectory, 0775, true) && !is_dir($targetDirectory)) {
+                return ['filename'=> "",'upload'=>false];
+            }
             $Filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $safeFilename = $slugger->slug($Filename);
             $newFilename = $safeFilename.'-'.uniqid().'.'.$file->guessExtension();
@@ -104,7 +110,7 @@ class AdministradorController extends AbstractController
             if($mime==='image/png' || $mime==='image/ico' || $mime==='image/x-icon' || $mime==='image/vnd.microsoft.icon'){
                 try {
                     $file->move(
-                        $this->getParameter($path),
+                        $targetDirectory,
                         $newFilename
                     );
                 } catch (FileException $e) {
@@ -123,7 +129,7 @@ class AdministradorController extends AbstractController
                 }
 
                 try {
-                    imagejpeg($imagen, $this->getParameter($path).'/'.$newFilename,$calidad);
+                    imagejpeg($imagen, $targetDirectory.'/'.$newFilename,$calidad);
 
                 } catch (FileException $e) {
                     return ['filename'=> "",'upload'=>false];
@@ -1100,7 +1106,7 @@ class AdministradorController extends AbstractController
     }
 
     #[Route('/administrador/traslados/destinos', name: 'app_admin_transfer_destinations')]
-    public function manageTransferDestinations(Request $request): Response
+    public function manageTransferDestinations(Request $request, SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1112,11 +1118,13 @@ class AdministradorController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->persist($destination);
-            $this->em->flush();
-            $this->addFlash('success', 'Destino creado correctamente.');
+            if ($this->hydrateTransferDestination($destination, $form, $slugger)) {
+                $this->em->persist($destination);
+                $this->em->flush();
+                $this->addFlash('success', 'Destino creado correctamente.');
 
-            return $this->redirectToRoute('app_admin_transfer_destinations');
+                return $this->redirectToRoute('app_admin_transfer_destinations');
+            }
         }
 
         $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
@@ -1130,25 +1138,31 @@ class AdministradorController extends AbstractController
             'form' => $form->createView(),
             'destinos' => $destinos,
             'editing' => false,
+            'mapDefaults' => $this->getTransferMapDefaults(),
         ]);
     }
 
     #[Route('/administrador/traslados/destinos/{id}', name: 'app_admin_transfer_destination_edit')]
-    public function editTransferDestination(Request $request, TransferDestination $destino): Response
+    public function editTransferDestination(Request $request, TransferDestination $destino, SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['transfer_destinations'] = true;
 
-        $form = $this->createForm(TransferDestinationType::class, $destino);
+        $form = $this->createForm(TransferDestinationType::class, $destino, [
+            'latitude' => $destino->getLatitude(),
+            'longitude' => $destino->getLongitude(),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->flush();
-            $this->addFlash('success', 'Destino actualizado.');
+            if ($this->hydrateTransferDestination($destino, $form, $slugger)) {
+                $this->em->flush();
+                $this->addFlash('success', 'Destino actualizado.');
 
-            return $this->redirectToRoute('app_admin_transfer_destinations');
+                return $this->redirectToRoute('app_admin_transfer_destinations');
+            }
         }
 
         $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
@@ -1163,11 +1177,12 @@ class AdministradorController extends AbstractController
             'destinos' => $destinos,
             'editing' => true,
             'editingDestination' => $destino,
+            'mapDefaults' => $this->getTransferMapDefaults(),
         ]);
     }
 
     #[Route('/administrador/traslados/combos', name: 'app_admin_transfer_combos')]
-    public function manageTransferCombos(Request $request): Response
+    public function manageTransferCombos(Request $request, SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1179,12 +1194,14 @@ class AdministradorController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->persist($combo);
-            $this->em->flush();
-            $this->syncComboDestinations($combo, $form->get('destinos')->getData());
-            $this->addFlash('success', 'Combo creado correctamente.');
+            if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
+                $this->em->persist($combo);
+                $this->em->flush();
+                $this->syncComboDestinations($combo, $form->get('destinos')->getData());
+                $this->addFlash('success', 'Combo creado correctamente.');
 
-            return $this->redirectToRoute('app_admin_transfer_combos');
+                return $this->redirectToRoute('app_admin_transfer_combos');
+            }
         }
 
         $combos = $this->em->getRepository(TransferCombo::class)->findBy([], ['nombre' => 'ASC']);
@@ -1202,7 +1219,7 @@ class AdministradorController extends AbstractController
     }
 
     #[Route('/administrador/traslados/combos/{id}', name: 'app_admin_transfer_combo_edit')]
-    public function editTransferCombo(Request $request, TransferCombo $combo): Response
+    public function editTransferCombo(Request $request, TransferCombo $combo, SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1220,11 +1237,13 @@ class AdministradorController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->flush();
-            $this->syncComboDestinations($combo, $form->get('destinos')->getData());
-            $this->addFlash('success', 'Combo actualizado.');
+            if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
+                $this->em->flush();
+                $this->syncComboDestinations($combo, $form->get('destinos')->getData());
+                $this->addFlash('success', 'Combo actualizado.');
 
-            return $this->redirectToRoute('app_admin_transfer_combos');
+                return $this->redirectToRoute('app_admin_transfer_combos');
+            }
         }
 
         $combos = $this->em->getRepository(TransferCombo::class)->findBy([], ['nombre' => 'ASC']);
@@ -1338,6 +1357,7 @@ class AdministradorController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['traslados'] = true;
+        $this->adminMenu['transfer_requests'] = true;
 
         $solicitudes = $this->em->getRepository(TransferRequest::class)->findBy([], ['creadoEn' => 'DESC']);
 
@@ -1509,6 +1529,75 @@ class AdministradorController extends AbstractController
         $this->addFlash('success', $message);
 
         return $this->redirectToRoute('app_admin_drivers');
+    }
+
+    private function hydrateTransferCombo(TransferCombo $combo, FormInterface $form, SluggerInterface $slugger): bool
+    {
+        /** @var UploadedFile|null $cover */
+        $cover = $form->get('imagenPortadaFile')->getData();
+        if ($cover instanceof UploadedFile) {
+            $upload = $this->upload($cover, 'img_transfer', $slugger);
+            if (!$upload['upload']) {
+                $this->addFlash('error', 'No se pudo subir la imagen de portada del combo.');
+
+                return false;
+            }
+
+            $combo->setImagenPortada($upload['filename']);
+        }
+
+        return true;
+    }
+
+    private function hydrateTransferDestination(TransferDestination $destination, FormInterface $form, SluggerInterface $slugger): bool
+    {
+        $lat = $this->parseCoordinate($form->get('latitud')->getData());
+        $lng = $this->parseCoordinate($form->get('longitud')->getData());
+
+        if (($lat === null) xor ($lng === null)) {
+            $this->addFlash('error', 'Seleccioná una ubicación válida en el mapa antes de guardar.');
+
+            return false;
+        }
+
+        $destination->withLocation($lat, $lng);
+
+        /** @var UploadedFile|null $cover */
+        $cover = $form->get('imagenPortadaFile')->getData();
+        if ($cover instanceof UploadedFile) {
+            $upload = $this->upload($cover, 'img_transfer', $slugger);
+            if (!$upload['upload']) {
+                $this->addFlash('error', 'No se pudo subir la imagen de portada del destino.');
+
+                return false;
+            }
+
+            $destination->setImagenPortada($upload['filename']);
+        }
+
+        return true;
+    }
+
+    private function parseCoordinate(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function getTransferMapDefaults(): array
+    {
+        return [
+            'lat' => -25.5972,
+            'lng' => -54.5781,
+            'zoom' => 12,
+        ];
     }
 
     private function collectTransferStats(): array

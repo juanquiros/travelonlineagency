@@ -54,21 +54,27 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="tipo" id="tipo_custom" value="custom">
-                        <label class="form-check-label" for="tipo_custom">Armar mi recorrido</label>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Destinos disponibles</label>
-                        <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
-                            {% for destino in destinos %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
-                                    <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - ${{ destino.tarifaBase }}</label>
-                                </div>
-                            {% endfor %}
+                    {% if customEnabled %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="tipo" id="tipo_custom" value="custom">
+                            <label class="form-check-label" for="tipo_custom">Armar mi recorrido</label>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Destinos disponibles</label>
+                            <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
+                                {% for destino in destinos %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
+                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - ${{ destino.tarifaBase }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Los traslados personalizados se encuentran deshabilitados por el administrador. Podés elegir cualquiera de los combos disponibles.
+                        </div>
+                    {% endif %}
                     {% if campos %}
                         <h2 class="h5 mt-4">Información adicional</h2>
                         {% for campo in campos %}
@@ -98,20 +104,66 @@
         <div class="col-lg-6">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h2 class="h5">Combos destacados</h2>
-                    <ul class="list-group list-group-flush">
+                    <h2 class="h5">Combos disponibles</h2>
+                    <div class="row g-3">
                         {% for combo in combos %}
-                            <li class="list-group-item">
-                                <div class="fw-bold">{{ combo.nombre }}</div>
-                                {% if combo.descripcion %}
-                                    <div class="text-muted small">{{ combo.descripcion }}</div>
-                                {% endif %}
-                                <div class="small">Tarifa: ${{ combo.precio }}</div>
-                            </li>
+                            <div class="col-12">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    {% if combo.imagenPortada %}
+                                        <img src="{{ asset('img/transfer/' ~ combo.imagenPortada) }}" class="card-img-top" alt="{{ combo.nombre }}">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h3 class="h6">{{ combo.nombre }}</h3>
+                                        <div class="text-success fw-semibold mb-2">${{ combo.precio }}</div>
+                                        {% if combo.descripcion %}
+                                            <p class="small text-muted mb-2">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
+                                        {% endif %}
+                                        {% if combo.destinos|length > 0 %}
+                                            <div class="small text-muted">
+                                                <strong>Recorrido:</strong>
+                                                {% for enlace in combo.destinos %}
+                                                    <span class="badge bg-light text-dark border">{{ enlace.destino.nombre }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         {% else %}
-                            <li class="list-group-item text-muted">No hay combos disponibles actualmente.</li>
+                            <div class="col-12 text-muted">No hay combos disponibles actualmente.</div>
                         {% endfor %}
-                    </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5">Destinos destacados</h2>
+                    <div class="row g-3">
+                        {% for destino in destinos %}
+                            <div class="col-12">
+                                <div class="card h-100 border-0 bg-light">
+                                    <div class="row g-0 align-items-center">
+                                        {% if destino.imagenPortada %}
+                                            <div class="col-md-4">
+                                                <img src="{{ asset('img/transfer/' ~ destino.imagenPortada) }}" class="img-fluid rounded-start" alt="{{ destino.nombre }}">
+                                            </div>
+                                        {% endif %}
+                                        <div class="col">
+                                            <div class="card-body">
+                                                <h3 class="h6 mb-1">{{ destino.nombre }}</h3>
+                                                <div class="text-success fw-semibold mb-1">Tarifa base: ${{ destino.tarifaBase }}</div>
+                                                {% if destino.descripcion %}
+                                                    <p class="small text-muted mb-0">{{ destino.descripcion|striptags|u.truncate(140, '…') }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-muted">Los destinos personalizados aparecerán aquí cuando estén habilitados.</div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             <div class="card shadow-sm">

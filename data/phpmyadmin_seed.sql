@@ -346,10 +346,10 @@ INSERT INTO solicitud_reserva (
   );
 
 -- Catálogo de destinos de traslado
-INSERT INTO transfer_destination (id, nombre, descripcion, tarifa_base, activo, metadata) VALUES
-  (1, 'Aeropuerto Internacional Cataratas', 'Punto de partida habitual para los traslados.', 25.00, 1, '{"tipo":"aeropuerto"}'),
-  (2, 'Hotel Gran Meliá Iguazú', 'Ingreso principal sobre la Ruta 101.', 18.50, 1, '{"tipo":"hotel"}'),
-  (3, 'Hito Tres Fronteras', 'Mirador panorámico con vista a los tres países.', 15.00, 1, '{"tipo":"punto_turistico"}');
+INSERT INTO transfer_destination (id, nombre, descripcion, tarifa_base, activo, imagen_portada, metadata) VALUES
+  (1, 'Aeropuerto Internacional Cataratas', 'Punto de partida habitual para los traslados.', 25.00, 1, NULL, '{"tipo":"aeropuerto"}'),
+  (2, 'Hotel Gran Meliá Iguazú', 'Ingreso principal sobre la Ruta 101.', 18.50, 1, NULL, '{"tipo":"hotel"}'),
+  (3, 'Hito Tres Fronteras', 'Mirador panorámico con vista a los tres países.', 15.00, 1, NULL, '{"tipo":"punto_turistico"}');
 
 -- Combos preconfigurados por el administrador
 INSERT INTO transfer_combo (id, nombre, descripcion, precio, activo, imagen_portada) VALUES

@@ -7,6 +7,8 @@ use App\Entity\EstadoReserva;
 use App\Entity\PayPalPago;
 use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferCombo;
+use App\Entity\TransferDestination;
 use App\Entity\TraduccionPlataforma;
 use App\Form\SolicitudReservaType;
 use App\Services\LanguageService;
@@ -39,6 +41,8 @@ class InicioController extends AbstractController
         $bookings = $this->em->getRepository(Booking::class)->obtenerVálidos(new \DateTime());
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $usuario = $this->getUser();
+        $transferCombos = $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
+        $transferDestinations = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
 
 
         $cfg_bookings['titulo'] = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['key_name'=>'app_inicio:bookings:titulo','lenguaje'=>$idioma->getId()]);
@@ -66,7 +70,10 @@ class InicioController extends AbstractController
             'now'=> new \DateTime(),
             'cfg_bookings'=>$cfg_bookings,
             'cfg_traslados'=>$cfg_traslados,
-            'usuario'=>$usuario
+            'usuario'=>$usuario,
+            'transferCombos'=>$transferCombos,
+            'transferDestinations'=>$transferDestinations,
+            'customTransfersEnabled' => (bool) $plataforma->isTrasladosODLibres(),
         ]);
     }
     #[Route('/reserva/{id}', name: 'app_reserva')]

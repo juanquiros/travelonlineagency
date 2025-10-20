@@ -20,7 +20,11 @@
                     <tbody>
                     {% for driver in pendientes %}
                         <tr>
-                            <td>{{ driver.nombreCompleto }}</td>
+                            <td>
+                                <button class="btn btn-link p-0 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#driver-pending-{{ driver.id }}" aria-expanded="false" aria-controls="driver-pending-{{ driver.id }}">
+                                    {{ driver.nombreCompleto }}
+                                </button>
+                            </td>
                             <td>{{ driver.documento }}</td>
                             <td>{{ driver.telefono }}</td>
                             <td class="text-end">
@@ -28,6 +32,20 @@
                                     <input type="hidden" name="action" value="approve">
                                     <button class="btn btn-sm btn-success" type="submit">Aprobar</button>
                                 </form>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="driver-pending-{{ driver.id }}">
+                            <td colspan="4" class="bg-light">
+                                <dl class="row mb-0 small">
+                                    <dt class="col-sm-3">Correo</dt>
+                                    <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
+                                    <dt class="col-sm-3">Vehículo</dt>
+                                    <dd class="col-sm-9">{{ driver.modeloVehiculo }} ({{ driver.patente }})</dd>
+                                    <dt class="col-sm-3">Notas</dt>
+                                    <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
+                                    <dt class="col-sm-3">Registrado</dt>
+                                    <dd class="col-sm-9">{{ driver.creadoEn|date('d/m/Y H:i') }}</dd>
+                                </dl>
                             </td>
                         </tr>
                     {% else %}
@@ -54,7 +72,11 @@
                     <tbody>
                     {% for driver in habilitados %}
                         <tr>
-                            <td>{{ driver.nombreCompleto }}</td>
+                            <td>
+                                <button class="btn btn-link p-0 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#driver-enabled-{{ driver.id }}" aria-expanded="false" aria-controls="driver-enabled-{{ driver.id }}">
+                                    {{ driver.nombreCompleto }}
+                                </button>
+                            </td>
                             <td>{{ driver.modeloVehiculo }} ({{ driver.patente }})</td>
                             <td>{{ driver.telefono }}</td>
                             <td class="text-end">
@@ -62,6 +84,24 @@
                                     <input type="hidden" name="action" value="suspend">
                                     <button class="btn btn-sm btn-outline-danger" type="submit">Suspender</button>
                                 </form>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="driver-enabled-{{ driver.id }}">
+                            <td colspan="4" class="bg-light">
+                                <dl class="row mb-0 small">
+                                    <dt class="col-sm-3">Correo</dt>
+                                    <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
+                                    <dt class="col-sm-3">Notas</dt>
+                                    <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
+                                    <dt class="col-sm-3">Última actualización</dt>
+                                    <dd class="col-sm-9">{{ driver.actualizadoEn|date('d/m/Y H:i') }}</dd>
+                                    {% if driver.fotoVehiculo %}
+                                        <dt class="col-sm-3">Vehículo</dt>
+                                        <dd class="col-sm-9">
+                                            <img src="{{ asset('img/drivers/' ~ driver.fotoVehiculo) }}" alt="Vehículo" class="img-fluid rounded" style="max-height: 160px;">
+                                        </dd>
+                                    {% endif %}
+                                </dl>
                             </td>
                         </tr>
                     {% else %}

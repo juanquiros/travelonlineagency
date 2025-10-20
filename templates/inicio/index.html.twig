@@ -66,8 +66,59 @@
                         <div class="col-md-4"></div>
                     </div>
                 {% endif %}
-                <div class="row center     ">
-
+                <div class="row gy-4 justify-content-center">
+                    {% for combo in transferCombos %}
+                        <div class="col-md-4 d-flex">
+                            <div class="card shadow-sm flex-fill h-100">
+                                {% if combo.imagenPortada %}
+                                    <img src="{{ asset('img/transfer/' ~ combo.imagenPortada) }}" class="card-img-top" alt="{{ combo.nombre }}">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h3 class="h5">{{ combo.nombre }}</h3>
+                                    <p class="text-success fw-semibold">${{ combo.precio }}</p>
+                                    {% if combo.descripcion %}
+                                        <p class="small text-muted">{{ combo.descripcion|striptags|u.truncate(150, '…') }}</p>
+                                    {% endif %}
+                                    {% if combo.destinos|length > 0 %}
+                                        <div class="small text-muted">
+                                            <strong>Incluye:</strong>
+                                            {% for enlace in combo.destinos %}
+                                                <span class="badge bg-light text-dark border">{{ enlace.destino.nombre }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="col-12 text-center text-muted">Pronto publicaremos nuevos combos de traslado.</div>
+                    {% endfor %}
+                </div>
+                {% if transferDestinations %}
+                    <div class="row gy-4 justify-content-center mt-3">
+                        {% for destino in transferDestinations %}
+                            <div class="col-md-3 d-flex">
+                                <div class="card border-0 bg-light flex-fill h-100">
+                                    {% if destino.imagenPortada %}
+                                        <img src="{{ asset('img/transfer/' ~ destino.imagenPortada) }}" class="card-img-top" alt="{{ destino.nombre }}">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h4 class="h6">{{ destino.nombre }}</h4>
+                                        <p class="text-success fw-semibold">Tarifa base: ${{ destino.tarifaBase }}</p>
+                                        {% if destino.descripcion %}
+                                            <p class="small text-muted mb-0">{{ destino.descripcion|striptags|u.truncate(120, '…') }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="text-center mt-4">
+                    <a class="btn btn-outline-primary" href="{{ path('app_transfers') }}">Planificá tu traslado</a>
+                    {% if not customTransfersEnabled %}
+                        <p class="small text-muted mt-2">Los traslados personalizados se activarán pronto. Mientras tanto, podés reservar cualquiera de nuestros combos.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
