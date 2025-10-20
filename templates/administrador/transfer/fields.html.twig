@@ -1,0 +1,60 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Formulario dinámico de traslados{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ editing ? 'Editar campo' : 'Nuevo campo' }}</h2>
+                {{ form_start(form) }}
+                {{ form_row(form.clave) }}
+                {{ form_row(form.etiqueta) }}
+                {{ form_row(form.tipo) }}
+                {{ form_row(form.requerido) }}
+                {{ form_row(form.orden) }}
+                {{ form_row(form.opciones) }}
+                <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Agregar campo' }}</button>
+                {{ form_end(form) }}
+                {% if editing %}
+                    <a class="btn btn-link mt-2" href="{{ path('app_admin_transfer_fields') }}">Agregar un nuevo campo</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Campos configurados</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Clave</th>
+                            <th>Etiqueta</th>
+                            <th>Tipo</th>
+                            <th>Orden</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for campo in campos %}
+                        <tr>
+                            <td><code>{{ campo.clave }}</code></td>
+                            <td>{{ campo.etiqueta }}</td>
+                            <td>{{ campo.tipo }}</td>
+                            <td>{{ campo.orden }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_field_edit', {id: campo.id}) }}">Editar</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">Todavía no se agregaron campos adicionales.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

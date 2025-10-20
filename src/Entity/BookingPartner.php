@@ -33,6 +33,10 @@ class BookingPartner
     #[ORM\Column(nullable: true)]
     private ?float $comisionPlataforma = null;
 
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?CredencialesMercadoPago $mercadoPagoCuenta = null;
+
     public function __construct()
     {
         $this->bookings = new ArrayCollection();
@@ -112,6 +116,18 @@ class BookingPartner
     public function setComisionPlataforma(?float $comisionPlataforma): static
     {
         $this->comisionPlataforma = $comisionPlataforma;
+
+        return $this;
+    }
+
+    public function getMercadoPagoCuenta(): ?CredencialesMercadoPago
+    {
+        return $this->mercadoPagoCuenta;
+    }
+
+    public function setMercadoPagoCuenta(?CredencialesMercadoPago $mercadoPagoCuenta): static
+    {
+        $this->mercadoPagoCuenta = $mercadoPagoCuenta;
 
         return $this;
     }

@@ -1,0 +1,77 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Solicitudes de traslado{% endblock %}
+
+{% block body %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Solicitudes registradas</h1>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Pasajero</th>
+                        <th>Tipo</th>
+                        <th>Arribo</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Choferes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for solicitud in solicitudes %}
+                    {% set assignments = solicitud.asignaciones|filter(a => a.estado in ['capturado','en_curso']) %}
+                    <tr>
+                        <td>{{ solicitud.id }}</td>
+                        <td>
+                            <div>{{ solicitud.nombrePasajero }}</div>
+                            <div class="small text-muted">{{ solicitud.emailPasajero }}</div>
+                        </td>
+                        <td>{{ solicitud.tipo == 'combo' ? 'Combo' : 'Personalizado' }}</td>
+                        <td>
+                            {% if solicitud.arribo %}
+                                {{ solicitud.arribo|date('d/m/Y H:i') }}
+                            {% else %}
+                                <span class="text-muted">Sin dato</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}
+                        </td>
+                        <td>${{ solicitud.precioTotal }}</td>
+                        <td>
+                            {% if assignments|length > 0 %}
+                                {% for asignacion in assignments %}
+                                    <div class="small">{{ asignacion.chofer.nombreCompleto }} ({{ asignacion.estado }})</div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-secondary">Sin asignar</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex flex-column gap-1 align-items-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_request_assign', {id: solicitud.id}) }}">Asignar chofer</a>
+                                <form method="post" action="{{ path('app_admin_transfer_request_state', {id: solicitud.id}) }}" class="d-flex gap-1">
+                                    <select name="estado" class="form-select form-select-sm">
+                                        <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_PENDIENTE') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_PENDIENTE') ? 'selected' }} >Pendiente</option>
+                                        <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_EN_CURSO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_EN_CURSO') ? 'selected' }}>En curso</option>
+                                        <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_COMPLETADO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_COMPLETADO') ? 'selected' }}>Completado</option>
+                                        <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_CANCELADO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_CANCELADO') ? 'selected' }}>Cancelado</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-secondary" type="submit">Actualizar</button>
+                                </form>
+                                <small class="text-muted">Creada {{ solicitud.creadoEn|date('d/m/Y H:i') }}</small>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted">No hay solicitudes registradas.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

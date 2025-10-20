@@ -3,15 +3,24 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\BookingPartner;
 use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
 use App\Entity\Lenguaje;
+use App\Entity\MercadoPagoPago;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
 use App\Entity\PreguntaFrecuente;
 use App\Entity\RespuestaMensaje;
 use App\Entity\SolicitudReserva;
+use App\Entity\DriverProfile;
+use App\Entity\TransferAssignment;
+use App\Entity\TransferCombo;
+use App\Entity\TransferComboDestination;
+use App\Entity\TransferDestination;
+use App\Entity\TransferFormField;
+use App\Entity\TransferRequest;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
@@ -21,20 +30,32 @@ use App\Form\CredencialesPayPalType;
 use App\Form\PlataformaType;
 use App\Form\PreguntaFrecuenteType;
 use App\Form\RespuestaMensajeType;
+use App\Form\TransferAssignDriverType;
+use App\Form\TransferComboType;
+use App\Form\TransferDestinationType;
+use App\Form\TransferFormFieldType;
 use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
 use App\Services\LanguageService;
+use App\Services\MercadoPagoOnboardingService;
+use App\Services\PartnerInvitationService;
+use App\Services\DriverInvitationService;
+use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class AdministradorController extends AbstractController
 {
@@ -51,21 +72,44 @@ class AdministradorController extends AbstractController
         's_reservas'=>false,
         'configuraciones'=>false,
         'dashboard'=>false,
-        's_preguntas'=>false
+        's_preguntas'=>false,
+        'partners'=>false,
+        'balance'=>false,
+        'transfer_requests'=>false,
+        'transfer_destinations'=>false,
+        'transfer_combos'=>false,
+        'transfer_campos'=>false,
+        'drivers'=>false,
     ];
 
     private $em;
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(
+        EntityManagerInterface $em,
+        private readonly PartnerInvitationService $partnerInvitationService,
+        private readonly DriverInvitationService $driverInvitationService,
+        private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding
+    )
     {
         $this->em = $em;
     }
 
     private function upload($file,$path, SluggerInterface $slugger){
         if(isset($file) && !empty($file)){
+            $targetDirectory = $this->getParameter($path);
+            if (!is_dir($targetDirectory) && !@mkdir($targetDirectory, 0775, true) && !is_dir($targetDirectory)) {
+                return ['filename'=> "",'upload'=>false];
+            }
+
+            $targetDirectory = rtrim($targetDirectory, "\\/");
+
             $Filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $safeFilename = $slugger->slug($Filename);
             $newFilename = $safeFilename.'-'.uniqid().'.'.$file->guessExtension();
-            $imgInfo = getimagesize($file);
+            $imgInfo = @getimagesize($file->getPathname());
+            if ($imgInfo === false || !isset($imgInfo['mime'])) {
+                return ['filename'=> "",'upload'=>false];
+            }
+
             $calidad = $file->getSize();
             if($calidad > 1536){ $calidad = 70;}else{$calidad = 100;}
             $mime = $imgInfo['mime'];
@@ -73,7 +117,7 @@ class AdministradorController extends AbstractController
             if($mime==='image/png' || $mime==='image/ico' || $mime==='image/x-icon' || $mime==='image/vnd.microsoft.icon'){
                 try {
                     $file->move(
-                        $this->getParameter($path),
+                        $targetDirectory,
                         $newFilename
                     );
                 } catch (FileException $e) {
@@ -82,19 +126,23 @@ class AdministradorController extends AbstractController
             }else{
                 switch($mime){
                     case 'image/jpeg':
-                        $imagen = imagecreatefromjpeg($file);
+                        $imagen = @imagecreatefromjpeg($file->getPathname());
                         break;
                     case 'image/gif':
-                        $imagen = imagecreatefromgif($file);
+                        $imagen = @imagecreatefromgif($file->getPathname());
                         break;
                     default:
-                        $imagen = imagecreatefromjpeg($file);
+                        $imagen = @imagecreatefromstring(@file_get_contents($file->getPathname()));
+                }
+
+                if(!$imagen){
+                    return ['filename'=> "",'upload'=>false];
                 }
 
                 try {
-                    imagejpeg($imagen, $this->getParameter($path).'/'.$newFilename,$calidad);
-
-                } catch (FileException $e) {
+                    imagejpeg($imagen, $targetDirectory.DIRECTORY_SEPARATOR.$newFilename,$calidad);
+                    imagedestroy($imagen);
+                } catch (\Throwable $e) {
                     return ['filename'=> "",'upload'=>false];
                 }
             }
@@ -260,7 +308,8 @@ class AdministradorController extends AbstractController
         'menu'=>$this->adminMenu,
         'idiomas'=>$idiomas,
         'idiomaPlataforma'=>$idioma,
-        'plataforma'=> $plataforma
+        'plataforma'=> $plataforma,
+        'vapidPublicKey' => notificacion::getPublicKey(),
     ]);
 }
     #[Route('/administrador/booking/{id}', name: 'app_administrador_booking', options: ['expose'=>true])]
@@ -318,6 +367,251 @@ class AdministradorController extends AbstractController
             'servicios'=>$servicios
         ]);
     }
+
+    #[Route('/administrador/partners', name: 'app_admin_partners')]
+    public function partners(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['partners'] = true;
+        $partners = $this->em->getRepository(BookingPartner::class)->findAll();
+
+        return $this->render('administrador/partners.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'partners' => $partners,
+        ]);
+    }
+
+    #[Route('/administrador/balance', name: 'app_admin_balance')]
+    public function balance(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['balance'] = true;
+
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+        $cuenta = null;
+        $balance = null;
+        $credencialesActualizadas = false;
+
+        if ($credenciales instanceof CredencialesMercadoPago && $credenciales->getAccessToken()) {
+            try {
+                if ($this->mercadoPagoOnboarding->ensureValidAccessToken($credenciales)) {
+                    $credencialesActualizadas = true;
+                }
+
+                $cuenta = $this->mercadoPagoOnboarding->syncAccountInformation($credenciales);
+                $balance = $this->mercadoPagoOnboarding->fetchBalance($credenciales);
+                $credencialesActualizadas = true;
+            } catch (\Throwable $exception) {
+                $this->addFlash('error', 'No se pudo actualizar la información de Mercado Pago: ' . $exception->getMessage());
+            }
+        }
+
+        if ($credencialesActualizadas && $credenciales instanceof CredencialesMercadoPago) {
+            $this->em->persist($credenciales);
+            $this->em->flush();
+        }
+
+        $pagos = $this->em->getRepository(MercadoPagoPago::class)
+            ->createQueryBuilder('p')
+            ->leftJoin('p.solicitudReserva', 'sr')->addSelect('sr')
+            ->leftJoin('sr.Booking', 'b')->addSelect('b')
+            ->leftJoin('b.bookingPartner', 'bp')->addSelect('bp')
+            ->leftJoin('bp.Usuario', 'u')->addSelect('u')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getResult();
+
+        $totalComision = 0.0;
+        foreach ($pagos as $pago) {
+            if ($pago instanceof MercadoPagoPago && $pago->getStatus() === 'approved') {
+                $totalComision += (float) ($pago->getApplicationFee() ?? 0.0);
+            }
+        }
+
+        $puedeConectar = $credenciales instanceof CredencialesMercadoPago
+            && $credenciales->getClientId()
+            && $credenciales->getClientSecret();
+
+        return $this->render('administrador/balance.html.twig', [
+            'controller_name' => 'AdministradorController',
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+            'credencialesMercadoPago' => $credenciales,
+            'cuentaMercadoPago' => $cuenta,
+            'balanceMercadoPago' => $balance,
+            'puedeConectarMercadoPago' => $puedeConectar,
+            'pagosMercadoPago' => $pagos,
+            'totalComisionMercadoPago' => $totalComision,
+        ]);
+    }
+
+    #[Route('/administrador/mercadopago/conectar', name: 'app_admin_mercadopago_connect')]
+    public function mercadopagoConnect(Request $request): Response
+    {
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credenciales instanceof CredencialesMercadoPago || !$credenciales->getClientId() || !$credenciales->getClientSecret()) {
+            $this->addFlash('error', 'Configurá el Client ID y Client Secret antes de vincular Mercado Pago.');
+
+            return $this->redirectToRoute('app_admin_configuraciones');
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $request->getSession()->set('mp_admin_state', $state);
+
+        try {
+            $authorizationUrl = $this->mercadoPagoOnboarding->createAuthorizationUrl(
+                $credenciales,
+                $this->generateUrl('app_admin_mercadopago_callback', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                $state,
+                ['offline_access', 'read', 'write']
+            );
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo generar el enlace de autorización: ' . $exception->getMessage());
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        return $this->redirect($authorizationUrl);
+    }
+
+    #[Route('/administrador/mercadopago/callback', name: 'app_admin_mercadopago_callback')]
+    public function mercadopagoCallback(Request $request): Response
+    {
+        $session = $request->getSession();
+        $expectedState = $session->get('mp_admin_state');
+        $session->remove('mp_admin_state');
+
+        $state = $request->query->get('state');
+        if (!$state || !$expectedState || $state !== $expectedState) {
+            $this->addFlash('error', 'El proceso de autorización caducó o es inválido.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        if ($request->query->has('error')) {
+            $this->addFlash('error', 'Mercado Pago rechazó la vinculación: ' . $request->query->get('error_description', '')); 
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        $authorizationCode = $request->query->get('code');
+        if (!$authorizationCode) {
+            $this->addFlash('error', 'Mercado Pago no devolvió el código de autorización.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if (!$credenciales instanceof CredencialesMercadoPago) {
+            $this->addFlash('error', 'La plataforma no tiene credenciales configuradas.');
+
+            return $this->redirectToRoute('app_admin_balance');
+        }
+
+        try {
+            $this->mercadoPagoOnboarding->exchangeAuthorizationCode(
+                $credenciales,
+                (string) $authorizationCode,
+                $this->generateUrl('app_admin_mercadopago_callback', [], UrlGeneratorInterface::ABSOLUTE_URL)
+            );
+
+            $this->mercadoPagoOnboarding->syncAccountInformation($credenciales);
+
+            $this->em->persist($credenciales);
+            if ($plataforma instanceof Plataforma) {
+                $this->em->persist($plataforma);
+            }
+            $this->em->flush();
+
+            $this->addFlash('success', 'Cuenta de Mercado Pago conectada correctamente.');
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'No se pudo vincular Mercado Pago: ' . $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('app_admin_balance');
+    }
+
+    #[Route('/administrador/mercadopago/desconectar', name: 'app_admin_mercadopago_disconnect', methods: ['POST'])]
+    public function mercadopagoDisconnect(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_mp_disconnect', $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $credenciales = $plataforma?->getCredencialesMercadoPago();
+
+        if ($credenciales instanceof CredencialesMercadoPago) {
+            $credenciales->clearTokens();
+            $this->em->persist($credenciales);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Se desconectó Mercado Pago de la plataforma.');
+        }
+
+        return $this->redirectToRoute('app_admin_balance');
+    }
+
+    #[Route('/administrador/partner/{id}/estado', name: 'app_admin_partner_estado', methods: ['POST'])]
+    public function updatePartnerStatus(Request $request, BookingPartner $bookingPartner): Response
+    {
+        if (!$this->isCsrfTokenValid('partner_status_'.$bookingPartner->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $action = $request->request->get('action', 'update');
+        $comision = $request->request->get('comision');
+
+        if ($comision !== null && $comision !== '') {
+            if (!is_numeric($comision)) {
+                $this->addFlash('error', 'La comisión debe ser un número válido.');
+                return $this->redirectToRoute('app_admin_partners');
+            }
+            $bookingPartner->setComisionPlataforma((float) $comision);
+        }
+
+        $usuario = $bookingPartner->getUsuario();
+        $roles = $usuario->getRoles();
+
+        if ($action === 'approve') {
+            $bookingPartner->setHabilitado(true);
+            if (!in_array('ROLE_PARTNER', $roles, true)) {
+                $roles[] = 'ROLE_PARTNER';
+            }
+            $this->addFlash('success', 'Partner habilitado correctamente.');
+        } elseif ($action === 'disable') {
+            $bookingPartner->setHabilitado(false);
+            $roles = array_values(array_filter($roles, static fn (string $role) => $role !== 'ROLE_PARTNER'));
+            $this->addFlash('success', 'Partner deshabilitado.');
+        } else {
+            $this->addFlash('success', 'Datos del partner actualizados.');
+        }
+
+        $usuario->setRoles(array_values(array_unique($roles)));
+
+        $this->em->persist($bookingPartner);
+        $this->em->persist($usuario);
+        $this->em->flush();
+
+        return $this->redirectToRoute('app_admin_partners');
+    }
     #[Route('/administrador/FAKs', name: 'app_plataforma_preguntas')]
     public function app_plataforma_preguntas(Request $request): Response
     {
@@ -326,6 +620,16 @@ class AdministradorController extends AbstractController
         $preguntas = $this->em->getRepository(PreguntaFrecuente::class)->findAll();
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['s_preguntas'] = true;
+        $partnerInviteLink = $this->generateUrl(
+            'app_register_partner_invite',
+            ['code' => $this->partnerInvitationService->generateInviteCode()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+        $driverInviteLink = $this->generateUrl(
+            'app_register_driver_invite',
+            ['code' => $this->driverInvitationService->generateInviteCode()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
         return $this->render('administrador/FAKs.html.twig', [
             'controller_name' => 'AdministradorController',
             'plataforma'=>$plataforma,
@@ -333,7 +637,9 @@ class AdministradorController extends AbstractController
             'menu'=>$this->adminMenu,
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
-            'preguntas'=>$preguntas
+            'preguntas'=>$preguntas,
+            'partnerInviteLink' => $partnerInviteLink,
+            'driverInviteLink' => $driverInviteLink,
         ]);
     }
 
@@ -464,7 +770,12 @@ class AdministradorController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'lenguajeFormulario'=>$lenguaje,
             'formularioPregunta'=>$formularioPregunta,
-            'formularioTraduccion'=>$formularioTraduccion
+            'formularioTraduccion'=>$formularioTraduccion,
+            'partnerInviteLink' => $this->generateUrl(
+                'app_register_partner_invite',
+                ['code' => $this->partnerInvitationService->generateInviteCode()],
+                UrlGeneratorInterface::ABSOLUTE_URL
+            ),
         ]);
     }
 
@@ -787,5 +1098,616 @@ class AdministradorController extends AbstractController
         return new JsonResponse(['files'=>$aux],200);
     }
 
+    #[Route('/administrador/traslados', name: 'app_admin_transfers_dashboard')]
+    public function transfersDashboard(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['traslados'] = true;
 
+        return $this->render('administrador/transfer/dashboard.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'stats' => $this->collectTransferStats(),
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos', name: 'app_admin_transfer_destinations')]
+    public function manageTransferDestinations(Request $request, SluggerInterface $slugger): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destinations'] = true;
+
+        $destination = new TransferDestination();
+        $form = $this->createForm(TransferDestinationType::class, $destination);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferDestination($destination, $form, $slugger)) {
+                $this->em->persist($destination);
+                $this->em->flush();
+                $this->addFlash('success', 'Destino creado correctamente.');
+
+                return $this->redirectToRoute('app_admin_transfer_destinations');
+            }
+        }
+
+        $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/destinations.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'destinos' => $destinos,
+            'editing' => false,
+            'mapDefaults' => $this->getTransferMapDefaults(),
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/{id}', name: 'app_admin_transfer_destination_edit')]
+    public function editTransferDestination(Request $request, TransferDestination $destino, SluggerInterface $slugger): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destinations'] = true;
+
+        $form = $this->createForm(TransferDestinationType::class, $destino, [
+            'latitude' => $destino->getLatitude(),
+            'longitude' => $destino->getLongitude(),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferDestination($destino, $form, $slugger)) {
+                $this->em->flush();
+                $this->addFlash('success', 'Destino actualizado.');
+
+                return $this->redirectToRoute('app_admin_transfer_destinations');
+            }
+        }
+
+        $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/destinations.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'destinos' => $destinos,
+            'editing' => true,
+            'editingDestination' => $destino,
+            'mapDefaults' => $this->getTransferMapDefaults(),
+        ]);
+    }
+
+    #[Route('/administrador/traslados/combos', name: 'app_admin_transfer_combos')]
+    public function manageTransferCombos(Request $request, SluggerInterface $slugger): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_combos'] = true;
+
+        $combo = new TransferCombo();
+        $form = $this->createForm(TransferComboType::class, $combo);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
+                $this->em->persist($combo);
+                $this->em->flush();
+                $this->syncComboDestinations($combo, $form->get('destinos')->getData());
+                $this->addFlash('success', 'Combo creado correctamente.');
+
+                return $this->redirectToRoute('app_admin_transfer_combos');
+            }
+        }
+
+        $combos = $this->em->getRepository(TransferCombo::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/combos.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'combos' => $combos,
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/combos/{id}', name: 'app_admin_transfer_combo_edit')]
+    public function editTransferCombo(Request $request, TransferCombo $combo, SluggerInterface $slugger): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_combos'] = true;
+
+        $selected = [];
+        foreach ($combo->getDestinos() as $destino) {
+            $selected[] = $destino->getDestino();
+        }
+
+        $form = $this->createForm(TransferComboType::class, $combo, [
+            'selected_destinations' => $selected,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
+                $this->em->flush();
+                $this->syncComboDestinations($combo, $form->get('destinos')->getData());
+                $this->addFlash('success', 'Combo actualizado.');
+
+                return $this->redirectToRoute('app_admin_transfer_combos');
+            }
+        }
+
+        $combos = $this->em->getRepository(TransferCombo::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/combos.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'combos' => $combos,
+            'editing' => true,
+            'editingCombo' => $combo,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/combos/{id}/toggle', name: 'app_admin_transfer_combo_toggle', methods: ['POST'])]
+    public function toggleTransferCombo(TransferCombo $combo): Response
+    {
+        $combo->setActivo(!$combo->isActivo());
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf('El combo "%s" ahora está %s.', $combo->getNombre(), $combo->isActivo() ? 'visible' : 'oculto'));
+
+        return $this->redirectToRoute('app_admin_transfer_combos');
+    }
+
+    #[Route('/administrador/traslados/campos', name: 'app_admin_transfer_fields')]
+    public function manageTransferFields(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_campos'] = true;
+
+        $field = new TransferFormField();
+        $form = $this->createForm(TransferFormFieldType::class, $field);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->applyFieldOptions($field, (string) $form->get('opciones')->getData())) {
+                return $this->redirectToRoute('app_admin_transfer_fields');
+            }
+
+            $this->em->persist($field);
+            $this->em->flush();
+            $this->addFlash('success', 'Campo agregado al formulario de traslado.');
+
+            return $this->redirectToRoute('app_admin_transfer_fields');
+        }
+
+        $campos = $this->em->getRepository(TransferFormField::class)->findBy([], ['orden' => 'ASC']);
+
+        return $this->render('administrador/transfer/fields.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'campos' => $campos,
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/campos/{id}', name: 'app_admin_transfer_field_edit')]
+    public function editTransferField(Request $request, TransferFormField $field): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_campos'] = true;
+
+        $initialOptions = $field->getOpciones() ? json_encode($field->getOpciones(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '';
+        $form = $this->createForm(TransferFormFieldType::class, $field, [
+            'initial_options' => $initialOptions,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->applyFieldOptions($field, (string) $form->get('opciones')->getData())) {
+                return $this->redirectToRoute('app_admin_transfer_field_edit', ['id' => $field->getId()]);
+            }
+
+            $this->em->flush();
+            $this->addFlash('success', 'Campo actualizado.');
+
+            return $this->redirectToRoute('app_admin_transfer_fields');
+        }
+
+        $campos = $this->em->getRepository(TransferFormField::class)->findBy([], ['orden' => 'ASC']);
+
+        return $this->render('administrador/transfer/fields.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'campos' => $campos,
+            'editing' => true,
+            'editingField' => $field,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/solicitudes', name: 'app_admin_transfer_requests')]
+    public function transferRequests(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['traslados'] = true;
+        $this->adminMenu['transfer_requests'] = true;
+
+        $solicitudes = $this->em->getRepository(TransferRequest::class)->findBy([], ['creadoEn' => 'DESC']);
+
+        return $this->render('administrador/transfer/requests.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'solicitudes' => $solicitudes,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/solicitud/{id}/asignar', name: 'app_admin_transfer_request_assign')]
+    public function assignTransfer(Request $request, TransferRequest $solicitud): Response
+    {
+        if ($solicitud->getEstado() === TransferRequest::ESTADO_CANCELADO) {
+            $this->addFlash('error', 'No es posible asignar un traslado cancelado.');
+
+            return $this->redirectToRoute('app_admin_transfer_requests');
+        }
+
+        $activos = $this->em->getRepository(TransferAssignment::class)->count([
+            'solicitud' => $solicitud,
+            'estado' => TransferAssignment::ESTADO_CAPTURADO,
+        ]);
+
+        if ($activos > 0) {
+            $this->addFlash('error', 'Este traslado ya cuenta con un chofer activo.');
+
+            return $this->redirectToRoute('app_admin_transfer_requests');
+        }
+
+        $form = $this->createForm(TransferAssignDriverType::class, null, [
+            'query_builder' => function (\App\Repository\DriverProfileRepository $repository) {
+                return $repository->createQueryBuilder('d')
+                    ->andWhere('d.aprobado = :aprobado')
+                    ->setParameter('aprobado', true)
+                    ->orderBy('d.nombreCompleto', 'ASC');
+            },
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var DriverProfile $driver */
+            $driver = $form->get('driver')->getData();
+            $notas = (string) $form->get('notas')->getData();
+
+            $assignment = new TransferAssignment();
+            $assignment->setSolicitud($solicitud);
+            $assignment->setChofer($driver);
+            $assignment->setNotas($notas !== '' ? $notas : null);
+
+            $solicitud->setEstado(TransferRequest::ESTADO_CAPTURADO);
+
+            $this->em->persist($assignment);
+            $this->em->persist($solicitud);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Chofer asignado correctamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_requests');
+        }
+
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['traslados'] = true;
+
+        return $this->render('administrador/transfer/assign.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'solicitud' => $solicitud,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/solicitud/{id}/estado', name: 'app_admin_transfer_request_state', methods: ['POST'])]
+    public function updateTransferState(Request $request, TransferRequest $solicitud): Response
+    {
+        $estado = $request->request->get('estado');
+        $notas = $request->request->get('notas');
+
+        if (!in_array($estado, [
+            TransferRequest::ESTADO_EN_CURSO,
+            TransferRequest::ESTADO_COMPLETADO,
+            TransferRequest::ESTADO_CANCELADO,
+            TransferRequest::ESTADO_PENDIENTE,
+        ], true)) {
+            $this->addFlash('error', 'Estado de traslado no válido.');
+
+            return $this->redirectToRoute('app_admin_transfer_requests');
+        }
+
+        $solicitud->setEstado($estado);
+        if ($notas) {
+            $extras = $solicitud->getDatosExtra() ?? [];
+            $extras['admin_notes'] = $notas;
+            $solicitud->setDatosExtra($extras);
+        }
+
+        foreach ($solicitud->getAsignaciones() as $asignacion) {
+            if ($estado === TransferRequest::ESTADO_COMPLETADO) {
+                $asignacion->setEstado(TransferAssignment::ESTADO_COMPLETADO);
+                $asignacion->setFinalizadoEn(new \DateTimeImmutable());
+            } elseif ($estado === TransferRequest::ESTADO_CANCELADO) {
+                $asignacion->setEstado(TransferAssignment::ESTADO_CANCELADO);
+            } elseif ($estado === TransferRequest::ESTADO_PENDIENTE) {
+                $asignacion->setEstado(TransferAssignment::ESTADO_CANCELADO);
+            }
+        }
+
+        $this->em->flush();
+        $this->addFlash('success', 'Estado del traslado actualizado.');
+
+        return $this->redirectToRoute('app_admin_transfer_requests');
+    }
+
+    #[Route('/administrador/choferes', name: 'app_admin_drivers')]
+    public function manageDrivers(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['drivers'] = true;
+
+        $pendientes = $this->em->getRepository(DriverProfile::class)->findPendientes();
+        $habilitados = $this->em->getRepository(DriverProfile::class)->findBy(['aprobado' => true], ['nombreCompleto' => 'ASC']);
+
+        return $this->render('administrador/transfer/drivers.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'pendientes' => $pendientes,
+            'habilitados' => $habilitados,
+        ]);
+    }
+
+    #[Route('/administrador/choferes/{id}/estado', name: 'app_admin_driver_state', methods: ['POST'])]
+    public function updateDriverState(Request $request, DriverProfile $driver): Response
+    {
+        $action = $request->request->get('action', 'approve');
+        $usuario = $driver->getUsuario();
+        $roles = $usuario->getRoles();
+
+        if ($action === 'approve') {
+            $driver->setAprobado(true);
+            if (!in_array('ROLE_DRIVER', $roles, true)) {
+                $roles[] = 'ROLE_DRIVER';
+            }
+            $message = 'Chofer habilitado correctamente.';
+        } else {
+            $driver->setAprobado(false);
+            $roles = array_values(array_filter($roles, static fn (string $role) => $role !== 'ROLE_DRIVER'));
+            $message = 'Chofer suspendido.';
+        }
+
+        $usuario->setRoles(array_values(array_unique($roles)));
+
+        $this->em->persist($driver);
+        $this->em->persist($usuario);
+        $this->em->flush();
+
+        $this->addFlash('success', $message);
+
+        return $this->redirectToRoute('app_admin_drivers');
+    }
+
+    private function hydrateTransferCombo(TransferCombo $combo, FormInterface $form, SluggerInterface $slugger): bool
+    {
+        /** @var UploadedFile|null $cover */
+        $cover = $form->get('imagenPortadaFile')->getData();
+        if ($cover instanceof UploadedFile) {
+            $upload = $this->upload($cover, 'img_transfer', $slugger);
+            if (!$upload['upload']) {
+                $this->addFlash('error', 'No se pudo subir la imagen de portada del combo.');
+
+                return false;
+            }
+
+            $combo->setImagenPortada($upload['filename']);
+        }
+
+        return true;
+    }
+
+    private function hydrateTransferDestination(TransferDestination $destination, FormInterface $form, SluggerInterface $slugger): bool
+    {
+        $lat = $this->parseCoordinate($form->get('latitud')->getData());
+        $lng = $this->parseCoordinate($form->get('longitud')->getData());
+
+        if (($lat === null) xor ($lng === null)) {
+            $this->addFlash('error', 'Seleccioná una ubicación válida en el mapa antes de guardar.');
+
+            return false;
+        }
+
+        $destination->withLocation($lat, $lng);
+
+        /** @var UploadedFile|null $cover */
+        $cover = $form->get('imagenPortadaFile')->getData();
+        if ($cover instanceof UploadedFile) {
+            $upload = $this->upload($cover, 'img_transfer', $slugger);
+            if (!$upload['upload']) {
+                $this->addFlash('error', 'No se pudo subir la imagen de portada del destino.');
+
+                return false;
+            }
+
+            $destination->setImagenPortada($upload['filename']);
+        }
+
+        return true;
+    }
+
+    private function parseCoordinate(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function getTransferMapDefaults(): array
+    {
+        return [
+            'lat' => -25.5972,
+            'lng' => -54.5781,
+            'zoom' => 12,
+        ];
+    }
+
+    private function collectTransferStats(): array
+    {
+        $counts = [];
+        foreach ([
+            'pendientes' => TransferRequest::ESTADO_PENDIENTE,
+            'capturados' => TransferRequest::ESTADO_CAPTURADO,
+            'en_curso' => TransferRequest::ESTADO_EN_CURSO,
+            'completados' => TransferRequest::ESTADO_COMPLETADO,
+            'cancelados' => TransferRequest::ESTADO_CANCELADO,
+        ] as $key => $estado) {
+            $counts[$key] = $this->countRequestsByEstado($estado);
+        }
+
+        $totalDestinos = (int) $this->em->getRepository(TransferDestination::class)->createQueryBuilder('d')
+            ->select('COUNT(d.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        $totalCombos = (int) $this->em->getRepository(TransferCombo::class)->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+        $choferesPendientes = count($this->em->getRepository(DriverProfile::class)->findPendientes());
+        $choferesActivos = (int) $this->em->getRepository(DriverProfile::class)->createQueryBuilder('d')
+            ->select('COUNT(d.id)')
+            ->andWhere('d.aprobado = :aprobado')
+            ->setParameter('aprobado', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return [
+            'totalSolicitudes' => array_sum($counts),
+            'porEstado' => $counts,
+            'destinos' => $totalDestinos,
+            'combos' => $totalCombos,
+            'choferesPendientes' => $choferesPendientes,
+            'choferesActivos' => $choferesActivos,
+        ];
+    }
+
+    private function countRequestsByEstado(string $estado): int
+    {
+        return (int) $this->em->getRepository(TransferRequest::class)->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->andWhere('r.estado = :estado')
+            ->setParameter('estado', $estado)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function syncComboDestinations(TransferCombo $combo, iterable $destinos): void
+    {
+        foreach ($combo->getDestinos() as $existing) {
+            $this->em->remove($existing);
+        }
+        $combo->getDestinos()->clear();
+
+        $position = 1;
+        foreach ($destinos as $destino) {
+            if (!$destino instanceof TransferDestination) {
+                continue;
+            }
+
+            $link = new TransferComboDestination();
+            $link->setCombo($combo);
+            $link->setDestino($destino);
+            $link->setPosicion($position++);
+            $this->em->persist($link);
+            $combo->addDestino($link);
+        }
+
+        $this->em->flush();
+    }
+
+    private function applyFieldOptions(TransferFormField $field, string $rawOptions): bool
+    {
+        if ($rawOptions === '') {
+            $field->setOpciones(null);
+
+            return true;
+        }
+
+        try {
+            $decoded = json_decode($rawOptions, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            $this->addFlash('error', 'El JSON de opciones no es válido: ' . $exception->getMessage());
+
+            return false;
+        }
+
+        if (!is_array($decoded)) {
+            $this->addFlash('error', 'El JSON de opciones debe representar un objeto o arreglo.');
+
+            return false;
+        }
+
+        $field->setOpciones($decoded);
+
+        return true;
+    }
 }

@@ -1,0 +1,153 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Balance - Panel admin{% endblock %}
+
+{% block body %}
+    <div class="p-3" style="background-color: white; box-shadow: 2px 2px 2px rgba(0,0,0,0.3)">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-1">Balance de la plataforma</h1>
+                <p class="text-muted mb-0">Controlá el estado de tu cuenta de Mercado Pago y las comisiones generadas por los servicios de los partners.</p>
+            </div>
+            {% if credencialesMercadoPago and credencialesMercadoPago.accessToken %}
+                <form method="post" action="{{ path('app_admin_mercadopago_disconnect') }}" onsubmit="return confirm('¿Seguro que querés desconectar Mercado Pago?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_mp_disconnect') }}">
+                    <button type="submit" class="btn btn-outline-danger">Desconectar Mercado Pago</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label == 'success' ? 'success' : (label == 'error' ? 'danger' : 'info') }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {% if not credencialesMercadoPago or not credencialesMercadoPago.accessToken %}
+            <div class="alert alert-warning d-flex flex-column flex-md-row align-items-md-center justify-content-between" role="alert">
+                <div class="me-md-3">
+                    <h2 class="h5 mb-1">Tu cuenta aún no está conectada</h2>
+                    <p class="mb-0">Conectá Mercado Pago para habilitar los cobros con split entre la plataforma y tus partners.</p>
+                </div>
+                <div>
+                    {% if puedeConectarMercadoPago %}
+                        <a class="btn btn-primary" href="{{ path('app_admin_mercadopago_connect') }}">Conectar Mercado Pago</a>
+                    {% else %}
+                        <a class="btn btn-outline-primary" href="{{ path('app_admin_configuraciones') }}">Configurar credenciales</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            {% set disponible = balanceMercadoPago.available_balance ?? {} %}
+            {% set pendiente = balanceMercadoPago.pending_balance ?? {} %}
+            {% set total = balanceMercadoPago.total_balance ?? {} %}
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 text-muted text-uppercase">Saldo disponible</h2>
+                            <div class="display-6 fw-semibold">{{ disponible.amount is defined ? disponible.amount|number_format(2, ',', '.') : '0,00' }} {{ disponible.currency_id ?? 'ARS' }}</div>
+                            <p class="text-muted small mb-0">Listo para retirar o transferir.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 text-muted text-uppercase">Saldo pendiente</h2>
+                            <div class="display-6 fw-semibold">{{ pendiente.amount is defined ? pendiente.amount|number_format(2, ',', '.') : '0,00' }} {{ pendiente.currency_id ?? 'ARS' }}</div>
+                            <p class="text-muted small mb-0">En proceso de liberación por Mercado Pago.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 text-muted text-uppercase">Balance total</h2>
+                            <div class="display-6 fw-semibold">{{ total.amount is defined ? total.amount|number_format(2, ',', '.') : '0,00' }} {{ total.currency_id ?? 'ARS' }}</div>
+                            <p class="text-muted small mb-0">Incluye montos disponibles y pendientes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                        <div>
+                            <h2 class="h5 mb-1">Comisión generada</h2>
+                            <p class="text-muted mb-0">Suma estimada de application fees cobrados por la plataforma en los últimos pagos aprobados.</p>
+                        </div>
+                        <div class="text-lg-end">
+                            <div class="fs-3 fw-semibold">{{ totalComisionMercadoPago|number_format(2, ',', '.') }} {{ disponible.currency_id ?? 'ARS' }}</div>
+                            <div class="text-muted small">Basado en los últimos 10 pagos.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3">
+                    <div>
+                        <h2 class="h5 mb-1">Pagos recientes</h2>
+                        <p class="text-muted mb-0">Resumen de las últimas operaciones cobradas con Mercado Pago.</p>
+                    </div>
+                    <div>
+                        {% if credencialesMercadoPago and credencialesMercadoPago.accessToken %}
+                            <a class="btn btn-outline-primary" href="{{ path('app_admin_mercadopago_connect') }}">Reautorizar acceso</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Servicio</th>
+                            <th>Partner</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-end">Comisión plataforma</th>
+                            <th>Estado</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if pagosMercadoPago is empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Aún no se registraron pagos mediante Mercado Pago.</td>
+                            </tr>
+                        {% else %}
+                            {% for pago in pagosMercadoPago %}
+                                {% set reserva = pago.solicitudReserva %}
+                                {% set servicio = reserva ? reserva.booking : null %}
+                                {% set partner = servicio ? servicio.bookingPartner : null %}
+                                <tr>
+                                    <td>{{ pago.createdAt ? pago.createdAt|date('d/m/Y H:i') : '-' }}</td>
+                                    <td>{{ servicio ? (servicio.nombre ?: 'Sin título') : '-' }}</td>
+                                    <td>{{ partner and partner.Usuario ? partner.Usuario.nombre ~ ' (' ~ partner.Usuario.email ~ ')' : '-' }}</td>
+                                    <td class="text-end">{{ pago.transactionAmount|number_format(2, ',', '.') }} {{ disponible.currency_id ?? 'ARS' }}</td>
+                                    <td class="text-end">{{ (pago.applicationFee ?? 0)|number_format(2, ',', '.') }} {{ disponible.currency_id ?? 'ARS' }}</td>
+                                    <td>
+                                        {% if pago.status == 'approved' %}
+                                            <span class="badge text-bg-success">Aprobado</span>
+                                        {% elseif pago.status == 'pending' %}
+                                            <span class="badge text-bg-warning text-dark">Pendiente</span>
+                                        {% else %}
+                                            <span class="badge text-bg-secondary">{{ pago.status|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

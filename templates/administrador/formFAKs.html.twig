@@ -16,6 +16,15 @@
         <div class="row">
             <div class="col-md-2"></div>
             <div class="col-md-8 p-5" style="text-align: left; min-width: 410px !important;">
+                {% if partnerInviteLink is defined %}
+                    <div class="alert alert-info d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2">
+                        <div>
+                            <strong>Enlace privado para partners:</strong>
+                            <span class="small d-block d-lg-inline text-muted">Podés pegar este enlace en la respuesta para habilitar el registro oculto.</span>
+                        </div>
+                        <code class="small text-break mb-0">{{ partnerInviteLink }}</code>
+                    </div>
+                {% endif %}
                 {% if editarPregunta == true %}
                     <h3>Crear/editar pregunta</h3>
                     <p>Lenguaje por defecto: {{ lenguajeFormulario.nombre }}  <img src="{{ asset(icon_language  ~ '/'  ~ lenguajeFormulario.icono ) }}" alt="" style="height: 1rem"></p>

@@ -53,6 +53,7 @@
                         <th scope="col">Seleccionar</th>
                         <th scope="col">Codigo</th>
                         <th scope="col">Nombre</th>
+                        <th scope="col">Partner</th>
                         <th scope="col">Disponibles</th>
                         <th scope="col">Válido hasta</th>
                         <th scope="col">Traducciones</th>
@@ -66,6 +67,18 @@
                             <td><input type="checkbox" ></td>
                             <td>{{ booking.id }}</td>
                             <td>{{ booking.nombre }}</td>
+                            <td>
+                                {% if booking.bookingPartner %}
+                                    {% if booking.bookingPartner.usuario %}
+                                        {{ booking.bookingPartner.usuario.nombre }}
+                                        <div class="small text-muted">{{ booking.bookingPartner.usuario.email }}</div>
+                                    {% else %}
+                                        <span class="text-muted">Partner sin usuario asignado</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Administrador</span>
+                                {% endif %}
+                            </td>
                             <td>{% if booking %}
                                 {{ booking.getLugaresDisponibles['total'] }}{% else %}-{% endif %}</td>
                             <td>{{ booking.validoHasta | date("d/m/Y H:i","America/Argentina/Buenos_Aires")}}</td>

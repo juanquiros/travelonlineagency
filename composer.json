@@ -51,6 +51,7 @@
         "symfony/yaml": "7.1.*",
         "twbs/bootstrap": "^5.3",
         "twig/extra-bundle": "^2.12|^3.0",
+        "twig/string-extra": "^3.0",
         "twig/twig": "^2.12|^3.0",
         "wemersonjanuario/wkhtmltopdf-windows": "0.12.2.3"
     },

@@ -56,6 +56,8 @@
 /public/img/reservas/
 /public/img/traslados/
 /public/img/
+!public/img/
+!public/img/logo-toa.png
 /public/logo.ico
 /public/ipn.txt
 /public/artiMP.dim

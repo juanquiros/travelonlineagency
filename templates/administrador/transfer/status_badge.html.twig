@@ -1,0 +1,9 @@
+{% set labels = {
+    constant('App\\Entity\\TransferRequest::ESTADO_PENDIENTE'): ['Pendiente', 'bg-secondary'],
+    constant('App\\Entity\\TransferRequest::ESTADO_CAPTURADO'): ['Capturado', 'bg-info'],
+    constant('App\\Entity\\TransferRequest::ESTADO_EN_CURSO'): ['En curso', 'bg-warning text-dark'],
+    constant('App\\Entity\\TransferRequest::ESTADO_COMPLETADO'): ['Completado', 'bg-success'],
+    constant('App\\Entity\\TransferRequest::ESTADO_CANCELADO'): ['Cancelado', 'bg-danger']
+} %}
+{% set data = labels[estado] ?? ['Desconocido', 'bg-light text-dark'] %}
+<span class="badge {{ data[1] }}">{{ data[0] }}</span>
