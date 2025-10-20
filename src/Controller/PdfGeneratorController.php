@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Booking;
 use App\Entity\EstadoReserva;
+use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
 use App\Entity\TransferRequest;
 use App\Entity\Usuario;
