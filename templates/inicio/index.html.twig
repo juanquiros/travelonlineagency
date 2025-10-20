@@ -114,6 +114,39 @@
                         {% endfor %}
                     </div>
                 {% endif %}
+                {% set mappedDestinations = [] %}
+                {% for destino in transferDestinations %}
+                    {% if destino.latitude is not null and destino.longitude is not null %}
+                        {% set mappedDestinations = mappedDestinations|merge([
+                            {
+                                'nombre': destino.nombre,
+                                'lat': destino.latitude,
+                                'lng': destino.longitude,
+                                'descripcion': destino.descripcion ? destino.descripcion|striptags|u.truncate(120, '…') : null,
+                                'tarifa': destino.tarifaBase,
+                                'moneda': 'ARS'
+                            }
+                        ]) %}
+                    {% endif %}
+                {% endfor %}
+                {% if mappedDestinations|length > 0 %}
+                    {% set firstPoint = mappedDestinations[0] %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-body">
+                            <h3 class="h6 text-uppercase text-muted">Mapa de destinos</h3>
+                            <div class="ratio ratio-16x9"
+                                 data-controller="transfer-destinations-overview"
+                                 data-transfer-destinations-overview-destinations-value="{{ mappedDestinations|json_encode(constant('JSON_UNESCAPED_UNICODE'))|e('html_attr') }}"
+                                 data-transfer-destinations-overview-lat-value="{{ firstPoint.lat }}"
+                                 data-transfer-destinations-overview-lng-value="{{ firstPoint.lng }}">
+                                <div data-transfer-destinations-overview-target="map" class="w-100 h-100 rounded"></div>
+                            </div>
+                            <div class="alert alert-warning mt-3 d-none" data-transfer-destinations-overview-target="fallback">
+                                No pudimos cargar el mapa en este momento. Actualizá la página para volver a intentarlo.
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="text-center mt-4">
                     <a class="btn btn-outline-primary" href="{{ path('app_transfers') }}">Planificá tu traslado</a>
                     {% if not customTransfersEnabled %}

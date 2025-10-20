@@ -1,10 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
+import { loadLeaflet } from '../utils/leaflet_loader.js';
 
-const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const DEFAULT_LAT = -25.5972;
 const DEFAULT_LNG = -54.5781;
-let leafletLoader = null;
 
 export default class extends Controller {
     static targets = ['map', 'latitude', 'longitude', 'output'];
@@ -16,7 +14,7 @@ export default class extends Controller {
 
     async connect() {
         try {
-            const L = await this.loadLeaflet();
+            const L = await loadLeaflet();
             this.initMap(L);
         } catch (error) {
             console.error('Leaflet failed to load', error);
@@ -30,40 +28,6 @@ export default class extends Controller {
         if (this.mapInstance) {
             this.mapInstance.remove();
         }
-    }
-
-    async loadLeaflet() {
-        if (window.L) {
-            return window.L;
-        }
-
-        if (!leafletLoader) {
-            leafletLoader = new Promise((resolve, reject) => {
-                const css = document.createElement('link');
-                css.rel = 'stylesheet';
-                css.href = LEAFLET_CSS;
-                css.integrity = 'sha256-sA+4psu6Y8VJbR8iicsDkbxU7G3ohoN6LKa5YShdP0M=';
-                css.crossOrigin = '';
-                document.head.appendChild(css);
-
-                const script = document.createElement('script');
-                script.src = LEAFLET_JS;
-                script.integrity = 'sha256-o9N1j7kGStIo3h4nLz96Ftx9qfFz8j6DmyFfZ7XALHU=';
-                script.crossOrigin = '';
-                script.async = true;
-                script.addEventListener('load', () => {
-                    if (window.L) {
-                        resolve(window.L);
-                    } else {
-                        reject(new Error('Leaflet global not available after load'));
-                    }
-                });
-                script.addEventListener('error', reject);
-                document.head.appendChild(script);
-            });
-        }
-
-        return leafletLoader;
     }
 
     initMap(L) {

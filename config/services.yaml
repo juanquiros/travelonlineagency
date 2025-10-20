@@ -6,11 +6,11 @@
 parameters:
     timezone: '%env(APP_TIMEZONE)%'
     icon_language: '/img/language'
-    img: '%kernel.project_dir%\public\img'
-    basedir: '%kernel.project_dir%\public'
-    img_booking: '%kernel.project_dir%\public\img\booking'
-    img_driver: '%kernel.project_dir%\public\img\drivers'
-    img_transfer: '%kernel.project_dir%\public\img\transfer'
+    img: '%kernel.project_dir%/public/img'
+    basedir: '%kernel.project_dir%/public'
+    img_booking: '%kernel.project_dir%/public/img/booking'
+    img_driver: '%kernel.project_dir%/public/img/drivers'
+    img_transfer: '%kernel.project_dir%/public/img/transfer'
 services:
     # default configuration for services in *this* file
     _defaults:

@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class TransferController extends AbstractController
 {
@@ -46,7 +47,7 @@ final class TransferController extends AbstractController
 
                 $trackingUrl = $this->generateUrl('app_transfer_tracking', [
                     'token' => $solicitud->getTokenSeguimiento(),
-                ], Route::ABSOLUTE_URL);
+                ], UrlGeneratorInterface::ABSOLUTE_URL);
 
                 mailerServer::enviarTrasladoSolicitud($this->em, $this->mailer, $solicitud, $trackingUrl);
 
@@ -102,7 +103,7 @@ final class TransferController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-        $trackingUrl = $this->generateUrl('app_transfer_tracking', ['token' => $token], Route::ABSOLUTE_URL);
+        $trackingUrl = $this->generateUrl('app_transfer_tracking', ['token' => $token], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $asignacionActiva = null;
         foreach ($solicitud->getAsignaciones() as $asignacion) {

@@ -99,10 +99,17 @@ class AdministradorController extends AbstractController
             if (!is_dir($targetDirectory) && !@mkdir($targetDirectory, 0775, true) && !is_dir($targetDirectory)) {
                 return ['filename'=> "",'upload'=>false];
             }
+
+            $targetDirectory = rtrim($targetDirectory, "\\/");
+
             $Filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $safeFilename = $slugger->slug($Filename);
             $newFilename = $safeFilename.'-'.uniqid().'.'.$file->guessExtension();
-            $imgInfo = getimagesize($file);
+            $imgInfo = @getimagesize($file->getPathname());
+            if ($imgInfo === false || !isset($imgInfo['mime'])) {
+                return ['filename'=> "",'upload'=>false];
+            }
+
             $calidad = $file->getSize();
             if($calidad > 1536){ $calidad = 70;}else{$calidad = 100;}
             $mime = $imgInfo['mime'];
@@ -119,19 +126,23 @@ class AdministradorController extends AbstractController
             }else{
                 switch($mime){
                     case 'image/jpeg':
-                        $imagen = imagecreatefromjpeg($file);
+                        $imagen = @imagecreatefromjpeg($file->getPathname());
                         break;
                     case 'image/gif':
-                        $imagen = imagecreatefromgif($file);
+                        $imagen = @imagecreatefromgif($file->getPathname());
                         break;
                     default:
-                        $imagen = imagecreatefromjpeg($file);
+                        $imagen = @imagecreatefromstring(@file_get_contents($file->getPathname()));
+                }
+
+                if(!$imagen){
+                    return ['filename'=> "",'upload'=>false];
                 }
 
                 try {
-                    imagejpeg($imagen, $targetDirectory.'/'.$newFilename,$calidad);
-
-                } catch (FileException $e) {
+                    imagejpeg($imagen, $targetDirectory.DIRECTORY_SEPARATOR.$newFilename,$calidad);
+                    imagedestroy($imagen);
+                } catch (\Throwable $e) {
                     return ['filename'=> "",'upload'=>false];
                 }
             }
