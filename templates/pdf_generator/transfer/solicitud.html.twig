@@ -63,7 +63,7 @@
     {% endif %}
 
     <div class="qr">
-        <img src="{{ qr_code_data_uri(trackingUrl, { size: 200 }) }}" alt="QR seguimiento" />
+        <img src="{{ qr_code_data_uri(trackingUrl, 'transfer_tracking') }}" alt="QR seguimiento" />
         <p class="muted">Escaneá el código para seguir el viaje: {{ trackingUrl }}</p>
     </div>
 
