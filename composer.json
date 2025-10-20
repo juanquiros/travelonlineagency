@@ -13,6 +13,7 @@
         "doctrine/orm": "^3.3",
         "endroid/qr-code-bundle": "^6.0",
         "friendsofsymfony/jsrouting-bundle": "^3.5",
+        "h4cc/wkhtmltopdf-amd64": "^0.12.4",
         "knplabs/knp-snappy-bundle": "^1.10",
         "mercadopago/dx-php": "^3.0",
         "minishlink/web-push": "^9.0",

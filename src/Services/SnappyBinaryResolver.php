@@ -8,6 +8,7 @@ class SnappyBinaryResolver
 {
     private const WINDOWS_PDF = '\\vendor\\wemersonjanuario\\wkhtmltopdf-windows\\bin\\64bit\\wkhtmltopdf.exe';
     private const WINDOWS_IMAGE = '\\vendor\\wemersonjanuario\\wkhtmltopdf-windows\\bin\\64bit\\wkhtmltoimage.exe';
+    private const VENDOR_LINUX_PDF = 'vendor/h4cc/wkhtmltopdf-amd64/bin/wkhtmltopdf-amd64';
     private const LINUX_PDF_DEFAULTS = [
         '/usr/bin/wkhtmltopdf',
         '/usr/local/bin/wkhtmltopdf',
@@ -35,6 +36,11 @@ class SnappyBinaryResolver
 
         if (\PHP_OS_FAMILY === 'Windows') {
             return $this->buildWindowsPath(self::WINDOWS_PDF);
+        }
+
+        $vendorBinary = $this->buildVendorBinary(self::VENDOR_LINUX_PDF);
+        if ($vendorBinary) {
+            return $vendorBinary;
         }
 
         return $this->resolveUnixBinary(self::LINUX_PDF_DEFAULTS, 'wkhtmltopdf');
@@ -72,6 +78,13 @@ class SnappyBinaryResolver
         }
 
         return $binaryName;
+    }
+
+    private function buildVendorBinary(string $relativePath): ?string
+    {
+        $path = $this->projectDir . DIRECTORY_SEPARATOR . str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $relativePath);
+
+        return $this->isUsableBinary($path) ? $path : null;
     }
 
     private function isUsableBinary(?string $path): bool

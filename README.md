@@ -54,7 +54,7 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
 
 - La generación de PDFs (solicitudes de reservas, traslados, etc.) utiliza [wkhtmltopdf](https://wkhtmltopdf.org/). Desde la
   versión actual el binario se detecta automáticamente según el sistema operativo:
-  - **Linux/macOS** → se probarán las rutas `/usr/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltopdf` y `/snap/bin/wkhtmltopdf`.
+  - **Linux/macOS** → primero se utiliza el binario empaquetado en `vendor/h4cc/wkhtmltopdf-amd64/bin/wkhtmltopdf-amd64` (instalado vía Composer). Si no está disponible o no es ejecutable, se prueban las rutas `/usr/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltopdf` y `/snap/bin/wkhtmltopdf`.
   - **Windows** → se utiliza el ejecutable incluido en `vendor/wemersonjanuario/wkhtmltopdf-windows`.
 - Si tu instalación vive en otro directorio podés forzar la ruta especificando las variables de entorno:
   ```env
