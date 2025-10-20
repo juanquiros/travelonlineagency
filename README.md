@@ -9,6 +9,8 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
 - Extensiones de PHP: `curl`, `intl`, `zip`, `pdo_pgsql`, `gd`.
 - Node.js 18+ y npm (para compilar assets administrados con Symfony Asset Mapper).
 - Docker y Docker Compose (opcional, pero recomendados para los servicios auxiliares).
+- Binarios de `wkhtmltopdf` y `wkhtmltoimage` disponibles en el sistema (`/usr/bin` en Linux, instalador oficial en Windows) o
+  rutas personalizadas definidas mediante variables de entorno.
 
 > ⚠️ Si ejecutás `composer install` o `composer update` con PHP 8.1 obtendrás un error similar a:
 >
@@ -47,6 +49,20 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
    npm install
    npm run dev -- --watch
    ```
+
+### Configuración de wkhtmltopdf
+
+- La generación de PDFs (solicitudes de reservas, traslados, etc.) utiliza [wkhtmltopdf](https://wkhtmltopdf.org/). Desde la
+  versión actual el binario se detecta automáticamente según el sistema operativo:
+  - **Linux/macOS** → se probarán las rutas `/usr/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltopdf` y `/snap/bin/wkhtmltopdf`.
+  - **Windows** → se utiliza el ejecutable incluido en `vendor/wemersonjanuario/wkhtmltopdf-windows`.
+- Si tu instalación vive en otro directorio podés forzar la ruta especificando las variables de entorno:
+  ```env
+  WKHTMLTOPDF_PATH=/ruta/completa/al/binario/wkhtmltopdf
+  WKHTMLTOIMAGE_PATH=/ruta/completa/al/binario/wkhtmltoimage
+  ```
+- Recordá reiniciar el servicio PHP-FPM/Symfony después de modificar estas variables para que la resolución del binario se
+  actualice.
 
 ## Datos de prueba para phpMyAdmin
 
