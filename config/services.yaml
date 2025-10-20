@@ -11,6 +11,8 @@ parameters:
     img_booking: '%kernel.project_dir%/public/img/booking'
     img_driver: '%kernel.project_dir%/public/img/drivers'
     img_transfer: '%kernel.project_dir%/public/img/transfer'
+    env(WKHTMLTOPDF_PATH): ''
+    env(WKHTMLTOIMAGE_PATH): ''
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -31,5 +33,5 @@ services:
     App\Services\SnappyBinaryResolver:
         arguments:
             $projectDir: '%kernel.project_dir%'
-            $pdfBinaryOverride: '%env(default::null:WKHTMLTOPDF_PATH)%'
-            $imageBinaryOverride: '%env(default::null:WKHTMLTOIMAGE_PATH)%'
+            $pdfBinaryOverride: '%env(string:WKHTMLTOPDF_PATH)%'
+            $imageBinaryOverride: '%env(string:WKHTMLTOIMAGE_PATH)%'
