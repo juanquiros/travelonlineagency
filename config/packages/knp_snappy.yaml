@@ -1,11 +1,11 @@
 knp_snappy:
     pdf:
         enabled:    true
-        binary:     '%env(default:/usr/bin/wkhtmltopdf:WKHTMLTOPDF_PATH)%'
+        binary:     'wkhtmltopdf'
         options:
             - { name: 'viewport-size', value: '1024x768' }
             - { name: 'page-size', value: 'A4'}
     image:
         enabled:    true
-        binary:     '%env(default:/usr/bin/wkhtmltoimage:WKHTMLTOIMAGE_PATH)%'
+        binary:     'wkhtmltoimage'
         options:    []
