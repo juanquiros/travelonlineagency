@@ -28,7 +28,36 @@
                     {{ form_label(formularioPlataforma.nombre) }}
                     {{ form_widget(formularioPlataforma.nombre) }}
 
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-6">
+                            {{ form_row(formularioPlataforma.language_def) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(formularioPlataforma.moneda_def) }}
+                        </div>
+                    </div>
 
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form_widget(formularioPlataforma.enableMercadoPagoPayments, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(formularioPlataforma.enableMercadoPagoPayments, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            <div class="form-check">
+                                {{ form_widget(formularioPlataforma.enablePayPalPayments, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(formularioPlataforma.enablePayPalPayments, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            <div class="form-check">
+                                {{ form_widget(formularioPlataforma.enableCashPayments, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(formularioPlataforma.enableCashPayments, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            {{ form_label(formularioPlataforma.cashPaymentInstructions) }}
+                            {{ form_widget(formularioPlataforma.cashPaymentInstructions, {'attr': {'class': 'form-control'}}) }}
+                            <small class="form-text text-muted">Este mensaje se mostrará a los clientes que elijan pagar en efectivo.</small>
+                        </div>
+                    </div>
 
                     {{ form_errors(formularioPlataforma.logo) }}
                     {{ form_label(formularioPlataforma.logo) }}
@@ -48,8 +77,9 @@
 
                     {{ form_widget(formularioPlataforma.icono) }}
 
+                    {{ form_rest(formularioPlataforma) }}
 
-                    {{ form_end(formularioPlataforma  ) }}
+                    {{ form_end(formularioPlataforma, {'render_rest': false}) }}
 
 
                 </div>

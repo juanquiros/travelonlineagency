@@ -13,6 +13,7 @@ use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\File;
@@ -59,6 +60,23 @@ class PlataformaType extends AbstractType
             ->add('moneda_def', EntityType::class, [
                 'class' => Moneda::class,
                 'choice_label' => 'nombre',
+            ])
+            ->add('enableMercadoPagoPayments', CheckboxType::class, [
+                'label' => 'Permitir pagos con Mercado Pago',
+                'required' => false,
+            ])
+            ->add('enablePayPalPayments', CheckboxType::class, [
+                'label' => 'Permitir pagos con PayPal',
+                'required' => false,
+            ])
+            ->add('enableCashPayments', CheckboxType::class, [
+                'label' => 'Permitir pago en efectivo',
+                'required' => false,
+            ])
+            ->add('cashPaymentInstructions', TextareaType::class, [
+                'label' => 'Instrucciones para pagos en efectivo',
+                'required' => false,
+                'attr' => ['rows' => 3],
             ])
             ->add('linkInstagram',TextType::class,['label'=>'Link Instagram',
                 'required' => false])

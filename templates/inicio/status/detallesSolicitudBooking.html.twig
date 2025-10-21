@@ -10,9 +10,29 @@
                     <h3 class="h5">Titular: {{ booking.name }} {{ booking.surname }}</h3>
                     <p class="text-muted">Estado actual: {{ booking.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
 
+                    {% if booking.estado.id == 1 %}
+                        <div class="alert alert-info text-start">
+                            <strong>Tu reserva sigue pendiente de pago.</strong><br>
+                            Elegí un método para abonar desde el botón inferior o continua con el que ya seleccionaste.
+                        </div>
+                        <a class="btn btn-primary mb-3" href="{{ opcionesPagoUrl }}">Ver opciones de pago</a>
+                    {% endif %}
+
                     {% if pago %}
-                        <div class="alert alert-info">Tu reserva está pendiente de pago. Podés completarlo desde el siguiente enlace.</div>
-                        <a class="btn btn-primary" href="{{ pago.linkPago }}" target="_blank">Pagar con PayPal</a>
+                        <div class="alert alert-primary text-start">
+                            Tenés un pago iniciado con PayPal pendiente de confirmación.
+                            <a class="alert-link" href="{{ pago.linkPago }}" target="_blank">Finalizar pago</a>
+                        </div>
+                    {% endif %}
+
+                    {% if pagoEfectivo %}
+                        <div class="alert alert-warning text-start">
+                            <h4 class="h6">Pago en efectivo solicitado</h4>
+                            <p class="mb-1">Monto a abonar: <strong>{{ pagoEfectivo.amount|number_format(2, ',', '.') }} {{ pagoEfectivo.currency }}</strong></p>
+                            {% if pagoEfectivo.notes %}
+                                <p class="mb-0">{{ pagoEfectivo.notes|nl2br }}</p>
+                            {% endif %}
+                        </div>
                     {% endif %}
 
                     {% if adicionales | length > 0 %}

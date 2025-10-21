@@ -74,12 +74,27 @@ class Plataforma
     #[ORM\Column]
     private ?float $comisionBookingPartner = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $enableMercadoPagoPayments = true;
+
+    #[ORM\Column(options: ['default' => true])]
+    private bool $enablePayPalPayments = true;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $enableCashPayments = false;
+
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $cashPaymentInstructions = null;
+
     public function __construct()
     {
         $this->comisionBookingPartner = 5;
         $this->traslados_OD_libres = false;
         $this->lenguajes = new ArrayCollection();
         $this->traducciones = new ArrayCollection();
+        $this->enableMercadoPagoPayments = true;
+        $this->enablePayPalPayments = true;
+        $this->enableCashPayments = false;
     }
 
     public function getId(): ?int
@@ -337,6 +352,54 @@ class Plataforma
     public function setComisionBookingPartner(float $comisionBookingPartner): static
     {
         $this->comisionBookingPartner = $comisionBookingPartner;
+
+        return $this;
+    }
+
+    public function isEnableMercadoPagoPayments(): bool
+    {
+        return $this->enableMercadoPagoPayments;
+    }
+
+    public function setEnableMercadoPagoPayments(bool $enableMercadoPagoPayments): static
+    {
+        $this->enableMercadoPagoPayments = $enableMercadoPagoPayments;
+
+        return $this;
+    }
+
+    public function isEnablePayPalPayments(): bool
+    {
+        return $this->enablePayPalPayments;
+    }
+
+    public function setEnablePayPalPayments(bool $enablePayPalPayments): static
+    {
+        $this->enablePayPalPayments = $enablePayPalPayments;
+
+        return $this;
+    }
+
+    public function isEnableCashPayments(): bool
+    {
+        return $this->enableCashPayments;
+    }
+
+    public function setEnableCashPayments(bool $enableCashPayments): static
+    {
+        $this->enableCashPayments = $enableCashPayments;
+
+        return $this;
+    }
+
+    public function getCashPaymentInstructions(): ?string
+    {
+        return $this->cashPaymentInstructions;
+    }
+
+    public function setCashPaymentInstructions(?string $cashPaymentInstructions): static
+    {
+        $this->cashPaymentInstructions = $cashPaymentInstructions;
 
         return $this;
     }

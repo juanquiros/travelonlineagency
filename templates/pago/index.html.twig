@@ -1,43 +1,49 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}PayPal Pay{% endblock %}
+{% block title %}Seleccioná tu medio de pago{% endblock %}
 
 {% block body %}
-    <div class="row mt-5 mb-5">
-        <div class="col-md-4"></div>
-        <div class="col-md-4 text-center">
-
-            <div class="card">
-                <div class="card-header">
-                    <h1>CheckOut</h1>
-                </div>
-                <div class="card-body">
-                    <p>Reserva para "{{ solicitud.booking.nombre }}"</p>
-                    {% if PayPalLink and habilitado['pp'] and MercadoPagoLink and habilitado['mp']%}
-                        <h3><strong>USD {{ habilitado['pp'].valor * cantidad }}/ARG ${{ habilitado['mp'].valor * cantidad }}</strong></h3>
-                    {% else %}
-                        {% if PayPalLink and habilitado['pp']%}
-                        <h3><strong>USD {{ habilitado['pp'].valor * cantidad }}</strong></h3>
-                        {% endif %}
-                        {% if MercadoPagoLink and habilitado['mp'] %}
-                        <h3><strong>ARG ${{ habilitado['mp'].valor * cantidad }}</strong></h3>
-                        {% endif %}
-                    {% endif %}
-                    <p>Puedes pagar con:</p>
-                    {% if PayPalLink and habilitado['pp']%}
-                        <a  class="btn btn-primary mt-3 mb-1 " href="{{ PayPalLink }}">PayPal en USD</a>
-                    {% endif %}
-                    {% if MercadoPagoLink and habilitado['mp'] %}
-
-                        <a class="btn btn-primary" href="{{ MercadoPagoLink }}">MercadoPago en Pesos Argentinos</a>
-                    {% endif %}
-                </div>
-            </div>
+<section class="container py-5">
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-6 mb-3">Elegí cómo pagar tu reserva</h1>
+            <p class="text-muted">Seleccioná el método que prefieras para completar el pago de tu experiencia. Podés cambiar de opción en cualquier momento antes de confirmar.</p>
         </div>
-        <div class="col-md-4"></div>
     </div>
 
+    <div class="row g-4 justify-content-center">
+        {% if opcionesPago is empty %}
+            <div class="col-lg-6">
+                <div class="alert alert-warning shadow-sm" role="alert">
+                    <h2 class="h5">Métodos de pago no disponibles</h2>
+                    <p class="mb-0">Por el momento no hay canales habilitados para abonar esta reserva. Escribinos para ayudarte a completar el proceso.</p>
+                </div>
+            </div>
+        {% else %}
+            {% for opcion in opcionesPago %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body d-flex flex-column">
+                            <h2 class="h5 mb-2">{{ opcion.label }}</h2>
+                            <p class="text-muted mb-4">Total a pagar: <strong>{{ opcion.total|number_format(2, ',', '.') }} {{ opcion.displayCurrency ?? opcion.currency }}</strong></p>
 
-
-
+                            {% if opcion.type == 'mercadopago' %}
+                                <p class="small text-muted mb-4">Pagá en pesos argentinos con tarjetas, débito o dinero en cuenta de Mercado Pago.</p>
+                                <a class="btn btn-primary mt-auto" href="{{ opcion.url }}">Continuar con Mercado Pago</a>
+                            {% elseif opcion.type == 'paypal' %}
+                                <p class="small text-muted mb-4">Realizá el pago en dólares a través de tu cuenta PayPal de forma segura.</p>
+                                <a class="btn btn-outline-primary mt-auto" href="{{ opcion.url }}">Continuar con PayPal</a>
+                            {% elseif opcion.type == 'cash' %}
+                                <p class="small text-muted mb-4">Recibirás las instrucciones para coordinar el pago en efectivo con nuestro equipo.</p>
+                                <a class="btn btn-outline-secondary mt-auto" href="{{ opcion.url }}">Solicitar pago en efectivo</a>
+                            {% else %}
+                                <a class="btn btn-primary mt-auto" href="{{ opcion.url }}">Continuar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</section>
 {% endblock %}

@@ -10,7 +10,9 @@ use App\Entity\TransferFormField;
 use App\Entity\TransferRequest;
 use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
+use App\Entity\CashPayment;
 use App\Services\LanguageService;
+use App\Services\PaymentOptionsResolver;
 use App\Services\mailerServer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +27,7 @@ final class TransferController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly MailerInterface $mailer,
+        private readonly PaymentOptionsResolver $paymentOptions
     ) {
     }
 
@@ -82,12 +85,23 @@ final class TransferController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
+        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
+        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
+            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
+        ]), $opciones);
+        $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
+            ['transferRequest' => $solicitud],
+            ['createdAt' => 'DESC']
+        );
+
         return $this->render('transfer/summary.html.twig', [
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'usuario' => $this->getUser(),
             'solicitud' => $solicitud,
+            'opcionesPago' => $opciones,
+            'pagoEfectivo' => $cashPayment,
         ]);
     }
 
@@ -116,6 +130,15 @@ final class TransferController extends AbstractController
             }
         }
 
+        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
+        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
+            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
+        ]), $opciones);
+        $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
+            ['transferRequest' => $solicitud],
+            ['createdAt' => 'DESC']
+        );
+
         return $this->render('transfer/tracking.html.twig', [
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
@@ -124,6 +147,8 @@ final class TransferController extends AbstractController
             'solicitud' => $solicitud,
             'trackingUrl' => $trackingUrl,
             'asignacion' => $asignacionActiva,
+            'opcionesPago' => $opciones,
+            'pagoEfectivo' => $cashPayment,
         ]);
     }
 

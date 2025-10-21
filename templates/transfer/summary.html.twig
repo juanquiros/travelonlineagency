@@ -40,11 +40,30 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h2 class="h5">Realizar pago</h2>
-                    <p class="text-muted">Seleccioná tu método de pago preferido.</p>
-                    <a class="btn btn-primary w-100 mb-2" href="{{ path('mercadopago_pay_transfer', {id: solicitud.id}) }}">Pagar con Mercado Pago</a>
-                    <a class="btn btn-outline-secondary w-100" href="{{ path('paypal_pay_transfer', {id: solicitud.id}) }}">Pagar con PayPal</a>
+                    {% if opcionesPago is empty %}
+                        <p class="text-muted mb-0">Por el momento no hay métodos disponibles. Contactanos para coordinar tu pago.</p>
+                    {% else %}
+                        <p class="text-muted">Seleccioná tu método de pago preferido.</p>
+                        {% for opcion in opcionesPago %}
+                            {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
+                            <a class="{{ btnClass }}" href="{{ opcion.url }}">
+                                {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
+                            </a>
+                        {% endfor %}
+                    {% endif %}
                 </div>
             </div>
+            {% if pagoEfectivo %}
+                <div class="card shadow-sm mb-4 border-warning">
+                    <div class="card-body">
+                        <h2 class="h6 text-warning">Pago en efectivo pendiente</h2>
+                        <p class="mb-1">Total acordado: <strong>{{ pagoEfectivo.amount|number_format(2, ',', '.') }} {{ pagoEfectivo.currency }}</strong></p>
+                        {% if pagoEfectivo.notes %}
+                            <p class="mb-0">{{ pagoEfectivo.notes|nl2br }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h6">Código de seguimiento</h2>

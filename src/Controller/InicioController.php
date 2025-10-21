@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Booking;
 use App\Entity\EstadoReserva;
+use App\Entity\CashPayment;
 use App\Entity\PayPalPago;
 use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
@@ -167,10 +168,10 @@ class InicioController extends AbstractController
                 $filtro = array_filter($fechasarray, function ($obj) use ($specific_value) {return $obj->fecha == $specific_value;});
                 if( count($filtro) >= 1 ){
                     $key = array_key_first($filtro);
-                    if($filtro[$key]->cantidad >= (count($reserva->getInChargeOfArray())+1)){
+                    if($filtro[$key]->cantidad >= $reserva->getPassengerCount()){
                         $reserva->setFechaSeleccionada(\DateTime::createFromFormat( 'Y-m-d H:i', $fecha));
                     }else{
-                        $reservaForm->addError(new FormError('La fecha solicitada no tiene '.(count($reserva->getInChargeOfArray())+1) . ' lugares, seleccione otra fecha.'));
+                        $reservaForm->addError(new FormError('La fecha solicitada no tiene '.$reserva->getPassengerCount() . ' lugares, seleccione otra fecha.'));
                     }
 
                 }else{
@@ -266,12 +267,18 @@ class InicioController extends AbstractController
             if($solicitudReserva->getEstado()->getId() == 1){
                 $pago = $this->em->getRepository(PayPalPago::class)->findOneBy(['solicitudReserva'=>$solicitudReserva->getId(),'estado'=>'PAYER_ACTION_REQUIRED']);
             }
+            $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
+                ['solicitudReserva' => $solicitudReserva],
+                ['createdAt' => 'DESC']
+            );
 
             $render = $this->renderView('inicio/status/detallesSolicitudBooking.html.twig',[
                 'booking'=>$solicitudReserva,
                 'adicionales'=>json_decode($solicitudReserva->getInChargeOf(),true),
                 'idiomaPlataforma'=>$idioma,
                 'pago'=>$pago,
+                'pagoEfectivo' => $cashPayment,
+                'opcionesPagoUrl' => $this->generateUrl('apps_pago', ['id' => $solicitudReserva->getId()]),
                 'melink'=>$this->generateUrl('app_status_booking',['tokenId'=>$tokenId,'id'=>$solicitudReserva->getId()],false)
             ]);
 

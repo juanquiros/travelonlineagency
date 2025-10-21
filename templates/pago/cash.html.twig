@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pago en efectivo{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-5">
+                    <h1 class="h4 mb-3">Confirmación de pago en efectivo</h1>
+                    {% if context == 'booking' %}
+                        <p class="text-muted">Guardá estos datos y presentalos cuando abones la reserva <strong>#{{ reserva.id }}</strong>.</p>
+                    {% else %}
+                        <p class="text-muted">Compartí estos detalles con el equipo para cancelar el traslado con efectivo.</p>
+                    {% endif %}
+
+                    {% set statusMap = {
+                        'pending': 'Pendiente de confirmar',
+                        'confirmed': 'Confirmado',
+                        'cancelled': 'Cancelado'
+                    } %}
+                    {% set statusKey = cashPayment.status|default('pending') %}
+                    <div class="rounded-3 bg-light p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total a abonar</span>
+                            <span class="fs-4 fw-semibold">{{ option.total|number_format(2, ',', '.') }} {{ option.displayCurrency ?? option.currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="text-muted">Estado del pago</span>
+                            <span class="badge bg-warning text-dark">{{ statusMap[statusKey] ?? 'Pendiente de confirmar' }}</span>
+                        </div>
+                    </div>
+
+                    {% if option.instructions %}
+                        <div class="alert alert-info" role="alert">
+                            <h2 class="h6 fw-semibold mb-2">Indicaciones de la plataforma</h2>
+                            <p class="mb-0">{{ option.instructions|nl2br }}</p>
+                        </div>
+                    {% endif %}
+
+                    {% if context == 'booking' %}
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4 text-muted">Servicio</dt>
+                            <dd class="col-sm-8">{{ reserva.booking.nombre }}</dd>
+                            <dt class="col-sm-4 text-muted">Titular</dt>
+                            <dd class="col-sm-8">{{ reserva.name }} {{ reserva.surname }}</dd>
+                            <dt class="col-sm-4 text-muted">Correo</dt>
+                            <dd class="col-sm-8">{{ reserva.email }}</dd>
+                        </dl>
+                    {% elseif context == 'transfer' %}
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4 text-muted">Pasajero</dt>
+                            <dd class="col-sm-8">{{ transfer.nombrePasajero }}</dd>
+                            <dt class="col-sm-4 text-muted">Correo</dt>
+                            <dd class="col-sm-8">{{ transfer.emailPasajero }}</dd>
+                            <dt class="col-sm-4 text-muted">Código de seguimiento</dt>
+                            <dd class="col-sm-8">{{ transfer.tokenSeguimiento }}</dd>
+                        </dl>
+                    {% endif %}
+
+                    <div class="d-flex flex-column flex-sm-row gap-3">
+                        <a class="btn btn-primary flex-fill" href="{{ returnUrl }}" target="_blank">Ver estado de mi solicitud</a>
+                        <a class="btn btn-outline-secondary flex-fill" href="javascript:window.print()">Imprimir detalle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

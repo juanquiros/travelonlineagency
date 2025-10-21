@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TransferRequestRepository;
+use App\Entity\CashPayment;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -90,11 +91,18 @@ class TransferRequest
     #[ORM\OneToMany(mappedBy: 'solicitud', targetEntity: TransferAssignment::class, cascade: ['persist', 'remove'])]
     private Collection $asignaciones;
 
+    /**
+     * @var Collection<int, CashPayment>
+     */
+    #[ORM\OneToMany(mappedBy: 'transferRequest', targetEntity: CashPayment::class, cascade: ['persist'], orphanRemoval: true)]
+    private Collection $cashPayments;
+
     public function __construct()
     {
         $this->destinos = new ArrayCollection();
         $this->valores = new ArrayCollection();
         $this->asignaciones = new ArrayCollection();
+        $this->cashPayments = new ArrayCollection();
         $this->creadoEn = new \DateTimeImmutable();
         $this->actualizadoEn = new \DateTimeImmutable();
     }
@@ -373,6 +381,35 @@ class TransferRequest
         if ($this->asignaciones->removeElement($asignacion)) {
             if ($asignacion->getSolicitud() === $this) {
                 $asignacion->setSolicitud(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CashPayment>
+     */
+    public function getCashPayments(): Collection
+    {
+        return $this->cashPayments;
+    }
+
+    public function addCashPayment(CashPayment $cashPayment): self
+    {
+        if (!$this->cashPayments->contains($cashPayment)) {
+            $this->cashPayments->add($cashPayment);
+            $cashPayment->setTransferRequest($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCashPayment(CashPayment $cashPayment): self
+    {
+        if ($this->cashPayments->removeElement($cashPayment)) {
+            if ($cashPayment->getTransferRequest() === $this) {
+                $cashPayment->setTransferRequest(null);
             }
         }
 

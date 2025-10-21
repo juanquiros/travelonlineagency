@@ -44,6 +44,12 @@ class PayPalController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
 
+        if(!$plataforma instanceof Plataforma || !$plataforma->isEnablePayPalPayments()){
+            $this->addFlash('error', 'PayPal no está disponible para esta reserva.');
+
+            return $this->redirectToRoute('app_inicio');
+        }
+
         if(!isset($pago) || empty($pago)){
             $credenciales = $plataforma->getCredencialesPayPal();
             $pago = new PayPalPago();
@@ -168,7 +174,7 @@ class PayPalController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em, $request);
 
         $credenciales = $plataforma?->getCredencialesPayPal();
-        if (!$credenciales) {
+        if (!$plataforma || !$plataforma->isEnablePayPalPayments() || !$credenciales) {
             $this->addFlash('error', 'La plataforma no tiene credenciales de PayPal configuradas.');
 
             return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
@@ -490,7 +496,7 @@ class PayPalController extends AbstractController
 
             if ($pago->getSolicitudReserva()) {
                 $pago->getSolicitudReserva()->setEstado($this->em->getRepository(EstadoReserva::class)->find(2));
-                $cantidad = count($pago->getSolicitudReserva()->getInChargeOfArray()) + 1;
+                $cantidad = $pago->getSolicitudReserva()?->getPassengerCount() ?? 1;
 
                 $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');
                 $booking = $pago->getSolicitudReserva()->getBooking();

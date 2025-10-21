@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\SolicitudReservaRepository;
+use App\Entity\CashPayment;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -68,6 +69,12 @@ class SolicitudReserva
     #[ORM\OneToMany(targetEntity: MercadoPagoPago::class, mappedBy: 'solicitudReserva')]
     private Collection $pagosMercadoPago;
 
+    /**
+     * @var Collection<int, CashPayment>
+     */
+    #[ORM\OneToMany(targetEntity: CashPayment::class, mappedBy: 'solicitudReserva', cascade: ['persist'], orphanRemoval: true)]
+    private Collection $cashPayments;
+
     #[ORM\ManyToOne]
     private ?Lenguaje $idiomaPreferido = null;
 
@@ -89,6 +96,7 @@ class SolicitudReserva
         $this->form_required = '[]';
         $this->pagosPayPal = new ArrayCollection();
         $this->pagosMercadoPago = new ArrayCollection();
+        $this->cashPayments = new ArrayCollection();
     }
 
 
@@ -200,9 +208,15 @@ class SolicitudReserva
     {
         return $this->inChargeOf;
     }
-    public function getInChargeOfArray(): ?array
+    public function getInChargeOfArray(): array
     {
-        return json_decode($this->inChargeOf);
+        if ($this->inChargeOf === null || $this->inChargeOf === '') {
+            return [];
+        }
+
+        $decoded = json_decode($this->inChargeOf, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
     public function setInChargeOf(string $inChargeOf): static
     {
@@ -210,6 +224,13 @@ class SolicitudReserva
         $this->inChargeOf = $inChargeOf;
 
         return $this;
+    }
+
+    public function getPassengerCount(): int
+    {
+        $companions = $this->getInChargeOfArray();
+
+        return max(1, is_countable($companions) ? count($companions) + 1 : 1);
     }
 
     public function getBooking(): ?Booking
@@ -315,6 +336,35 @@ class SolicitudReserva
         if (!$this->pagosMercadoPago->contains($pagosMercadoPago)) {
             $this->pagosMercadoPago->add($pagosMercadoPago);
             $pagosMercadoPago->setSolicitudReserva($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CashPayment>
+     */
+    public function getCashPayments(): Collection
+    {
+        return $this->cashPayments;
+    }
+
+    public function addCashPayment(CashPayment $cashPayment): static
+    {
+        if (!$this->cashPayments->contains($cashPayment)) {
+            $this->cashPayments->add($cashPayment);
+            $cashPayment->setSolicitudReserva($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCashPayment(CashPayment $cashPayment): static
+    {
+        if ($this->cashPayments->removeElement($cashPayment)) {
+            if ($cashPayment->getSolicitudReserva() === $this) {
+                $cashPayment->setSolicitudReserva(null);
+            }
         }
 
         return $this;

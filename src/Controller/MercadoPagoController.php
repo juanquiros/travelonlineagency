@@ -54,6 +54,12 @@ final class MercadoPagoController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em, $request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
+        if (!$plataforma instanceof Plataforma || !$plataforma->isEnableMercadoPagoPayments()) {
+            $this->addFlash('error', 'Mercado Pago no está disponible para la plataforma en este momento.');
+
+            return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
+        }
+
         $credencial = $this->credencialesPlataforma;
 
         if (!$credencial instanceof CredencialesMercadoPago || !$credencial->getAccessToken()) {
@@ -145,7 +151,7 @@ final class MercadoPagoController extends AbstractController
             'booking' => $booking?->getId(),
         ]);
 
-        if (!$plataforma instanceof Plataforma || !$booking || !$precioBoking) {
+        if (!$plataforma instanceof Plataforma || !$plataforma->isEnableMercadoPagoPayments() || !$booking || !$precioBoking) {
             return $this->redirectToRoute('app_inicio');
         }
 
@@ -339,7 +345,7 @@ final class MercadoPagoController extends AbstractController
             $reserva = $pagoDB->getSolicitudReserva();
                 if(isset($reserva) && !empty($reserva)){ //Enviar mail de pago aprobado para una reserva...
                     if($reserva->getEstado()->getId() == 2) {
-                        $cantidad = count($reserva->getInChargeOfArray()) + 1;
+                        $cantidad = $reserva->getPassengerCount();
                         mailerServer::enviarPagoAprobadoReserva($this->em,$mailer,$reserva,$this->generateUrl('app_status_booking',['tokenId'=> $reserva->getLinkDetalles(),'id'=>$reserva->getId()],UrlGeneratorInterface::ABSOLUTE_URL));
 
                         $administradores = $this->em->getRepository(Usuario::class)->obtenerUsuariosPorRol('ROLE_ADMIN');

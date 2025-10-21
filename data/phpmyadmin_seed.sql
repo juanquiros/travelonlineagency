@@ -8,6 +8,8 @@ DELETE FROM pay_pal_pago;
 ALTER TABLE pay_pal_pago AUTO_INCREMENT = 1;
 DELETE FROM mercado_pago_pago;
 ALTER TABLE mercado_pago_pago AUTO_INCREMENT = 1;
+DELETE FROM cash_payment;
+ALTER TABLE cash_payment AUTO_INCREMENT = 1;
 DELETE FROM transfer_assignment;
 ALTER TABLE transfer_assignment AUTO_INCREMENT = 1;
 DELETE FROM transfer_request_field_value;
@@ -136,7 +138,8 @@ INSERT INTO plataforma (
   id, nombre, traslados_od_libres, tasa_traslados_def, language_def_id, moneda_def_id,
   credenciales_pay_pal_id, credenciales_mercado_pago_id,
   logo, icono, link_instagram, link_whatsapp, contacto_telefono,
-  contacto_correo, contacto_direccion, comision_booking_partner
+  contacto_correo, contacto_direccion, comision_booking_partner,
+  enable_mercado_pago_payments, enable_pay_pal_payments, enable_cash_payments, cash_payment_instructions
 ) VALUES
   (1,
    'Travel Online Agency',
@@ -153,7 +156,11 @@ INSERT INTO plataforma (
    '+54 9 11 2233-4455',
    'contacto@travelonlineagency.test',
    'Av. Siempre Viva 742, Springfield',
-   12.5
+   12.5,
+   1,
+   1,
+   1,
+   'Coordiná el pago en efectivo con nuestro equipo de atención o al momento del arribo. Mostrá el comprobante recibido por correo.'
   );
 
 -- Lenguajes habilitados
@@ -497,6 +504,34 @@ INSERT INTO pay_pal_pago (
    '2024-11-21 10:05:00',
    'PAYER_ACTION_REQUIRED',
    40.00
+  );
+
+-- Pagos en efectivo registrados
+INSERT INTO cash_payment (
+  id, solicitud_reserva_id, transfer_request_id, amount, currency, status,
+  notes, created_at, updated_at, reference
+) VALUES
+  (1,
+   2,
+   NULL,
+   250.00,
+   'ARS',
+   'pending',
+   'El huésped abonará en efectivo al momento del check-in.',
+   '2024-11-21 11:00:00',
+   '2024-11-21 11:00:00',
+   'booking-2'
+  ),
+  (2,
+   NULL,
+   1,
+   90.00,
+   'ARS',
+   'pending',
+   'Coordinar cobro en efectivo con el chofer asignado.',
+   '2024-11-21 11:30:00',
+   '2024-11-21 11:30:00',
+   'transfer-1'
   );
 
 INSERT INTO detalle_pago_pay_pal (
