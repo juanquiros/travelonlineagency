@@ -26,23 +26,7 @@
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
 
-            <style>
-                html {
-                    min-height: 100%;
-                    position: relative;
-                }
-                body {
-                    margin-bottom: 40px;
-                    padding-bottom: 24rem;
-                }
-                footer {
-                    background-color: black;
-                    position: absolute;
-                    bottom: 0;
-                    width: 100%;
-                }
-            </style>
-
+            <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
         {% endblock %}
 
         {% block javascripts %}
@@ -62,121 +46,113 @@
     <body>
     {% set usuario = usuario is defined ? usuario : app.user %}
     {% set tradMenu = plataforma.getTraduccionMenu(idiomaPlataforma.codigo) %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="padding-left: 1rem; padding-right: 1rem; ">
-        <a class="navbar-brand" href="{{ path('app_inicio') }}"><img src="{{ asset('img/'~ plataforma.logo) }}" style="height: 2em" alt=""></a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-
-
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse pl-3 pr-3" id="navbarSupportedContent" style="align-content: baseline;justify-content: space-between;">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="{{ path('app_inicio') }}">{{ tradMenu['menu:inicio']}} <span class="sr-only"></span></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('app_inicio') }}#bookings">{{ tradMenu['menu:reservas']}}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('app_ayuda') }}">{{ tradMenu['menu:faks']}}</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav mr-auto">
-
-                <li class="nav-item">
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                        style="align-content: baseline" id="lang-seceted-dropdown">
-                            <img src="{{ asset(icon_language  ~ '/'  ~ idiomaPlataforma.icono ) }}" alt="" style="height: 1rem"> {{ idiomaPlataforma.nombre }}
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            {% for idioma in idiomas %}
-                                <button class="dropdown-item" type="button" onclick="changelan({{ idioma.id }})"><img src="{{ asset(icon_language  ~ '/'  ~ idioma.icono ) }}" alt="" style="height: 1rem"> {{ idioma.nombre }}</button>
-                            {% endfor %}
+    <header class="shadow-sm">
+        <nav class="navbar navbar-expand-lg toa-navbar">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" href="{{ path('app_inicio') }}">
+                    <img src="{{ asset('img/'~ plataforma.logo) }}" alt="{{ plataforma.nombre }}">
+                    <span class="fw-semibold ms-2 text-uppercase text-nowrap text-primary">{{ plataforma.nombre }}</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                        <li class="nav-item">
+                            <a class="nav-link {{ app.request.attributes.get('_route') == 'app_inicio' ? 'active' : '' }}" href="{{ path('app_inicio') }}">{{ tradMenu['menu:inicio']}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_inicio') }}#bookings">{{ tradMenu['menu:reservas']}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_ayuda') }}">{{ tradMenu['menu:faks']}}</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center ms-lg-4">
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle px-3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="lang-seceted-dropdown">
+                                <img src="{{ asset(icon_language  ~ '/'  ~ idiomaPlataforma.icono ) }}" alt="{{ idiomaPlataforma.nombre }}" class="me-2" style="height: 1rem">{{ idiomaPlataforma.nombre }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end shadow-sm">
+                                {% for idioma in idiomas %}
+                                    <button class="dropdown-item d-flex align-items-center gap-2" type="button" onclick="changelan({{ idioma.id }})">
+                                        <img src="{{ asset(icon_language  ~ '/'  ~ idioma.icono ) }}" alt="{{ idioma.nombre }}" style="height: 1rem"> {{ idioma.nombre }}
+                                    </button>
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-
-
-
-                </li>
-            </ul>
-            <div class="form-inline my-2 my-lg-0" style="display: flex; flex-direction: row" >
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <button class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            {%  if not usuario %}
-                                Usuario
-                            {% else %}
-                                {{ usuario.nombre }}
-                            {% endif %}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-dark">
-                            {%  if not usuario %}
-                                <li><a class="dropdown-item" href="{{ path('app_login') }}">Login</a></li>
-                                <li><a class="dropdown-item" href="{{ path('app_register') }}">Registro</a></li>
-                            {% else %}
-                                {% if 'ROLE_ADMIN' in usuario.roles  %}
-                                    <li><a class="dropdown-item" href="{{ path('app_administrador_home') }}">Panel de administración</a></li>
+                        <div class="dropdown">
+                            <button class="btn btn-dark dropdown-toggle px-3" data-bs-toggle="dropdown" aria-expanded="false">
+                                {%  if not usuario %}
+                                    Usuario
+                                {% else %}
+                                    {{ usuario.nombre }}
                                 {% endif %}
-                                {% if 'ROLE_PARTNER' in usuario.roles %}
-                                    <li><a class="dropdown-item" href="{{ path('app_booking_partner') }}">Panel de partner</a></li>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow">
+                                {%  if not usuario %}
+                                    <li><a class="dropdown-item" href="{{ path('app_login') }}">Ingresar</a></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_register') }}">Crear cuenta</a></li>
+                                {% else %}
+                                    {% if 'ROLE_ADMIN' in usuario.roles  %}
+                                        <li><a class="dropdown-item" href="{{ path('app_administrador_home') }}">Panel de administración</a></li>
+                                    {% endif %}
+                                    {% if 'ROLE_PARTNER' in usuario.roles %}
+                                        <li><a class="dropdown-item" href="{{ path('app_booking_partner') }}">Panel de partner</a></li>
+                                    {% endif %}
+                                    {% if 'ROLE_DRIVER' in usuario.roles %}
+                                        <li><a class="dropdown-item" href="{{ path('app_driver_dashboard') }}">Panel de chofer</a></li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ path('app_logout') }}">Cerrar sesión</a></li>
                                 {% endif %}
-                                {% if 'ROLE_DRIVER' in usuario.roles %}
-                                    <li><a class="dropdown-item" href="{{ path('app_driver_dashboard') }}">Panel de chofer</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ path('app_logout') }}">Cerrar sesión</a></li>
-                            {% endif %}
-
-
-                        </ul>
-                    </li>
-                </ul>
-
-            </div>
-        </div>
-    </nav>
-        {% block body %}{% endblock %}
-    <footer  class="mb-5" >
-        <div class="row">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
-                <div class="row">
-                    <div class="col-md-4">
-                        <ul>
-                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}">Travel Online Agency</a></li>
-                            <li><a class="navbar-brand" href="{{ path('app_ayuda') }}">Common questions</a></li>
-                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}">Contact us</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-md-4">
-                        <ul>
-
-                            <li><a class="navbar-brand" href="{{ path('app_inicio') }}#bookings">Booking</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-md-4">
-                        <ul>
-                            <li>Contact</li>
-                            {% if plataforma.contactoTelefono != '' %}<li>Phone: {{ plataforma.contactoTelefono }}</li>{% endif %}
-                            {% if plataforma.contactoCorreo != '' %}<li>Email: {{ plataforma.contactoCorreo }}</li>{% endif %}
-                            {% if plataforma.contactoDireccion != '' %}<li>{{ plataforma.contactoDireccion }}</li>{% endif %}
-                        </ul>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-2"></div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4 center" data-aos="fade-up">
-                <hr>
-                <span><a href="https://shophardware.com.ar"  >Power by Shop Hardware</a></span>
+        </nav>
+    </header>
+    <main>
+        {% block body %}{% endblock %}
+    </main>
+    <footer class="toa-footer">
+        <div class="container">
+            <div class="row gy-4">
+                <div class="col-md-4">
+                    <h6>{{ plataforma.nombre }}</h6>
+                    <p class="small mb-1">{{ plataforma.descripcionCorta ?? 'Tu agencia integral para explorar Iguazú con reservas seguras y traslados confiables.' }}</p>
+                    <div class="toa-social-links">
+                        {% if plataforma.linkInstagram != '' %}
+                            <a href="{{ plataforma.linkInstagram }}" target="_blank" aria-label="Instagram"><span class="bi bi-instagram"></span></a>
+                        {% endif %}
+                        {% if plataforma.linkWhatsapp != '' %}
+                            <a href="{{ plataforma.linkWhatsapp }}" target="_blank" aria-label="WhatsApp"><span class="bi bi-whatsapp"></span></a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Navegación</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><a href="{{ path('app_inicio') }}">Inicio</a></li>
+                        <li class="mb-2"><a href="{{ path('app_inicio') }}#bookings">Reservas</a></li>
+                        <li class="mb-2"><a href="{{ path('app_transfers') }}">Traslados</a></li>
+                        <li class="mb-2"><a href="{{ path('app_ayuda') }}">Preguntas frecuentes</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>Contacto</h6>
+                    <ul class="list-unstyled small mb-0">
+                        {% if plataforma.contactoTelefono != '' %}<li class="mb-2"><span class="bi bi-telephone me-2"></span>{{ plataforma.contactoTelefono }}</li>{% endif %}
+                        {% if plataforma.contactoCorreo != '' %}<li class="mb-2"><span class="bi bi-envelope me-2"></span>{{ plataforma.contactoCorreo }}</li>{% endif %}
+                        {% if plataforma.contactoDireccion != '' %}<li class="mb-2"><span class="bi bi-geo-alt me-2"></span>{{ plataforma.contactoDireccion }}</li>{% endif %}
+                    </ul>
+                </div>
             </div>
-            <div class="col-md-4"></div>
-
+            <div class="toa-footer-bottom">
+                <span>© {{ "now"|date('Y') }} {{ plataforma.nombre }} · Desarrollado por <a href="https://shophardware.com.ar" target="_blank" rel="noopener">Shop Hardware</a></span>
+            </div>
         </div>
     </footer>
     <script>

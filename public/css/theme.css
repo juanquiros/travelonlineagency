@@ -1,0 +1,415 @@
+:root {
+    --toa-navy: #0c2d4a;
+    --toa-deep-navy: #081d32;
+    --toa-sky: #1f6bb3;
+    --toa-aqua: #2aa4d6;
+    --toa-sun: #f2942a;
+    --toa-sand: #f6efe7;
+    --toa-ink: #1f1f1f;
+    --toa-muted: #6f7a85;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', 'Raleway', 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--toa-ink);
+    background: linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.toa-navbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(12, 45, 74, 0.08);
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.toa-navbar .navbar-brand img {
+    height: 48px;
+    width: auto;
+}
+
+.toa-navbar .nav-link {
+    font-weight: 500;
+    color: var(--toa-navy);
+    margin-right: 0.75rem;
+    position: relative;
+}
+
+.toa-navbar .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -0.35rem;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--toa-sun), var(--toa-sky));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+}
+
+.toa-navbar .nav-link:hover,
+.toa-navbar .nav-link:focus,
+.toa-navbar .nav-link.active {
+    color: var(--toa-sun);
+}
+
+.toa-navbar .nav-link:hover::after,
+.toa-navbar .nav-link:focus::after,
+.toa-navbar .nav-link.active::after {
+    transform: scaleX(1);
+}
+
+.toa-navbar .dropdown-menu {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 16px 40px rgba(12, 45, 74, 0.12);
+}
+
+.toa-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(1.5rem, 3vw, 2.75rem);
+    background: linear-gradient(135deg, rgba(12, 45, 74, 0.92), rgba(31, 107, 179, 0.92)),
+        linear-gradient(120deg, rgba(242, 148, 42, 0.6), rgba(42, 164, 214, 0.2));
+    color: #fff;
+    padding: clamp(3rem, 6vw, 4.5rem);
+    margin: clamp(2rem, 4vw, 3.5rem) auto;
+    max-width: 1200px;
+    box-shadow: 0 25px 65px rgba(8, 29, 50, 0.18);
+}
+
+.toa-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(242, 148, 42, 0.35), transparent 55%),
+        radial-gradient(circle at 80% 20%, rgba(42, 164, 214, 0.35), transparent 55%);
+    mix-blend-mode: screen;
+}
+
+.toa-hero-content {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    align-items: center;
+}
+
+.toa-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.toa-hero-title {
+    font-size: clamp(2.4rem, 5vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.toa-hero-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 0;
+}
+
+.toa-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.toa-btn-primary {
+    background: linear-gradient(120deg, var(--toa-sun), #f5b55e);
+    border: none;
+    color: #1b1b1b;
+    font-weight: 600;
+    padding: 0.75rem 1.75rem;
+    border-radius: 999px;
+    box-shadow: 0 12px 24px rgba(242, 148, 42, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toa-btn-primary:hover,
+.toa-btn-primary:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 30px rgba(242, 148, 42, 0.45);
+    color: #1b1b1b;
+}
+
+.toa-btn-outline {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #fff;
+    padding: 0.75rem 1.75rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.toa-btn-outline:hover,
+.toa-btn-outline:focus {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.toa-section {
+    padding: clamp(2.5rem, 6vw, 4rem) 0;
+}
+
+.toa-section-title {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--toa-navy);
+}
+
+.toa-section-subtitle {
+    max-width: 620px;
+    margin: 0 auto 2.5rem;
+    text-align: center;
+    color: var(--toa-muted);
+    font-size: 1rem;
+}
+
+.toa-card {
+    border: none;
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 40px rgba(12, 45, 74, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    background: #fff;
+    overflow: hidden;
+}
+
+.toa-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 30px 50px rgba(12, 45, 74, 0.12);
+}
+
+.toa-card .card-img-top {
+    height: 220px;
+    object-fit: cover;
+}
+
+.toa-card .card-body {
+    padding: 1.5rem;
+}
+
+.toa-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background-color: rgba(31, 107, 179, 0.08);
+    color: var(--toa-sky);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.toa-map-card {
+    border-radius: 1.5rem;
+    border: none;
+    background: #fff;
+    box-shadow: 0 22px 45px rgba(12, 45, 74, 0.1);
+}
+
+.toa-map-card .card-body {
+    padding: 1.75rem;
+}
+
+.toa-map-card .ratio {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.toa-footer {
+    background: var(--toa-deep-navy);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 3rem 0 2rem;
+    margin-top: 4rem;
+}
+
+.toa-footer a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+}
+
+.toa-footer a:hover {
+    color: var(--toa-sun);
+}
+
+.toa-footer h6 {
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.toa-footer hr {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.toa-footer .toa-footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.toa-section .nav-pills .nav-link {
+    border-radius: 999px;
+    padding: 0.5rem 1.2rem;
+    color: var(--toa-navy);
+    border: 1px solid rgba(12, 45, 74, 0.15);
+    transition: all 0.2s ease;
+}
+
+.toa-section .nav-pills .nav-link.active,
+.toa-section .nav-pills .nav-link:hover {
+    background: linear-gradient(120deg, rgba(31, 107, 179, 0.15), rgba(42, 164, 214, 0.25));
+    color: var(--toa-navy);
+    border-color: transparent;
+}
+
+.toa-badge-muted {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(12, 45, 74, 0.06);
+    color: var(--toa-muted);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.toa-list-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.toa-list-inline li {
+    background: rgba(12, 45, 74, 0.05);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--toa-navy);
+}
+
+.toa-social-links a {
+    font-size: 1.5rem;
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    margin: 0 0.35rem;
+}
+
+.toa-social-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toa-social-links a:hover {
+    transform: translateY(-3px);
+    background: rgba(242, 148, 42, 0.35);
+    color: #fff;
+}
+
+.section-divider {
+    width: 80px;
+    height: 3px;
+    margin: 0.5rem auto 2rem;
+    background: linear-gradient(90deg, var(--toa-sun), var(--toa-sky));
+    border-radius: 999px;
+}
+
+.booking-filter-card {
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 18px 40px rgba(12, 45, 74, 0.1);
+    padding: 1.25rem 1.75rem;
+    max-width: 720px;
+    margin: 0 auto 2rem;
+}
+
+.booking-filter-card label {
+    font-weight: 600;
+    color: var(--toa-navy);
+}
+
+.booking-filter-card input[type="date"] {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(12, 45, 74, 0.2);
+    padding: 0.6rem 0.85rem;
+}
+
+.booking-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(12, 45, 74, 0.08);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 35px rgba(12, 45, 74, 0.06);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 991.98px) {
+    .toa-navbar .nav-link {
+        margin-right: 0;
+        padding: 0.75rem 0;
+    }
+
+    .toa-hero {
+        margin-left: 1.25rem;
+        margin-right: 1.25rem;
+    }
+
+    .booking-filter-card {
+        padding: 1.25rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .toa-hero {
+        border-radius: 1.5rem;
+        padding: 2.5rem 1.75rem;
+        margin: 1.5rem 1rem 2.5rem;
+    }
+
+    .toa-navbar .navbar-brand img {
+        height: 40px;
+    }
+}
