@@ -90,7 +90,7 @@
             </div>
         {% endif %}
 
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3">
                     <div>
@@ -141,6 +141,81 @@
                                             <span class="badge text-bg-secondary">{{ pago.status|capitalize }}</span>
                                         {% endif %}
                                     </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3">
+                    <div>
+                        <h2 class="h5 mb-1">Balance de choferes</h2>
+                        <p class="text-muted mb-0">Controlá los movimientos registrados en las cuentas de los choferes.</p>
+                    </div>
+                    <div class="text-lg-end">
+                        <div class="d-flex flex-wrap gap-3">
+                            <div>
+                                <p class="small text-muted mb-1">Total acreditado</p>
+                                <p class="fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.credits|number_format(2, ',', '.') }}</p>
+                            </div>
+                            <div>
+                                <p class="small text-muted mb-1">Total debitado</p>
+                                <p class="fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.debits|number_format(2, ',', '.') }}</p>
+                            </div>
+                            <div>
+                                <p class="small text-muted mb-1">Saldo disponible</p>
+                                <p class="fw-semibold text-success mb-0">{{ driverCurrency }} {{ driverStats.available|number_format(2, ',', '.') }}</p>
+                                <p class="small text-muted mb-0">Retiros pendientes: {{ driverCurrency }} {{ driverStats.pending|number_format(2, ',', '.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Chofer</th>
+                            <th>Movimiento</th>
+                            <th class="text-end">Monto</th>
+                            <th>Descripción</th>
+                            <th>Referencia</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if driverBalanceEntries is empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Todavía no se registraron movimientos para los choferes.</td>
+                            </tr>
+                        {% else %}
+                            {% for entry in driverBalanceEntries %}
+                                <tr>
+                                    <td>{{ entry.createdAt|date('d/m/Y H:i') }}</td>
+                                    <td>
+                                        {% set driver = entry.driver %}
+                                        {% if driver %}
+                                            <a href="{{ path('app_admin_driver_balance', {id: driver.id}) }}">{{ driver.nombreCompleto }}</a>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if entry.isCredit() %}
+                                            <span class="badge text-bg-success">Crédito</span>
+                                        {% else %}
+                                            <span class="badge text-bg-danger">Débito</span>
+                                        {% endif %}
+                                        <span class="ms-2 text-uppercase small text-muted">{{ entry.type|replace({'_':' '}) }}</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">{{ entry.currency }} {{ entry.amount|number_format(2, ',', '.') }}</td>
+                                    <td>{{ entry.description ?: '—' }}</td>
+                                    <td>{{ entry.reference ?: '—' }}</td>
                                 </tr>
                             {% endfor %}
                         {% endif %}

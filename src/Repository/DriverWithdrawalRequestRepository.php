@@ -38,6 +38,24 @@ class DriverWithdrawalRequestRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return float
+     */
+    public function getPendingTotalForAll(): float
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('COALESCE(SUM(r.amount), 0) as pendingTotal')
+            ->where('r.status IN (:statuses)')
+            ->setParameter('statuses', [
+                DriverWithdrawalRequest::STATUS_PENDING,
+                DriverWithdrawalRequest::STATUS_APPROVED,
+            ]);
+
+        $result = $qb->getQuery()->getSingleResult();
+
+        return isset($result['pendingTotal']) ? (float) $result['pendingTotal'] : 0.0;
+    }
+
+    /**
      * @return list<DriverWithdrawalRequest>
      */
     public function findRecentForDriver(DriverProfile $driver, int $limit = 20): array

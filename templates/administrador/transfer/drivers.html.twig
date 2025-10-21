@@ -3,6 +3,43 @@
 {% block title %}Gestión de choferes{% endblock %}
 
 {% block body %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Balance general de choferes</h2>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100 bg-light">
+                            <p class="text-muted small text-uppercase mb-1">Total acreditado</p>
+                            <p class="fs-5 fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.credits|number_format(2, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100 bg-light">
+                            <p class="text-muted small text-uppercase mb-1">Total debitado</p>
+                            <p class="fs-5 fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.debits|number_format(2, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100 bg-light">
+                            <p class="text-muted small text-uppercase mb-1">Saldo neto</p>
+                            <p class="fs-5 fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.balance|number_format(2, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100 bg-light">
+                            <p class="text-muted small text-uppercase mb-1">Retiros pendientes</p>
+                            <p class="fs-5 fw-semibold mb-0">{{ driverCurrency }} {{ driverStats.pending|number_format(2, ',', '.') }}</p>
+                            <p class="text-muted small mb-0">Saldo disponible: {{ driverCurrency }} {{ driverStats.available|number_format(2, ',', '.') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card shadow-sm">
@@ -41,6 +78,12 @@
                                     <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
                                     <dt class="col-sm-3">Vehículo</dt>
                                     <dd class="col-sm-9">{{ driver.modeloVehiculo }} ({{ driver.patente }})</dd>
+                                    <dt class="col-sm-3">CBU</dt>
+                                    <dd class="col-sm-9">{{ driver.cbu ?: 'No informado' }}</dd>
+                                    <dt class="col-sm-3">CVU</dt>
+                                    <dd class="col-sm-9">{{ driver.cvu ?: 'No informado' }}</dd>
+                                    <dt class="col-sm-3">Alias</dt>
+                                    <dd class="col-sm-9">{{ driver.bankAlias ?: 'No informado' }}</dd>
                                     <dt class="col-sm-3">Notas</dt>
                                     <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
                                     <dt class="col-sm-3">Registrado</dt>
@@ -97,6 +140,12 @@
                                     <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
                                     <dt class="col-sm-3">Notas</dt>
                                     <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
+                                    <dt class="col-sm-3">CBU</dt>
+                                    <dd class="col-sm-9">{{ driver.cbu ?: 'No informado' }}</dd>
+                                    <dt class="col-sm-3">CVU</dt>
+                                    <dd class="col-sm-9">{{ driver.cvu ?: 'No informado' }}</dd>
+                                    <dt class="col-sm-3">Alias</dt>
+                                    <dd class="col-sm-9">{{ driver.bankAlias ?: 'No informado' }}</dd>
                                     <dt class="col-sm-3">Última actualización</dt>
                                     <dd class="col-sm-9">{{ driver.actualizadoEn|date('d/m/Y H:i') }}</dd>
                                     {% if driver.fotoVehiculo %}

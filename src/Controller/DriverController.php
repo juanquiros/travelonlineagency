@@ -21,7 +21,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
+use Knp\Snappy\Pdf;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -324,8 +325,8 @@ final class DriverController extends AbstractController
                 $notes = trim((string) $request->request->get('notes'));
                 $stats = $balanceService->buildDriverBalance($perfil);
 
-                if ($perfil->getCbu() === null && $perfil->getCvu() === null) {
-                    $this->addFlash('error', 'Debes configurar tu CBU o CVU antes de solicitar un retiro.');
+                if ($perfil->getCbu() === null && $perfil->getCvu() === null && $perfil->getBankAlias() === null) {
+                    $this->addFlash('error', 'Debes configurar tu CBU, CVU o alias antes de solicitar un retiro.');
 
                     return $this->redirectToRoute('app_driver_balance');
                 }
@@ -380,36 +381,44 @@ final class DriverController extends AbstractController
     }
 
     #[Route('/balance/export', name: 'app_driver_balance_export', methods: ['GET'])]
-    public function exportBalance(DriverBalanceEntryRepository $entryRepository): StreamedResponse
+    public function exportBalance(
+        DriverBalanceEntryRepository $entryRepository,
+        DriverWithdrawalRequestRepository $withdrawals,
+        DriverBalanceService $balanceService,
+        Pdf $pdf
+    ): PdfResponse
     {
         $usuario = $this->requireAuthenticatedUser();
         $perfil = $this->requireApprovedProfile($usuario);
 
-        $entries = $entryRepository->findRecentForDriver($perfil, 500);
+        $entries = $entryRepository->findRecentForDriver($perfil, 250);
+        $solicitudes = $withdrawals->findRecentForDriver($perfil, 50);
+        $stats = $balanceService->buildDriverBalance($perfil);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
-        $response = new StreamedResponse(function () use ($entries) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Fecha', 'Tipo', 'Movimiento', 'Monto', 'Moneda', 'Descripción', 'Referencia']);
+        $html = $this->renderView('pdf_generator/driver/balance.html.twig', [
+            'driver' => $perfil,
+            'entries' => $entries,
+            'solicitudes' => $solicitudes,
+            'stats' => $stats,
+            'plataforma' => $plataforma,
+            'generadoEn' => new \DateTimeImmutable(),
+            'emitidoPara' => $usuario,
+            'esAdministrador' => false,
+        ]);
 
-            foreach ($entries as $entry) {
-                fputcsv($handle, [
-                    $entry->getCreatedAt()->format('Y-m-d H:i'),
-                    $entry->getType(),
-                    $entry->isCredit() ? 'Crédito' : 'Débito',
-                    number_format((float) $entry->getAmount(), 2, '.', ''),
-                    $entry->getCurrency(),
-                    $entry->getDescription(),
-                    $entry->getReference(),
-                ]);
-            }
+        $pdf->setOption('enable-local-file-access', true);
 
-            fclose($handle);
-        });
-
-        $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="balance-chofer.csv"');
-
-        return $response;
+        return new PdfResponse(
+            $pdf->getOutputFromHtml($html, [
+                'page-size' => 'A4',
+                'orientation' => 'Portrait',
+                'encoding' => 'utf-8',
+                'margin-top' => 10,
+                'margin-bottom' => 15,
+            ]),
+            sprintf('balance-chofer-%s.pdf', $perfil->getId())
+        );
     }
 
     private function requireAuthenticatedUser(): Usuario

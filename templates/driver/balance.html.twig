@@ -35,7 +35,7 @@
                         <dt class="col-7">Saldo disponible</dt>
                         <dd class="col-5 text-end text-success fw-semibold">{{ currency }} {{ stats.available|number_format(2, ',', '.') }}</dd>
                     </dl>
-                    <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="{{ path('app_driver_balance_export') }}">Descargar movimientos</a>
+                    <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="{{ path('app_driver_balance_export') }}" target="_blank" rel="noopener">Descargar movimientos en PDF</a>
                 </div>
             </div>
 
@@ -56,8 +56,10 @@
                             <label class="form-label">Alias</label>
                             <input type="text" name="alias" class="form-control" value="{{ perfil.bankAlias }}" maxlength="50" placeholder="Alias de tu cuenta">
                         </div>
+                        <p class="text-muted small mb-3">Controle sus datos, cualquier error en los datos ingresados es responsabilidad exclusiva del usuario.</p>
                         <button class="btn btn-primary btn-sm w-100" type="submit">Guardar datos bancarios</button>
                     </form>
+                    <p class="text-muted small mt-3 mb-0">Podés registrar tu CBU, CVU y/o alias. Al menos uno es necesario para solicitar retiros.</p>
                 </div>
             </div>
 

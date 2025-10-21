@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Balance del chofer</title>
+    <style>
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; color: #1b1d29; margin: 0; padding: 24px; }
+        h1, h2, h3 { margin: 0 0 8px 0; }
+        h1 { font-size: 22px; }
+        h2 { font-size: 16px; color: #0b5394; text-transform: uppercase; letter-spacing: 0.08em; }
+        h3 { font-size: 14px; color: #444; }
+        p { margin: 4px 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .brand strong { display: block; font-size: 14px; letter-spacing: 0.12em; color: #0b5394; }
+        .summary { display: flex; gap: 16px; margin-bottom: 16px; }
+        .card { flex: 1; background: #f5f7fb; border: 1px solid #d6def3; padding: 12px; border-radius: 8px; }
+        .card dl { margin: 0; }
+        .card dt { font-size: 11px; text-transform: uppercase; color: #5f6b88; margin-top: 6px; }
+        .card dd { font-size: 15px; font-weight: 600; margin: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th { text-align: left; padding: 8px; font-size: 11px; text-transform: uppercase; background: #0b5394; color: #fff; letter-spacing: 0.05em; }
+        td { padding: 8px; border-bottom: 1px solid #d6def3; }
+        .text-right { text-align: right; }
+        .text-muted { color: #6c7284; font-size: 11px; }
+        .section { margin-top: 24px; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+        .badge-success { background: #e7f6ed; color: #2f7a4f; }
+        .badge-danger { background: #fdecea; color: #c7362f; }
+        .badge-warning { background: #fff4d6; color: #8a6d1d; }
+        .notes { font-size: 10px; color: #6c7284; margin-top: 8px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="brand">
+        <strong>{{ plataforma.nombre }}</strong>
+        <span class="text-muted">Reporte de movimientos de chofer</span>
+    </div>
+    <div class="text-muted" style="text-align: right;">
+        <p>Emitido: {{ generadoEn|date('d/m/Y H:i') }}</p>
+        {% if emitidoPara %}
+            <p>Solicitado por: {{ emitidoPara.nombre }} ({{ emitidoPara.email }})</p>
+        {% endif %}
+    </div>
+</div>
+
+<h1>{{ driver.nombreCompleto }}</h1>
+<p class="text-muted">Documento: {{ driver.documento }} · Teléfono: {{ driver.telefono }} · Correo: {{ driver.usuario.email }}</p>
+
+<div class="summary">
+    <div class="card">
+        <h2>Resumen</h2>
+        {% set currency = entries|length > 0 ? entries[0].currency : 'ARS' %}
+        <dl>
+            <dt>Total acreditado</dt>
+            <dd>{{ currency }} {{ stats.credits|number_format(2, ',', '.') }}</dd>
+            <dt>Total debitado</dt>
+            <dd>{{ currency }} {{ stats.debits|number_format(2, ',', '.') }}</dd>
+            <dt>Saldo neto</dt>
+            <dd>{{ currency }} {{ stats.balance|number_format(2, ',', '.') }}</dd>
+            <dt>Retiros pendientes</dt>
+            <dd>{{ currency }} {{ stats.pending|number_format(2, ',', '.') }}</dd>
+            <dt>Saldo disponible</dt>
+            <dd>{{ currency }} {{ stats.available|number_format(2, ',', '.') }}</dd>
+        </dl>
+    </div>
+    <div class="card">
+        <h2>Datos bancarios</h2>
+        <p>CBU: {{ driver.cbu ?: 'No informado' }}</p>
+        <p>CVU: {{ driver.cvu ?: 'No informado' }}</p>
+        <p>Alias: {{ driver.bankAlias ?: 'No informado' }}</p>
+        <div class="notes">Controle sus datos, cualquier error en los datos ingresados es responsabilidad exclusiva del usuario.</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Movimientos</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Movimiento</th>
+            <th class="text-right">Monto</th>
+            <th>Descripción</th>
+            <th>Referencia</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in entries %}
+            <tr>
+                <td>{{ entry.createdAt|date('d/m/Y H:i') }}</td>
+                <td>{{ entry.type|replace({'_':' '})|capitalize }}</td>
+                <td>
+                    {% if entry.isCredit() %}
+                        <span class="badge badge-success">Crédito</span>
+                    {% else %}
+                        <span class="badge badge-danger">Débito</span>
+                    {% endif %}
+                </td>
+                <td class="text-right">{{ entry.currency }} {{ entry.amount|number_format(2, ',', '.') }}</td>
+                <td>{{ entry.description ?: '—' }}</td>
+                <td>{{ entry.reference ?: '—' }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6" class="text-muted">Sin movimientos registrados.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h2>Solicitudes de retiro</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Notas</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for retiro in solicitudes %}
+            <tr>
+                <td>{{ retiro.createdAt|date('d/m/Y H:i') }}</td>
+                <td>{{ retiro.currency }} {{ retiro.amount|number_format(2, ',', '.') }}</td>
+                <td>
+                    {% if retiro.status == 'paid' %}
+                        <span class="badge badge-success">Pagado</span>
+                    {% elseif retiro.status == 'approved' %}
+                        <span class="badge badge-warning">Aprobado</span>
+                    {% elseif retiro.status == 'rejected' %}
+                        <span class="badge badge-danger">Rechazado</span>
+                    {% else %}
+                        <span class="badge">Pendiente</span>
+                    {% endif %}
+                </td>
+                <td>{{ retiro.adminNotes ?: retiro.notes ?: '—' }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4" class="text-muted">Sin solicitudes registradas.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if esAdministrador %}
+    <div class="section">
+        <h3>Observaciones para administración</h3>
+        <p class="text-muted">Este reporte incluye todos los movimientos registrados hasta la fecha indicada. Utilice esta información para validar pagos en efectivo, ajustes manuales y retiros transferidos.</p>
+    </div>
+{% endif %}
+</body>
+</html>

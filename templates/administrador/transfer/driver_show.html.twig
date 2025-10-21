@@ -7,7 +7,10 @@
     <div class="col-lg-4">
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <h2 class="h5 mb-3">Información del chofer</h2>
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h2 class="h5 mb-0">Información del chofer</h2>
+                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_admin_driver_balance_pdf', {id: driver.id}) }}" target="_blank" rel="noopener">Descargar balance PDF</a>
+                </div>
                 <dl class="row small mb-0">
                     <dt class="col-5">Nombre</dt>
                     <dd class="col-7">{{ driver.nombreCompleto }}</dd>
@@ -27,6 +30,12 @@
                             <span class="badge bg-warning text-dark">Pendiente</span>
                         {% endif %}
                     </dd>
+                    <dt class="col-5">CBU</dt>
+                    <dd class="col-7">{{ driver.cbu ?: 'No informado' }}</dd>
+                    <dt class="col-5">CVU</dt>
+                    <dd class="col-7">{{ driver.cvu ?: 'No informado' }}</dd>
+                    <dt class="col-5">Alias</dt>
+                    <dd class="col-7">{{ driver.bankAlias ?: 'No informado' }}</dd>
                 </dl>
                 {% if driver.fotoVehiculo %}
                     <img src="{{ asset('img/drivers/' ~ driver.fotoVehiculo) }}" alt="Vehículo" class="img-fluid rounded mt-3">

@@ -29,6 +29,8 @@ use App\Entity\TransferRequestFieldValue;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
+use App\Repository\DriverBalanceEntryRepository;
+use App\Repository\DriverWithdrawalRequestRepository;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
@@ -49,6 +51,8 @@ use App\Services\PartnerInvitationService;
 use App\Services\DriverInvitationService;
 use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
+use Knp\Snappy\Pdf;
 use PaypalPayoutsSDK;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Form;
@@ -396,7 +400,11 @@ class AdministradorController extends AbstractController
     }
 
     #[Route('/administrador/balance', name: 'app_admin_balance')]
-    public function balance(Request $request): Response
+    public function balance(
+        Request $request,
+        DriverBalanceService $driverBalanceService,
+        DriverBalanceEntryRepository $driverEntryRepository
+    ): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em, $request);
@@ -449,6 +457,10 @@ class AdministradorController extends AbstractController
             && $credenciales->getClientId()
             && $credenciales->getClientSecret();
 
+        $driverStats = $driverBalanceService->buildGlobalBalance();
+        $driverEntries = $driverEntryRepository->findRecentGlobal(15);
+        $driverCurrency = count($driverEntries) > 0 ? $driverEntries[0]->getCurrency() : 'ARS';
+
         return $this->render('administrador/balance.html.twig', [
             'controller_name' => 'AdministradorController',
             'usuario' => $this->getUser(),
@@ -462,6 +474,9 @@ class AdministradorController extends AbstractController
             'puedeConectarMercadoPago' => $puedeConectar,
             'pagosMercadoPago' => $pagos,
             'totalComisionMercadoPago' => $totalComision,
+            'driverStats' => $driverStats,
+            'driverBalanceEntries' => $driverEntries,
+            'driverCurrency' => $driverCurrency,
         ]);
     }
 
@@ -1541,7 +1556,11 @@ class AdministradorController extends AbstractController
     }
 
     #[Route('/administrador/choferes', name: 'app_admin_drivers')]
-    public function manageDrivers(Request $request): Response
+    public function manageDrivers(
+        Request $request,
+        DriverBalanceService $balanceService,
+        DriverBalanceEntryRepository $entryRepository
+    ): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1551,6 +1570,13 @@ class AdministradorController extends AbstractController
         $pendientes = $this->em->getRepository(DriverProfile::class)->findPendientes();
         $habilitados = $this->em->getRepository(DriverProfile::class)->findBy(['aprobado' => true], ['nombreCompleto' => 'ASC']);
 
+        $driverStats = $balanceService->buildGlobalBalance();
+        $driverCurrency = 'ARS';
+        $latestEntry = $entryRepository->findRecentGlobal(1);
+        if (!empty($latestEntry)) {
+            $driverCurrency = $latestEntry[0]->getCurrency();
+        }
+
         return $this->render('administrador/transfer/drivers.html.twig', [
             'plataforma' => $plataforma,
             'usuario' => $this->getUser(),
@@ -1559,6 +1585,8 @@ class AdministradorController extends AbstractController
             'idiomaPlataforma' => $idioma,
             'pendientes' => $pendientes,
             'habilitados' => $habilitados,
+            'driverStats' => $driverStats,
+            'driverCurrency' => $driverCurrency,
         ]);
     }
 
@@ -1567,8 +1595,8 @@ class AdministradorController extends AbstractController
         Request $request,
         DriverProfile $driver,
         DriverBalanceService $balanceService,
-        \App\Repository\DriverBalanceEntryRepository $entryRepository,
-        \App\Repository\DriverWithdrawalRequestRepository $withdrawals
+        DriverBalanceEntryRepository $entryRepository,
+        DriverWithdrawalRequestRepository $withdrawals
     ): Response {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1590,6 +1618,45 @@ class AdministradorController extends AbstractController
             'entries' => $entries,
             'solicitudes' => $solicitudes,
         ]);
+    }
+
+    #[Route('/administrador/choferes/{id}/balance/pdf', name: 'app_admin_driver_balance_pdf', methods: ['GET'])]
+    public function driverBalancePdf(
+        DriverProfile $driver,
+        DriverBalanceService $balanceService,
+        DriverBalanceEntryRepository $entryRepository,
+        DriverWithdrawalRequestRepository $withdrawals,
+        Pdf $pdf
+    ): PdfResponse {
+        $entries = $entryRepository->findRecentForDriver($driver, 250);
+        $solicitudes = $withdrawals->findRecentForDriver($driver, 50);
+        $stats = $balanceService->buildDriverBalance($driver);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $usuario = $this->getUser();
+
+        $html = $this->renderView('pdf_generator/driver/balance.html.twig', [
+            'driver' => $driver,
+            'entries' => $entries,
+            'solicitudes' => $solicitudes,
+            'stats' => $stats,
+            'plataforma' => $plataforma,
+            'generadoEn' => new \DateTimeImmutable(),
+            'emitidoPara' => $usuario instanceof \App\Entity\Usuario ? $usuario : null,
+            'esAdministrador' => true,
+        ]);
+
+        $pdf->setOption('enable-local-file-access', true);
+
+        return new PdfResponse(
+            $pdf->getOutputFromHtml($html, [
+                'page-size' => 'A4',
+                'orientation' => 'Portrait',
+                'encoding' => 'utf-8',
+                'margin-top' => 10,
+                'margin-bottom' => 15,
+            ]),
+            sprintf('balance-chofer-%s.pdf', $driver->getId())
+        );
     }
 
     #[Route('/administrador/choferes/{id}/estado', name: 'app_admin_driver_state', methods: ['POST'])]

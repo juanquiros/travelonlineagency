@@ -172,4 +172,22 @@ class DriverBalanceService
             'available' => $available,
         ];
     }
+
+    /**
+     * @return array{credits: float, debits: float, balance: float, pending: float, available: float}
+     */
+    public function buildGlobalBalance(): array
+    {
+        $totals = $this->entries->getTotalsForAll();
+        $pending = $this->withdrawals->getPendingTotalForAll();
+        $available = $totals['balance'] - $pending;
+
+        return [
+            'credits' => $totals['credits'],
+            'debits' => $totals['debits'],
+            'balance' => $totals['balance'],
+            'pending' => $pending,
+            'available' => $available,
+        ];
+    }
 }
