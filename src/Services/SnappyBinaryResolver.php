@@ -30,7 +30,7 @@ class SnappyBinaryResolver
 
     public function getPdfBinary(): string
     {
-        if ($this->pdfBinaryOverride) {
+        if ($this->isValidOverride($this->pdfBinaryOverride)) {
             return $this->pdfBinaryOverride;
         }
 
@@ -48,7 +48,7 @@ class SnappyBinaryResolver
 
     public function getImageBinary(): string
     {
-        if ($this->imageBinaryOverride) {
+        if ($this->isValidOverride($this->imageBinaryOverride)) {
             return $this->imageBinaryOverride;
         }
 
@@ -93,5 +93,21 @@ class SnappyBinaryResolver
             && $path !== ''
             && file_exists($path)
             && @is_executable($path);
+    }
+
+    private function isValidOverride(?string $override): bool
+    {
+        if (!is_string($override) || $override === '') {
+            return false;
+        }
+
+        // Allow pointing to a binary available in PATH (e.g. "wkhtmltopdf").
+        if (str_contains($override, DIRECTORY_SEPARATOR) || str_contains($override, '/')) {
+            return $this->isUsableBinary($override);
+        }
+
+        $detected = $this->executableFinder->find($override);
+
+        return $this->isUsableBinary($detected);
     }
 }
