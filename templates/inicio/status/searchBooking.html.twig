@@ -1,27 +1,37 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello PayPalController!{% endblock %}
+{% block title %}Buscar reserva{% endblock %}
 
 {% block body %}
-<div class="row m-5">
-    <div class="col-md-4"></div>
-    <div class="col-md-4">
-        {% if render %}
-            <h1>Buscar reserva</h1>
-
-
-        {% else %}
-            <h1>Buscar estado de mi reserva</h1>
-            <hr>
-            <p>Ingresa tu email para consultar</p>
-            <input type="email">
-            <button class="btn btn-success btn-sm">Buscar</button>
-            <div class="row text-center">
-
-
+<section class="toa-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-5 text-center">
+                        {% if render %}
+                            <h1 class="h4 mb-3">Buscar reserva</h1>
+                            <div class="section-divider"></div>
+                            <div class="text-start">{{ render | raw }}</div>
+                        {% else %}
+                            <h1 class="h4 mb-3">Buscar estado de mi reserva</h1>
+                            <div class="section-divider"></div>
+                            <p class="text-muted">Ingresá tu correo electrónico para recibir el enlace con los detalles de tu reserva.</p>
+                            <form class="row g-3 mt-3">
+                                <div class="col-12">
+                                    <label for="searchEmail" class="form-label">Correo electrónico</label>
+                                    <input id="searchEmail" type="email" class="form-control" placeholder="tu@email.com" required>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">Enviar enlace</button>
+                                </div>
+                            </form>
+                            <p class="small text-muted mt-3 mb-0">Verificá la bandeja de entrada y correo no deseado para encontrar nuestro mensaje.</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        {% endif %}
+        </div>
     </div>
-    <div class="col-md-4"></div>
-</div>
+</section>
 {% endblock %}

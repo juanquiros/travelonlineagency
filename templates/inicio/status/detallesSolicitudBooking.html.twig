@@ -1,34 +1,35 @@
 {% if booking %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-header py-4">
+                    <h2 class="h5 mb-0">Reserva de {{ booking.booking.nombre }}</h2>
+                    <p class="text-muted small mb-0">Código #{{ booking.id }}</p>
+                </div>
+                <div class="card-body p-5">
+                    <h3 class="h5">Titular: {{ booking.name }} {{ booking.surname }}</h3>
+                    <p class="text-muted">Estado actual: {{ booking.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
 
-    <div class="row text-center">
-        <div class="card text-center">
-            <div class="card-header">
-                Reseerva de: {{ booking.booking.nombre }}
-            </div>
-            <div class="card-body">
-                <h3>Cod: {{ booking.id }}</h3>
-                <h5 class="card-title">Solicitado por: {{ booking.name }} {{ booking.surname }}</h5>
+                    {% if pago %}
+                        <div class="alert alert-info">Tu reserva está pendiente de pago. Podés completarlo desde el siguiente enlace.</div>
+                        <a class="btn btn-primary" href="{{ pago.linkPago }}" target="_blank">Pagar con PayPal</a>
+                    {% endif %}
 
-                <p>Estado: {{ booking.estado.getnombreporlenguaje(idiomaPlataforma.codigo).traduccion }}</p>
-                {% if pago %}
-                    <a href="{{ pago.linkPago }}" class="btn btn-primary">Pagar con PayPal</a>
-                {% endif %}
+                    {% if adicionales | length > 0 %}
+                        <hr class="my-4">
+                        <h4 class="h6">Acompañantes</h4>
+                        <ul class="list-unstyled small text-start d-inline-block">
+                            {% for reserva in adicionales %}
+                                <li>{{ reserva.name }} {{ reserva.surname }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
 
-                {% if adicionales | length > 0 %}
-                    <hr>
-                    <p class="card-text" style="text-align: left">Con reservas adicionales para:</p>
-                    <ul style="text-align: left">
-                        {% for reserva in adicionales %}
-                            <li>{{ reserva.name }} {{ reserva.surname }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <hr>
-                <h5>Codigo qr a detalles</h5>
-                <div class="row" style="justify-content: center"><img style="max-width: 15rem" src="{{ qr_code_url(melink) }}" /></div>
-
+                    <hr class="my-4">
+                    <h4 class="h6 mb-3">Escaneá el código para revisar la reserva</h4>
+                    <img class="img-fluid" style="max-width: 180px" src="{{ qr_code_url(melink) }}" alt="Código QR de la reserva">
+                </div>
             </div>
         </div>
     </div>
-
 {% endif %}

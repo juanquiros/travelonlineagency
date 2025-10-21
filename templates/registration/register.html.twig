@@ -1,48 +1,68 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Crear cuenta{% endblock %}
 
 {% block body %}
-    <div class="row mt-5">
-        <div class="col-md-4"></div>
-        <div class="col-md-4">
-            <h1>Register</h1>
+<section class="toa-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-xl-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-5">
+                        <h1 class="h3 mb-2 text-center">Crear tu cuenta</h1>
+                        <p class="text-muted text-center mb-4">Registrate para gestionar reservas, traslados y recibir notificaciones personalizadas.</p>
 
-            {{ form_errors(registrationForm) }}
+                        {% for message in app.flashes('success') %}
+                            <div class="alert alert-success" role="alert">{{ message }}</div>
+                        {% endfor %}
 
-            {% for message in app.flashes('success') %}
-                <div class="alert alert-success" role="alert">{{ message }}</div>
-            {% endfor %}
+                        {{ form_start(registrationForm, {'attr': {'class': 'row g-3'}}) }}
+                            <div class="col-12">
+                                {{ form_row(registrationForm.nombre) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(registrationForm.email) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(registrationForm.plainPassword, {'label': 'Contraseña'}) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form_row(registrationForm.agreeTerms) }}
+                            </div>
 
-            {{ form_start(registrationForm) }}
-            {{ form_row(registrationForm.nombre) }}
-            {{ form_row(registrationForm.email) }}
-            {{ form_row(registrationForm.plainPassword, {
-                label: 'Password'
-            }) }}
-            {{ form_row(registrationForm.agreeTerms) }}
-            {% if forcePartnerRequest %}
-                <div class="alert alert-info small">Estás completando el formulario exclusivo para partners. El equipo revisará tu solicitud antes de habilitar el acceso al panel.</div>
-            {% endif %}
-            {% if registrationForm.solicitarPartner is defined %}
-                {{ form_row(registrationForm.solicitarPartner) }}
-            {% endif %}
-            {% if driverMode %}
-                <div class="alert alert-info small">
-                    Completa tus datos de chofer. Un administrador revisará tu solicitud antes de habilitar el acceso al panel de viajes.
+                            {% if forcePartnerRequest %}
+                                <div class="col-12">
+                                    <div class="alert alert-info small mb-0">Estás completando el formulario exclusivo para partners. El equipo revisará tu solicitud antes de habilitar el acceso al panel.</div>
+                                </div>
+                            {% endif %}
+
+                            {% if registrationForm.solicitarPartner is defined %}
+                                <div class="col-12">
+                                    {{ form_row(registrationForm.solicitarPartner) }}
+                                </div>
+                            {% endif %}
+
+                            {% if driverMode %}
+                                <div class="col-12">
+                                    <div class="alert alert-info small">Completá tus datos de chofer. Un administrador revisará tu solicitud antes de habilitar el acceso al panel de viajes.</div>
+                                </div>
+                                <div class="col-12">{{ form_row(registrationForm.driverDocumento) }}</div>
+                                <div class="col-12">{{ form_row(registrationForm.driverTelefono) }}</div>
+                                <div class="col-12">{{ form_row(registrationForm.driverPatente) }}</div>
+                                <div class="col-12">{{ form_row(registrationForm.driverModeloVehiculo) }}</div>
+                                <div class="col-12">{{ form_row(registrationForm.driverNotas) }}</div>
+                                <div class="col-12">{{ form_row(registrationForm.driverFoto) }}</div>
+                            {% endif %}
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">Crear cuenta</button>
+                            </div>
+                        {{ form_end(registrationForm) }}
+                    </div>
                 </div>
-                {{ form_row(registrationForm.driverDocumento) }}
-                {{ form_row(registrationForm.driverTelefono) }}
-                {{ form_row(registrationForm.driverPatente) }}
-                {{ form_row(registrationForm.driverModeloVehiculo) }}
-                {{ form_row(registrationForm.driverNotas) }}
-                {{ form_row(registrationForm.driverFoto) }}
-            {% endif %}
-
-            <button type="submit" class="btn btn-success  w-100">Register</button>
-            {{ form_end(registrationForm) }}
+                <p class="text-center text-muted small mt-3">¿Ya tenés cuenta? <a href="{{ path('app_login') }}">Iniciá sesión</a>.</p>
+            </div>
         </div>
-        <div class="col-md-4"></div>
     </div>
-
+</section>
 {% endblock %}

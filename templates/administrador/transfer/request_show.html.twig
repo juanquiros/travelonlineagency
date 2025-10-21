@@ -1,0 +1,239 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Solicitud de traslado #{{ solicitud.id }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div>
+            <a class="btn btn-link px-0" href="{{ path('app_admin_transfer_requests') }}">
+                <i class="bi bi-arrow-left"></i> Volver a solicitudes
+            </a>
+            <h1 class="h3 mb-1">Solicitud #{{ solicitud.id }}</h1>
+            <div class="text-muted small">Creada el {{ solicitud.creadoEn|date('d/m/Y H:i') }}</div>
+        </div>
+        <div>
+            {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Información del pasajero</h2>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Nombre completo</span>
+                            <strong>{{ solicitud.nombrePasajero }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Correo electrónico</span>
+                            <a href="mailto:{{ solicitud.emailPasajero }}">{{ solicitud.emailPasajero }}</a>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Teléfono</span>
+                            {{ solicitud.telefonoPasajero ?: 'No informado' }}
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Usuario registrado</span>
+                            {% if solicitud.usuario %}
+                                <a href="mailto:{{ solicitud.usuario.email }}">{{ solicitud.usuario.nombre }}</a>
+                            {% else %}
+                                Invitado
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Fecha de arribo</span>
+                            {% if solicitud.arribo %}
+                                {{ solicitud.arribo|date('d/m/Y H:i') }}
+                            {% else %}
+                                <span class="text-muted">Sin dato</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small d-block">Fecha de salida</span>
+                            {% if solicitud.salida %}
+                                {{ solicitud.salida|date('d/m/Y H:i') }}
+                            {% else %}
+                                <span class="text-muted">Sin dato</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Detalle del traslado</h2>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <span class="text-muted small d-block">Tipo</span>
+                            {{ solicitud.tipo == 'combo' ? 'Combo establecido' : 'Traslado personalizado' }}
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-muted small d-block">Importe</span>
+                            {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-muted small d-block">Seguimiento</span>
+                            {% if solicitud.tokenSeguimiento %}
+                                <a href="{{ absolute_url(path('app_transfer_tracking', {token: solicitud.tokenSeguimiento})) }}" target="_blank">Ver enlace</a>
+                            {% else %}
+                                <span class="text-muted">No generado</span>
+                            {% endif %}
+                        </div>
+                        {% if solicitud.combo %}
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0">
+                                    <strong>Combo asociado:</strong> {{ solicitud.combo.nombre }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if solicitud.notasCliente %}
+                        <hr>
+                        <h3 class="h6">Notas del cliente</h3>
+                        <p class="mb-0">{{ solicitud.notasCliente }}</p>
+                    {% endif %}
+
+                    {% if datosExtra.admin_notes is defined %}
+                        <hr>
+                        <h3 class="h6">Notas internas</h3>
+                        <p class="mb-0 text-muted">{{ datosExtra.admin_notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Destinos solicitados</h2>
+                    {% if solicitud.destinos|length > 0 %}
+                        <ol class="list-group list-group-numbered">
+                            {% for detalle in solicitud.destinos %}
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="me-3">
+                                        <h3 class="h6 mb-1">{{ detalle.destino.nombre }}</h3>
+                                        {% if detalle.destino.descripcion %}
+                                            <p class="text-muted small mb-0">{{ detalle.destino.descripcion|striptags }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge bg-light text-dark">Parada {{ loop.index }}</span>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    {% else %}
+                        <p class="text-muted mb-0">No se registraron destinos en esta solicitud.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if customValues %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h5 mb-3">Datos personalizados</h2>
+                        <div class="row g-3">
+                            {% for valor in customValues %}
+                                <div class="col-md-6">
+                                    <span class="text-muted small d-block">{{ valor.campo.etiqueta }}</span>
+                                    <strong>{{ valor.valor ?: 'Sin respuesta' }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Choferes y seguimiento</h2>
+                    {% if solicitud.asignaciones|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Chofer</th>
+                                        <th>Estado</th>
+                                        <th>Notas</th>
+                                        <th>Actualizado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for asignacion in solicitud.asignaciones %}
+                                    <tr>
+                                        <td>{{ asignacion.chofer.nombreCompleto }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary text-uppercase">{{ asignacion.estado }}</span>
+                                        </td>
+                                        <td class="small">{{ asignacion.notas ?: '—' }}</td>
+                                        <td class="small">{{ asignacion.actualizadoEn|date('d/m/Y H:i') }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No hay choferes asignados todavía.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Actualizar estado</h2>
+                    <form method="post" action="{{ path('app_admin_transfer_request_state', {id: solicitud.id}) }}" class="d-grid gap-3">
+                        <select name="estado" class="form-select">
+                            <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_PENDIENTE') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_PENDIENTE') ? 'selected' }}>Pendiente</option>
+                            <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_CAPTURADO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_CAPTURADO') ? 'selected' }}>Capturado</option>
+                            <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_EN_CURSO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_EN_CURSO') ? 'selected' }}>En curso</option>
+                            <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_COMPLETADO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_COMPLETADO') ? 'selected' }}>Completado</option>
+                            <option value="{{ constant('App\\Entity\\TransferRequest::ESTADO_CANCELADO') }}" {{ solicitud.estado == constant('App\\Entity\\TransferRequest::ESTADO_CANCELADO') ? 'selected' }}>Cancelado</option>
+                        </select>
+                        <div>
+                            <label for="notas-admin" class="form-label">Nota interna</label>
+                            <textarea id="notas-admin" name="notas" rows="3" class="form-control" placeholder="Agregar comentarios opcionales"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </form>
+                    <a class="btn btn-outline-secondary w-100 mt-3" href="{{ path('app_admin_transfer_request_assign', {id: solicitud.id}) }}">Asignar chofer</a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Pagos registrados</h2>
+                    {% if pagosMercadoPago or pagosPayPal %}
+                        {% if pagosMercadoPago %}
+                            <h3 class="h6">Mercado Pago</h3>
+                            <ul class="list-group mb-3">
+                                {% for pago in pagosMercadoPago %}
+                                    <li class="list-group-item small d-flex justify-content-between">
+                                        <span>#{{ pago.paymentId }} · {{ pago.status|upper }}</span>
+                                        <strong>{{ solicitud.moneda }} {{ pago.transactionAmount|number_format(2, ',', '.') }}</strong>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        {% if pagosPayPal %}
+                            <h3 class="h6">PayPal</h3>
+                            <ul class="list-group">
+                                {% for pago in pagosPayPal %}
+                                    <li class="list-group-item small d-flex justify-content-between">
+                                        <span>{{ pago.ordersId }} · {{ pago.estado|upper }}</span>
+                                        <strong>{{ solicitud.moneda }} {{ pago.total|number_format(2, ',', '.') }}</strong>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Aún no se registraron pagos para este traslado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

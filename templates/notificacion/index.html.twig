@@ -1,20 +1,38 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello NotificacionController!{% endblock %}
+{% block title %}Notificaciones push{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/wamp64/www/travelonlineagency/travelonlineagency/src/Controller/NotificacionController.php</code></li>
-        <li>Your template at <code>C:/wamp64/www/travelonlineagency/travelonlineagency/templates/notificacion/index.html.twig</code></li>
-    </ul>
-</div>
+<section class="toa-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card toa-card shadow-sm">
+                    <div class="card-body p-5">
+                        <h1 class="toa-section-title mb-3">Centro de notificaciones</h1>
+                        <div class="section-divider"></div>
+                        <p class="text-muted">Activá las notificaciones web para enterarte cuando recibas nuevas reservas o actualizaciones importantes de tus servicios.</p>
+                        <div class="d-flex flex-column gap-3 mt-4">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="toa-pill"><i class="bi bi-bell"></i></span>
+                                <div>
+                                    <h2 class="h5 mb-1">Cómo funciona</h2>
+                                    <p class="mb-0 text-muted">Desde tu panel vas a poder activar o desactivar las alertas con un clic. Nosotros te avisamos en cuanto haya novedades.</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="toa-pill"><i class="bi bi-shield-check"></i></span>
+                                <div>
+                                    <h2 class="h5 mb-1">Tu privacidad</h2>
+                                    <p class="mb-0 text-muted">Solo almacenamos el permiso necesario para enviarte los avisos. Podés darte de baja cuando quieras.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary mt-4" href="{{ path('app_inicio') }}">Volver al inicio</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}

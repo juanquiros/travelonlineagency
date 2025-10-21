@@ -3,40 +3,43 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block body %}
-<div class="row mt-5">
-    <div class="col-md-4"></div>
-    <div class="col-md-4 ">
-        <h1 class="m-3">{{ titulo }}</h1>
-        <hr>
-    </div>
-    <div class="col-md-4"></div>
-</div>
-    <section>
-        <div class="row mb-5">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-                <div class="accordion accordion-flush mb-5" id="accordionPreguntasFrecuentes">
+<section class="toa-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="toa-pill">Centro de ayuda</span>
+            <h1 class="toa-section-title">{{ titulo }}</h1>
+            <div class="section-divider"></div>
+            <p class="toa-section-subtitle">Encontrá respuestas rápidas sobre reservas, traslados y pagos directamente desde nuestro equipo.</p>
+        </div>
 
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion accordion-flush shadow-sm" id="accordionPreguntasFrecuentes">
                     {% if preguntas %}
                         {% for pregunta in preguntas %}
                             <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{ loop.index  }}" aria-expanded="false" aria-controls="flush-collapse{{ loop.index  }}">
+                                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{ loop.index }}" aria-expanded="false" aria-controls="flush-collapse{{ loop.index }}">
                                         <strong>{{ pregunta.titulo }}</strong>
                                     </button>
                                 </h2>
-                                <div id="flush-collapse{{ loop.index  }}" class="accordion-collapse collapse" data-bs-parent="#accordionPreguntasFrecuentes">
-                                    <div class="accordion-body">
-                                        {{ pregunta.respuesta | raw }}
-                                    </div>
+                                <div id="flush-collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionPreguntasFrecuentes">
+                                    <div class="accordion-body">{{ pregunta.respuesta | raw }}</div>
                                 </div>
                             </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <p class="text-muted mb-0">Todavía no hay preguntas frecuentes cargadas.</p>
+                            </div>
                         {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <p class="text-muted mb-0">Todavía no hay preguntas frecuentes cargadas.</p>
+                        </div>
                     {% endif %}
                 </div>
-
             </div>
-            <div class="col-md-4"></div>
         </div>
-    </section>
+    </div>
+</section>
 {% endblock %}

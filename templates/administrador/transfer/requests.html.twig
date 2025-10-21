@@ -51,7 +51,8 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <div class="d-flex flex-column gap-1 align-items-end">
+                            <div class="d-flex flex-column gap-2 align-items-end">
+                                <a class="btn btn-sm btn-outline-dark" href="{{ path('app_admin_transfer_request_show', {id: solicitud.id}) }}">Ver detalle</a>
                                 <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_request_assign', {id: solicitud.id}) }}">Asignar chofer</a>
                                 <form method="post" action="{{ path('app_admin_transfer_request_state', {id: solicitud.id}) }}" class="d-flex gap-1">
                                     <select name="estado" class="form-select form-select-sm">

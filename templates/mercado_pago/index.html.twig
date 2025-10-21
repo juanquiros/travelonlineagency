@@ -1,50 +1,55 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}PayPal Pay{% endblock %}
+{% block title %}Pago con Mercado Pago{% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-
 {% endblock %}
 
-
 {% block body %}
-
-    <div class="row mt-5 mb-5">
-        <div class="col-md-4"></div>
-        <div class="col-md-4 text-center">
-            <h1>Mercadopago</h1>
-            <div id="wallet_container"></div>
-            {% if isSandbox %}
-                <div class="alert alert-info mt-3" role="alert">
-                    Estás operando en el modo <strong>Sandbox</strong> de Mercado Pago. Utilizá credenciales y tarjetas de prueba.
+<section class="toa-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <h1 class="h4 mb-3">Completar pago</h1>
+                        <div class="section-divider"></div>
+                        <p class="text-muted">Utilizá el botón de Mercado Pago para confirmar tu reserva en un entorno seguro.</p>
+                        <div id="wallet_container" class="my-4"></div>
+                        {% if isSandbox %}
+                            <div class="alert alert-info" role="alert">
+                                Estás operando en el modo <strong>Sandbox</strong> de Mercado Pago. Utilizá credenciales y tarjetas de prueba.
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
+            </div>
         </div>
-        <div class="col-md-4"></div>
     </div>
+</section>
 
-    <script>
-        const mpOptions = {
-            locale: "{{ idiomaPlataforma.codigo ?? 'es-AR' }}"
-        };
-        {% if isSandbox %}
-        mpOptions.advancedFraudPrevention = false;
-        {% endif %}
-        const mp = new MercadoPago("{{ publicKey }}", mpOptions);
-        const walletOptions = {
-            initialization: {
-                preferenceId: "{{ id }}",
+<script>
+    const mpOptions = {
+        locale: "{{ idiomaPlataforma.codigo ?? 'es-AR' }}"
+    };
+    {% if isSandbox %}
+    mpOptions.advancedFraudPrevention = false;
+    {% endif %}
+    const mp = new MercadoPago("{{ publicKey }}", mpOptions);
+    const walletOptions = {
+        initialization: {
+            preferenceId: "{{ id }}",
+        },
+        customization: {
+            texts: {
+                valueProp: 'smart_option',
             },
-            customization: {
-                texts: {
-                    valueProp: 'smart_option',
-                },
-            },
-        };
-        {% if isSandbox %}
-        walletOptions.onReady = () => console.info('Mercado Pago Wallet en modo sandbox');
-        {% endif %}
-        mp.bricks().create("wallet", "wallet_container", walletOptions);
-    </script>
+        },
+    };
+    {% if isSandbox %}
+    walletOptions.onReady = () => console.info('Mercado Pago Wallet en modo sandbox');
+    {% endif %}
+    mp.bricks().create("wallet", "wallet_container", walletOptions);
+</script>
 {% endblock %}

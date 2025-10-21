@@ -1,27 +1,41 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello PayPalController!{% endblock %}
+{% block title %}Seguimiento de reserva{% endblock %}
 
 {% block body %}
-<div class="row m-5">
-    <div class="col-md-4"></div>
-    <div class="col-md-4">
-        {% if render %}
-            <h1>Detalles de la reserva</h1>
-            {{ render | raw }}
-
-        {% else %}
-            <h1>Buscar estado de mi reserva</h1>
-            <hr>
-            <p>Ingresa tu email para consultar</p>
-            <input type="email">
-            <button class="btn btn-success btn-sm">Buscar</button>
-            <div class="row text-center">
-
-
+<section class="toa-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-5 text-center">
+                        {% if render %}
+                            <h1 class="h4 mb-3">Detalles de tu reserva</h1>
+                            <div class="section-divider"></div>
+                            <div class="text-start">{{ render | raw }}</div>
+                        {% else %}
+                            <h1 class="h4 mb-3">Buscar estado de mi reserva</h1>
+                            <div class="section-divider"></div>
+                            <p class="text-muted">Ingresá tu correo y el código de reserva recibido por email para conocer el estado actual.</p>
+                            <form class="row g-3 mt-3">
+                                <div class="col-12">
+                                    <label for="statusEmail" class="form-label">Correo electrónico</label>
+                                    <input id="statusEmail" type="email" class="form-control" placeholder="tu@email.com" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="statusCode" class="form-label">Código de reserva</label>
+                                    <input id="statusCode" type="text" class="form-control" placeholder="ABC123" required>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">Consultar</button>
+                                </div>
+                            </form>
+                            <p class="small text-muted mt-3 mb-0">Recibiste estos datos en el correo de confirmación al crear tu reserva.</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        {% endif %}
+        </div>
     </div>
-    <div class="col-md-4"></div>
-</div>
+</section>
 {% endblock %}

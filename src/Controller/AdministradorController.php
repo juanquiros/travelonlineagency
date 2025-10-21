@@ -8,6 +8,7 @@ use App\Entity\CredencialesMercadoPago;
 use App\Entity\CredencialesPayPal;
 use App\Entity\Lenguaje;
 use App\Entity\MercadoPagoPago;
+use App\Entity\PayPalPago;
 use App\Entity\Moneda;
 use App\Entity\Plataforma;
 use App\Entity\Precio;
@@ -21,6 +22,7 @@ use App\Entity\TransferComboDestination;
 use App\Entity\TransferDestination;
 use App\Entity\TransferFormField;
 use App\Entity\TransferRequest;
+use App\Entity\TransferRequestFieldValue;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
@@ -1379,6 +1381,48 @@ class AdministradorController extends AbstractController
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'solicitudes' => $solicitudes,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/solicitud/{id}', name: 'app_admin_transfer_request_show')]
+    public function showTransferRequest(Request $request, TransferRequest $solicitud): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+
+        $this->adminMenu['traslados'] = true;
+        $this->adminMenu['transfer_requests'] = true;
+
+        $customValues = $solicitud->getValores()->toArray();
+        usort($customValues, static function (TransferRequestFieldValue $a, TransferRequestFieldValue $b): int {
+            $ordenA = $a->getCampo() ? $a->getCampo()->getOrden() : 0;
+            $ordenB = $b->getCampo() ? $b->getCampo()->getOrden() : 0;
+
+            return $ordenA <=> $ordenB;
+        });
+
+        $pagosMercadoPago = $this->em->getRepository(MercadoPagoPago::class)->findBy(
+            ['transferRequest' => $solicitud],
+            ['createdAt' => 'DESC']
+        );
+
+        $pagosPayPal = $this->em->getRepository(PayPalPago::class)->findBy(
+            ['transferRequest' => $solicitud],
+            ['createdAt' => 'DESC']
+        );
+
+        return $this->render('administrador/transfer/request_show.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'solicitud' => $solicitud,
+            'customValues' => $customValues,
+            'datosExtra' => $solicitud->getDatosExtra() ?? [],
+            'pagosMercadoPago' => $pagosMercadoPago,
+            'pagosPayPal' => $pagosPayPal,
         ]);
     }
 

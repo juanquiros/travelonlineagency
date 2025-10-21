@@ -1,52 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}test paypal{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends 'administrador/base.html.twig' %}
 
+{% block title %}Test PayPal{% endblock %}
 
+{% block body %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body p-5">
+                    <h1 class="h4 mb-3">Prueba de inicio de sesión PayPal</h1>
+                    <p class="text-muted">Utilizá este entorno para verificar las credenciales de PayPal sin afectar a los usuarios finales.</p>
+                    <a class="btn btn-primary" href="{{ link }}" target="_blank">Pagar con PayPal</a>
+                    <div id="btn-paypalLogin" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <meta property="og:url" content="http://localhost:8000" />
-
-
-
-</head>
-<body>
-<a href="{{ link }}">Pagar con paypal</a>
-<span id='btn-paypalLogin'></span>
-
-<script src='https://www.paypalobjects.com/js/external/api.js'></script>
-
-<script>
-
-    paypal.use( ['login'], function (login) {
-
-        login.render ({
-
-            "appid":"AcN_E-S19Ofp3CZeem3xHiAVVeLjVIz6kDYiEGAAQ9xIeW_Yl3Cb5lycPByr8m74sCBlPl365c6KTniV",
-
-            "scopes":"None",
-
-            "containerid":"btn-paypalLogin",
-
-            "responseType":"code",
-
-            "locale":"es-es",
-
-            "buttonType":"CWP",
-
-            "buttonShape":"pill",
-
-            "buttonSize":"sm",
-
-            "fullPage":"true",
-
-            "returnurl":"https://shophardware.com.ar/paypal/login"
-
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://www.paypalobjects.com/js/external/api.js"></script>
+    <script>
+        paypal.use(['login'], function (login) {
+            login.render({
+                "appid": "AcN_E-S19Ofp3CZeem3xHiAVVeLjVIz6kDYiEGAAQ9xIeW_Yl3Cb5lycPByr8m74sCBlPl365c6KTniV",
+                "scopes": "None",
+                "containerid": "btn-paypalLogin",
+                "responseType": "code",
+                "locale": "es-es",
+                "buttonType": "CWP",
+                "buttonShape": "pill",
+                "buttonSize": "sm",
+                "fullPage": "true",
+                "returnurl": "https://shophardware.com.ar/paypal/login"
+            });
         });
-
-    });
-
-</script>
-</body>
+    </script>
+{% endblock %}
+{% endblock %}
