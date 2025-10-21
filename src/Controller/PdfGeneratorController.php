@@ -17,6 +17,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class PdfGeneratorController extends AbstractController
 {
@@ -52,7 +53,11 @@ final class PdfGeneratorController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $trackingUrl = $this->generateUrl('app_transfer_tracking', ['token' => $token], true);
+        $trackingUrl = $this->generateUrl(
+            'app_transfer_tracking',
+            ['token' => $token],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
         $html = $this->renderView('pdf_generator/transfer/solicitud.html.twig', [
