@@ -228,6 +228,41 @@
                                 {% endfor %}
                             </ul>
                         {% endif %}
+                        {% set cashPayment = solicitud.cashPayments|last %}
+                        {% if cashPayment %}
+                            <h3 class="h6 mt-3">Pago en efectivo</h3>
+                            <div class="border rounded p-3 bg-light small">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div>
+                                        <div class="text-uppercase fw-semibold">Estado: {{ cashPayment.status|replace({'_':' '}) }}</div>
+                                        {% if cashPayment.driverReportedAt %}
+                                            <div class="text-muted">Reportado por el chofer: {{ cashPayment.driverReportedAt|date('d/m/Y H:i') }}</div>
+                                        {% endif %}
+                                        {% if cashPayment.adminConfirmedAt %}
+                                            <div class="text-success">Confirmado: {{ cashPayment.adminConfirmedAt|date('d/m/Y H:i') }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end fw-semibold">{{ cashPayment.currency }} {{ cashPayment.amount|number_format(2, ',', '.') }}</div>
+                                </div>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <form method="post" action="{{ path('app_admin_transfer_cash_status', {id: cashPayment.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_cash_' ~ cashPayment.id) }}">
+                                        <input type="hidden" name="status" value="confirm">
+                                        <button class="btn btn-sm btn-success" type="submit">Confirmar ingreso</button>
+                                    </form>
+                                    <form method="post" action="{{ path('app_admin_transfer_cash_status', {id: cashPayment.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_cash_' ~ cashPayment.id) }}">
+                                        <input type="hidden" name="status" value="driver_reported">
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">Marcar entregado por chofer</button>
+                                    </form>
+                                    <form method="post" action="{{ path('app_admin_transfer_cash_status', {id: cashPayment.id}) }}" onsubmit="return confirm('¿Deseás volver a estado pendiente?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_cash_' ~ cashPayment.id) }}">
+                                        <input type="hidden" name="status" value="pending">
+                                        <button class="btn btn-sm btn-outline-secondary" type="submit">Volver a pendiente</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <p class="text-muted mb-0">Aún no se registraron pagos para este traslado.</p>
                     {% endif %}

@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 class CashPayment
 {
     public const STATUS_PENDING = 'pending';
+    public const STATUS_DRIVER_REPORTED = 'driver_reported';
     public const STATUS_CONFIRMED = 'confirmed';
     public const STATUS_CANCELLED = 'cancelled';
 
@@ -44,6 +45,18 @@ class CashPayment
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $reference = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $driverReportedAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $adminConfirmedAt = null;
+
+    #[ORM\ManyToOne]
+    private ?DriverProfile $driverReportedBy = null;
+
+    #[ORM\OneToOne(mappedBy: 'cashPayment', cascade: ['persist', 'remove'])]
+    private ?DriverBalanceEntry $driverBalanceEntry = null;
 
     public function __construct()
     {
@@ -155,6 +168,69 @@ class CashPayment
     {
         $this->reference = $reference;
         $this->touch();
+
+        return $this;
+    }
+
+    public function getDriverReportedAt(): ?\DateTimeInterface
+    {
+        return $this->driverReportedAt;
+    }
+
+    public function setDriverReportedAt(?\DateTimeInterface $driverReportedAt): self
+    {
+        $this->driverReportedAt = $driverReportedAt;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getAdminConfirmedAt(): ?\DateTimeInterface
+    {
+        return $this->adminConfirmedAt;
+    }
+
+    public function setAdminConfirmedAt(?\DateTimeInterface $adminConfirmedAt): self
+    {
+        $this->adminConfirmedAt = $adminConfirmedAt;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getDriverReportedBy(): ?DriverProfile
+    {
+        return $this->driverReportedBy;
+    }
+
+    public function setDriverReportedBy(?DriverProfile $driverReportedBy): self
+    {
+        $this->driverReportedBy = $driverReportedBy;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getDriverBalanceEntry(): ?DriverBalanceEntry
+    {
+        return $this->driverBalanceEntry;
+    }
+
+    public function setDriverBalanceEntry(?DriverBalanceEntry $driverBalanceEntry): self
+    {
+        if ($driverBalanceEntry === null) {
+            if ($this->driverBalanceEntry && $this->driverBalanceEntry->getCashPayment() === $this) {
+                $this->driverBalanceEntry->setCashPayment(null);
+            }
+            $this->driverBalanceEntry = null;
+
+            return $this;
+        }
+
+        $this->driverBalanceEntry = $driverBalanceEntry;
+        if ($driverBalanceEntry->getCashPayment() !== $this) {
+            $driverBalanceEntry->setCashPayment($this);
+        }
 
         return $this;
     }

@@ -46,6 +46,9 @@ class TransferAssignment
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $finalizadoEn = null;
 
+    #[ORM\OneToOne(cascade: ['persist'])]
+    private ?DriverBalanceEntry $earningEntry = null;
+
     public function __construct()
     {
         $this->creadoEn = new \DateTimeImmutable();
@@ -144,6 +147,18 @@ class TransferAssignment
     {
         $this->finalizadoEn = $finalizadoEn;
         $this->touch();
+
+        return $this;
+    }
+
+    public function getEarningEntry(): ?DriverBalanceEntry
+    {
+        return $this->earningEntry;
+    }
+
+    public function setEarningEntry(?DriverBalanceEntry $earningEntry): self
+    {
+        $this->earningEntry = $earningEntry;
 
         return $this;
     }

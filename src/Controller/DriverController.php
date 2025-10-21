@@ -2,19 +2,26 @@
 
 namespace App\Controller;
 
+use App\Entity\CashPayment;
 use App\Entity\DriverProfile;
+use App\Entity\DriverWithdrawalRequest;
 use App\Entity\Plataforma;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferRequest;
 use App\Entity\Usuario;
+use App\Repository\CashPaymentRepository;
+use App\Repository\DriverBalanceEntryRepository;
+use App\Repository\DriverWithdrawalRequestRepository;
 use App\Repository\TransferAssignmentRepository;
 use App\Repository\TransferRequestRepository;
+use App\Services\DriverBalanceService;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -144,7 +151,7 @@ final class DriverController extends AbstractController
     }
 
     #[Route('/asignacion/{id}/finalizar', name: 'app_driver_assignment_complete', methods: ['POST'])]
-    public function complete(Request $request, TransferAssignment $asignacion): RedirectResponse
+    public function complete(Request $request, TransferAssignment $asignacion, DriverBalanceService $balanceService): RedirectResponse
     {
         $usuario = $this->requireAuthenticatedUser();
         $this->assertAssignmentOwner($asignacion, $usuario);
@@ -166,6 +173,8 @@ final class DriverController extends AbstractController
         $this->em->persist($asignacion);
         $this->em->persist($asignacion->getSolicitud());
         $this->em->flush();
+
+        $balanceService->recordTransferCompletion($asignacion);
 
         $this->addFlash('success', 'Traslado finalizado. ¡Gracias!');
 
@@ -223,6 +232,184 @@ final class DriverController extends AbstractController
         $this->addFlash('success', 'Notas actualizadas.');
 
         return $this->redirectToRoute('app_driver_dashboard');
+    }
+
+    #[Route('/solicitud/{id}/pago-efectivo', name: 'app_driver_transfer_cash', methods: ['POST'])]
+    public function updateCashPayment(
+        Request $request,
+        TransferRequest $solicitud,
+        CashPaymentRepository $cashPayments,
+        DriverBalanceService $balanceService
+    ): RedirectResponse {
+        $usuario = $this->requireAuthenticatedUser();
+        $perfil = $this->requireApprovedProfile($usuario);
+
+        if (!$this->isCsrfTokenValid('driver_cash_' . $solicitud->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $asignado = false;
+        foreach ($solicitud->getAsignaciones() as $asignacion) {
+            if ($asignacion->getChofer()?->getId() === $perfil->getId()) {
+                $asignado = true;
+                break;
+            }
+        }
+
+        if (!$asignado) {
+            throw $this->createAccessDeniedException('No podés administrar el pago en efectivo de este traslado.');
+        }
+
+        $cashPayment = $cashPayments->findLatestForTransfer($solicitud);
+        if (!$cashPayment instanceof CashPayment) {
+            $this->addFlash('error', 'No se encontró un pago en efectivo asociado a este traslado.');
+
+            return $this->redirectToRoute('app_driver_dashboard');
+        }
+
+        $action = (string) $request->request->get('action', '');
+
+        if ($action === 'report') {
+            $cashPayment->setStatus(CashPayment::STATUS_DRIVER_REPORTED);
+            $cashPayment->setDriverReportedBy($perfil);
+            $cashPayment->setDriverReportedAt(new \DateTimeImmutable());
+            $cashPayment->setAdminConfirmedAt(null);
+            $this->em->persist($cashPayment);
+
+            $balanceService->recordCashDelivery($cashPayment, $perfil, $usuario);
+            $this->addFlash('success', 'Registraste la entrega de efectivo al administrador.');
+        } elseif ($action === 'revert') {
+            $cashPayment->setStatus(CashPayment::STATUS_PENDING);
+            $cashPayment->setDriverReportedAt(null);
+            $cashPayment->setDriverReportedBy(null);
+            $cashPayment->setAdminConfirmedAt(null);
+            $this->em->persist($cashPayment);
+
+            $balanceService->removeCashDelivery($cashPayment);
+            $this->addFlash('info', 'Se revirtió el registro de entrega en efectivo.');
+        } else {
+            $this->addFlash('error', 'Acción de pago en efectivo no reconocida.');
+        }
+
+        return $this->redirectToRoute('app_driver_dashboard');
+    }
+
+    #[Route('/balance', name: 'app_driver_balance', methods: ['GET', 'POST'])]
+    public function balance(
+        Request $request,
+        DriverBalanceService $balanceService,
+        DriverBalanceEntryRepository $entryRepository,
+        DriverWithdrawalRequestRepository $withdrawals
+    ): Response {
+        $usuario = $this->requireAuthenticatedUser();
+        $perfil = $this->requireApprovedProfile($usuario);
+
+        if ($request->isMethod('POST')) {
+            $action = (string) $request->request->get('action', '');
+
+            if ($action === 'update_bank') {
+                $perfil->setCbu($request->request->get('cbu'));
+                $perfil->setCvu($request->request->get('cvu'));
+                $perfil->setBankAlias($request->request->get('alias'));
+                $this->em->persist($perfil);
+                $this->em->flush();
+
+                $this->addFlash('success', 'Datos bancarios actualizados.');
+
+                return $this->redirectToRoute('app_driver_balance');
+            }
+
+            if ($action === 'request_withdrawal') {
+                $amount = (float) $request->request->get('amount', 0);
+                $notes = trim((string) $request->request->get('notes'));
+                $stats = $balanceService->buildDriverBalance($perfil);
+
+                if ($perfil->getCbu() === null && $perfil->getCvu() === null) {
+                    $this->addFlash('error', 'Debes configurar tu CBU o CVU antes de solicitar un retiro.');
+
+                    return $this->redirectToRoute('app_driver_balance');
+                }
+
+                if ($amount <= 0) {
+                    $this->addFlash('error', 'Ingresá un monto válido para retirar.');
+
+                    return $this->redirectToRoute('app_driver_balance');
+                }
+
+                if ($amount > $stats['available']) {
+                    $this->addFlash('error', 'No hay saldo disponible suficiente para este retiro.');
+
+                    return $this->redirectToRoute('app_driver_balance');
+                }
+
+                $retiro = (new DriverWithdrawalRequest())
+                    ->setDriver($perfil)
+                    ->setAmount($amount)
+                    ->setCurrency('ARS')
+                    ->setStatus(DriverWithdrawalRequest::STATUS_PENDING)
+                    ->setNotes($notes !== '' ? $notes : null)
+                    ->setRequestedBy($usuario);
+
+                $this->em->persist($retiro);
+                $this->em->flush();
+
+                $this->addFlash('success', 'Solicitud de retiro enviada. El administrador la revisará a la brevedad.');
+
+                return $this->redirectToRoute('app_driver_balance');
+            }
+        }
+
+        $stats = $balanceService->buildDriverBalance($perfil);
+        $entries = $entryRepository->findRecentForDriver($perfil, 50);
+        $solicitudes = $withdrawals->findRecentForDriver($perfil, 20);
+
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+
+        return $this->render('driver/balance.html.twig', [
+            'usuario' => $usuario,
+            'perfil' => $perfil,
+            'stats' => $stats,
+            'entries' => $entries,
+            'solicitudes' => $solicitudes,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'plataforma' => $plataforma,
+        ]);
+    }
+
+    #[Route('/balance/export', name: 'app_driver_balance_export', methods: ['GET'])]
+    public function exportBalance(DriverBalanceEntryRepository $entryRepository): StreamedResponse
+    {
+        $usuario = $this->requireAuthenticatedUser();
+        $perfil = $this->requireApprovedProfile($usuario);
+
+        $entries = $entryRepository->findRecentForDriver($perfil, 500);
+
+        $response = new StreamedResponse(function () use ($entries) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Fecha', 'Tipo', 'Movimiento', 'Monto', 'Moneda', 'Descripción', 'Referencia']);
+
+            foreach ($entries as $entry) {
+                fputcsv($handle, [
+                    $entry->getCreatedAt()->format('Y-m-d H:i'),
+                    $entry->getType(),
+                    $entry->isCredit() ? 'Crédito' : 'Débito',
+                    number_format((float) $entry->getAmount(), 2, '.', ''),
+                    $entry->getCurrency(),
+                    $entry->getDescription(),
+                    $entry->getReference(),
+                ]);
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="balance-chofer.csv"');
+
+        return $response;
     }
 
     private function requireAuthenticatedUser(): Usuario

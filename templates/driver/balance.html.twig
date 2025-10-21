@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Balance del chofer{% endblock %}
+
+{% block body %}
+<section class="container py-5">
+    <h1 class="mb-4">Mi balance</h1>
+
+    {% for flashSuccess in app.flashes('success') %}
+        <div class="alert alert-success">{{ flashSuccess }}</div>
+    {% endfor %}
+    {% for flashError in app.flashes('error') %}
+        <div class="alert alert-danger">{{ flashError }}</div>
+    {% endfor %}
+    {% for flashInfo in app.flashes('info') %}
+        <div class="alert alert-info">{{ flashInfo }}</div>
+    {% endfor %}
+
+    {% set currency = entries|length > 0 ? entries[0].currency : 'ARS' %}
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6 text-uppercase text-muted mb-3">Resumen</h2>
+                    <dl class="row small mb-0">
+                        <dt class="col-7">Total acreditado</dt>
+                        <dd class="col-5 text-end fw-semibold">{{ currency }} {{ stats.credits|number_format(2, ',', '.') }}</dd>
+                        <dt class="col-7">Total debitado</dt>
+                        <dd class="col-5 text-end">{{ currency }} {{ stats.debits|number_format(2, ',', '.') }}</dd>
+                        <dt class="col-7">Saldo neto</dt>
+                        <dd class="col-5 text-end fw-semibold">{{ currency }} {{ stats.balance|number_format(2, ',', '.') }}</dd>
+                        <dt class="col-7">Retiros pendientes</dt>
+                        <dd class="col-5 text-end">{{ currency }} {{ stats.pending|number_format(2, ',', '.') }}</dd>
+                        <dt class="col-7">Saldo disponible</dt>
+                        <dd class="col-5 text-end text-success fw-semibold">{{ currency }} {{ stats.available|number_format(2, ',', '.') }}</dd>
+                    </dl>
+                    <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="{{ path('app_driver_balance_export') }}">Descargar movimientos</a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">Datos para transferencias</h2>
+                    <form method="post" class="small">
+                        <input type="hidden" name="action" value="update_bank">
+                        <div class="mb-2">
+                            <label class="form-label">CBU</label>
+                            <input type="text" name="cbu" class="form-control" value="{{ perfil.cbu }}" maxlength="32" placeholder="Ingresá tu CBU">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">CVU</label>
+                            <input type="text" name="cvu" class="form-control" value="{{ perfil.cvu }}" maxlength="32" placeholder="Ingresá tu CVU">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Alias</label>
+                            <input type="text" name="alias" class="form-control" value="{{ perfil.bankAlias }}" maxlength="50" placeholder="Alias de tu cuenta">
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" type="submit">Guardar datos bancarios</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">Solicitar retiro</h2>
+                    <form method="post" class="small">
+                        <input type="hidden" name="action" value="request_withdrawal">
+                        <div class="mb-2">
+                            <label class="form-label">Monto a retirar</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">{{ currency }}</span>
+                                <input type="number" step="0.01" min="0" name="amount" class="form-control" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas para el administrador (opcional)</label>
+                            <textarea name="notes" rows="2" class="form-control" placeholder="Datos adicionales para el pago"></textarea>
+                        </div>
+                        <button class="btn btn-success btn-sm w-100" type="submit">Solicitar retiro</button>
+                    </form>
+                    <p class="small text-muted mt-2 mb-0">Saldo disponible: {{ currency }} {{ stats.available|number_format(2, ',', '.') }}.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h5 mb-0">Movimientos recientes</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Movimiento</th>
+                                    <th class="text-end">Monto</th>
+                                    <th>Descripción</th>
+                                    <th>Referencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in entries %}
+                                    <tr>
+                                        <td>{{ entry.createdAt|date('d/m/Y H:i') }}</td>
+                                        <td class="text-uppercase small">{{ entry.type|replace({'_':' '}) }}</td>
+                                        <td>
+                                            {% if entry.isCredit() %}
+                                                <span class="badge bg-success-subtle text-success">Crédito</span>
+                                            {% else %}
+                                                <span class="badge bg-danger-subtle text-danger">Débito</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end fw-semibold">{{ entry.currency }} {{ entry.amount|number_format(2, ',', '.') }}</td>
+                                        <td class="small">{{ entry.description ?: '—' }}</td>
+                                        <td class="small">{{ entry.reference ?: '—' }}</td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="6" class="text-center text-muted">Todavía no se registraron movimientos.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Solicitudes de retiro</h2>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for retiro in solicitudes %}
+                                    <tr>
+                                        <td>{{ retiro.createdAt|date('d/m/Y H:i') }}</td>
+                                        <td>{{ retiro.currency }} {{ retiro.amount|number_format(2, ',', '.') }}</td>
+                                        <td class="text-uppercase small">{{ retiro.status|replace({'_':' '}) }}</td>
+                                        <td class="small">{{ retiro.adminNotes ?: retiro.notes ?: '—' }}</td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="4" class="text-center text-muted">Sin solicitudes registradas.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

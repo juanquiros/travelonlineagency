@@ -10,6 +10,10 @@ DELETE FROM mercado_pago_pago;
 ALTER TABLE mercado_pago_pago AUTO_INCREMENT = 1;
 DELETE FROM cash_payment;
 ALTER TABLE cash_payment AUTO_INCREMENT = 1;
+DELETE FROM driver_balance_entry;
+ALTER TABLE driver_balance_entry AUTO_INCREMENT = 1;
+DELETE FROM driver_withdrawal_request;
+ALTER TABLE driver_withdrawal_request AUTO_INCREMENT = 1;
 DELETE FROM transfer_assignment;
 ALTER TABLE transfer_assignment AUTO_INCREMENT = 1;
 DELETE FROM transfer_request_field_value;
@@ -214,10 +218,24 @@ INSERT INTO booking_partner (id, habilitado, usuario_id, comision_plataforma, me
 -- Choferes registrados
 INSERT INTO driver_profile (
   id, usuario_id, nombre_completo, documento, telefono, patente, modelo_vehiculo,
-  foto_vehiculo, aprobado, notas, creado_en, actualizado_en
+  foto_vehiculo, aprobado, notas, commission_percentage, cbu, cvu, bank_alias, creado_en, actualizado_en
 ) VALUES
   (1, 5, 'Diego Chofer', '32.123.456', '+54 9 3757 111222', 'AB123CD', 'Toyota Corolla 2022',
-   'driver-diego.jpg', 1, 'Disponible para traslados aeropuerto-hotel.', '2024-11-20 09:00:00', '2024-11-20 09:00:00');
+   'driver-diego.jpg', 1, 'Disponible para traslados aeropuerto-hotel.', 15.00,
+   '1230001230001230001234', '0000000000000000000001', 'chofer.diego', '2024-11-20 09:00:00', '2024-11-20 09:00:00');
+
+-- Movimientos iniciales del chofer
+INSERT INTO driver_balance_entry (
+  id, driver_id, amount, currency, direction, type, description, reference, created_at, created_by_id, cash_payment_id
+) VALUES
+  (1, 1, 180.00, 'ARS', 'credit', 'earning', 'Ingreso por traslado aeropuerto-hotel', 'transfer-earning-1', '2024-11-20 12:00:00', NULL, NULL),
+  (2, 1, 80.00, 'ARS', 'debit', 'cash_delivery', 'Entrega de efectivo al administrador', 'cash-transfer-1', '2024-11-20 18:30:00', NULL, NULL);
+
+-- Solicitudes de retiro de ejemplo
+INSERT INTO driver_withdrawal_request (
+  id, driver_id, amount, currency, status, notes, admin_notes, created_at, updated_at, processed_at, requested_by_id, processed_by_id
+) VALUES
+  (1, 1, 60.00, 'ARS', 'pending', 'Retiro inicial para viáticos', NULL, '2024-11-21 09:00:00', '2024-11-21 09:00:00', NULL, 5, NULL);
 
 -- Servicios disponibles
 INSERT INTO booking (
@@ -509,7 +527,7 @@ INSERT INTO pay_pal_pago (
 -- Pagos en efectivo registrados
 INSERT INTO cash_payment (
   id, solicitud_reserva_id, transfer_request_id, amount, currency, status,
-  notes, created_at, updated_at, reference
+  notes, created_at, updated_at, reference, driver_reported_at, admin_confirmed_at, driver_reported_by_id, driver_balance_entry_id
 ) VALUES
   (1,
    2,
@@ -520,18 +538,26 @@ INSERT INTO cash_payment (
    'El huésped abonará en efectivo al momento del check-in.',
    '2024-11-21 11:00:00',
    '2024-11-21 11:00:00',
-   'booking-2'
+   'booking-2',
+   NULL,
+   NULL,
+   NULL,
+   NULL
   ),
   (2,
    NULL,
    1,
    90.00,
    'ARS',
-   'pending',
+   'driver_reported',
    'Coordinar cobro en efectivo con el chofer asignado.',
    '2024-11-21 11:30:00',
-   '2024-11-21 11:30:00',
-   'transfer-1'
+   '2024-11-21 11:45:00',
+   'transfer-1',
+   '2024-11-21 12:00:00',
+   NULL,
+   1,
+   2
   );
 
 INSERT INTO detalle_pago_pay_pal (

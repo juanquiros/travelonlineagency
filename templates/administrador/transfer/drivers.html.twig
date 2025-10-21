@@ -45,6 +45,10 @@
                                     <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
                                     <dt class="col-sm-3">Registrado</dt>
                                     <dd class="col-sm-9">{{ driver.creadoEn|date('d/m/Y H:i') }}</dd>
+                                    <dt class="col-sm-3">Acciones</dt>
+                                    <dd class="col-sm-9">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_driver_balance', {id: driver.id}) }}">Ver ficha completa</a>
+                                    </dd>
                                 </dl>
                             </td>
                         </tr>
@@ -101,6 +105,10 @@
                                             <img src="{{ asset('img/drivers/' ~ driver.fotoVehiculo) }}" alt="Vehículo" class="img-fluid rounded" style="max-height: 160px;">
                                         </dd>
                                     {% endif %}
+                                    <dt class="col-sm-3">Acciones</dt>
+                                    <dd class="col-sm-9">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_driver_balance', {id: driver.id}) }}">Ver ficha completa</a>
+                                    </dd>
                                 </dl>
                             </td>
                         </tr>

@@ -43,6 +43,18 @@ class DriverProfile
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notas = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    private string $commissionPercentage = '0.00';
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $cbu = null;
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $cvu = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $bankAlias = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $creadoEn;
 
@@ -171,6 +183,59 @@ class DriverProfile
     public function setNotas(?string $notas): self
     {
         $this->notas = $notas;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getCommissionPercentage(): float
+    {
+        return (float) $this->commissionPercentage;
+    }
+
+    public function setCommissionPercentage(float|string $commissionPercentage): self
+    {
+        $value = max(0, min(100, (float) $commissionPercentage));
+        $this->commissionPercentage = number_format($value, 2, '.', '');
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getCbu(): ?string
+    {
+        return $this->cbu;
+    }
+
+    public function setCbu(?string $cbu): self
+    {
+        $this->cbu = $cbu ? substr(preg_replace('/\s+/', '', $cbu), 0, 32) : null;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getCvu(): ?string
+    {
+        return $this->cvu;
+    }
+
+    public function setCvu(?string $cvu): self
+    {
+        $this->cvu = $cvu ? substr(preg_replace('/\s+/', '', $cvu), 0, 32) : null;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getBankAlias(): ?string
+    {
+        return $this->bankAlias;
+    }
+
+    public function setBankAlias(?string $bankAlias): self
+    {
+        $this->bankAlias = $bankAlias ? substr(trim($bankAlias), 0, 50) : null;
         $this->touch();
 
         return $this;

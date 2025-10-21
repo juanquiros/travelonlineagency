@@ -15,7 +15,10 @@ use App\Entity\Precio;
 use App\Entity\PreguntaFrecuente;
 use App\Entity\RespuestaMensaje;
 use App\Entity\SolicitudReserva;
+use App\Entity\CashPayment;
+use App\Entity\DriverBalanceEntry;
 use App\Entity\DriverProfile;
+use App\Entity\DriverWithdrawalRequest;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
 use App\Entity\TransferComboDestination;
@@ -39,6 +42,7 @@ use App\Form\TransferFormFieldType;
 use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
+use App\Services\DriverBalanceService;
 use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
 use App\Services\PartnerInvitationService;
@@ -55,6 +59,7 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -1494,7 +1499,7 @@ class AdministradorController extends AbstractController
     }
 
     #[Route('/administrador/traslados/solicitud/{id}/estado', name: 'app_admin_transfer_request_state', methods: ['POST'])]
-    public function updateTransferState(Request $request, TransferRequest $solicitud): Response
+    public function updateTransferState(Request $request, TransferRequest $solicitud, DriverBalanceService $balanceService): Response
     {
         $estado = $request->request->get('estado');
         $notas = $request->request->get('notas');
@@ -1521,6 +1526,7 @@ class AdministradorController extends AbstractController
             if ($estado === TransferRequest::ESTADO_COMPLETADO) {
                 $asignacion->setEstado(TransferAssignment::ESTADO_COMPLETADO);
                 $asignacion->setFinalizadoEn(new \DateTimeImmutable());
+                $balanceService->recordTransferCompletion($asignacion);
             } elseif ($estado === TransferRequest::ESTADO_CANCELADO) {
                 $asignacion->setEstado(TransferAssignment::ESTADO_CANCELADO);
             } elseif ($estado === TransferRequest::ESTADO_PENDIENTE) {
@@ -1556,6 +1562,36 @@ class AdministradorController extends AbstractController
         ]);
     }
 
+    #[Route('/administrador/choferes/{id}/detalle', name: 'app_admin_driver_balance', methods: ['GET'])]
+    public function driverBalance(
+        Request $request,
+        DriverProfile $driver,
+        DriverBalanceService $balanceService,
+        \App\Repository\DriverBalanceEntryRepository $entryRepository,
+        \App\Repository\DriverWithdrawalRequestRepository $withdrawals
+    ): Response {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['drivers'] = true;
+
+        $stats = $balanceService->buildDriverBalance($driver);
+        $entries = $entryRepository->findRecentForDriver($driver, 100);
+        $solicitudes = $withdrawals->findRecentForDriver($driver, 50);
+
+        return $this->render('administrador/transfer/driver_show.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'driver' => $driver,
+            'stats' => $stats,
+            'entries' => $entries,
+            'solicitudes' => $solicitudes,
+        ]);
+    }
+
     #[Route('/administrador/choferes/{id}/estado', name: 'app_admin_driver_state', methods: ['POST'])]
     public function updateDriverState(Request $request, DriverProfile $driver): Response
     {
@@ -1584,6 +1620,174 @@ class AdministradorController extends AbstractController
         $this->addFlash('success', $message);
 
         return $this->redirectToRoute('app_admin_drivers');
+    }
+
+    #[Route('/administrador/choferes/{id}/comision', name: 'app_admin_driver_commission', methods: ['POST'])]
+    public function updateDriverCommission(Request $request, DriverProfile $driver): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('driver_commission_' . $driver->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $valor = (float) $request->request->get('commission', 0);
+        $driver->setCommissionPercentage($valor);
+        $this->em->persist($driver);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Comisión del chofer actualizada.');
+
+        return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/choferes/{id}/balance/movimiento', name: 'app_admin_driver_balance_entry', methods: ['POST'])]
+    public function addDriverBalanceEntry(Request $request, DriverProfile $driver, DriverBalanceService $balanceService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('driver_balance_entry_' . $driver->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $amount = (float) $request->request->get('amount', 0);
+        $currency = (string) $request->request->get('currency', 'ARS');
+        $direction = (string) $request->request->get('direction', DriverBalanceEntry::DIRECTION_CREDIT);
+        $type = (string) $request->request->get('type', DriverBalanceEntry::TYPE_ADJUSTMENT);
+        $description = trim((string) $request->request->get('description')) ?: null;
+        $reference = trim((string) $request->request->get('reference')) ?: null;
+
+        if ($amount <= 0) {
+            $this->addFlash('error', 'Ingresá un monto válido para registrar el movimiento.');
+
+            return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+        }
+
+        if (!in_array($direction, [DriverBalanceEntry::DIRECTION_CREDIT, DriverBalanceEntry::DIRECTION_DEBIT], true)) {
+            $direction = DriverBalanceEntry::DIRECTION_CREDIT;
+        }
+
+        $usuario = $this->getUser();
+        $balanceService->createManualEntry(
+            $driver,
+            $amount,
+            $currency ?: 'ARS',
+            $direction,
+            $type ?: DriverBalanceEntry::TYPE_ADJUSTMENT,
+            $description,
+            $reference,
+            $usuario instanceof \App\Entity\Usuario ? $usuario : null
+        );
+
+        $this->addFlash('success', 'Movimiento registrado en la cuenta del chofer.');
+
+        return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/choferes/{driver}/retiro/{id}', name: 'app_admin_driver_withdrawal_update', methods: ['POST'])]
+    public function updateDriverWithdrawal(
+        Request $request,
+        DriverProfile $driver,
+        DriverWithdrawalRequest $retiro,
+        DriverBalanceService $balanceService
+    ): RedirectResponse {
+        if (!$this->isCsrfTokenValid('driver_withdrawal_' . $retiro->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        if ($retiro->getDriver()?->getId() !== $driver->getId()) {
+            throw $this->createNotFoundException('La solicitud no pertenece al chofer indicado.');
+        }
+
+        $status = (string) $request->request->get('status', DriverWithdrawalRequest::STATUS_PENDING);
+        $notes = trim((string) $request->request->get('admin_notes')) ?: null;
+
+        $retiro->setAdminNotes($notes);
+
+        $usuario = $this->getUser();
+        if ($usuario instanceof \App\Entity\Usuario) {
+            $retiro->setProcessedBy($usuario);
+        }
+
+        if ($status === DriverWithdrawalRequest::STATUS_REJECTED) {
+            $retiro->setStatus(DriverWithdrawalRequest::STATUS_REJECTED);
+            $retiro->setProcessedAt(new \DateTimeImmutable());
+        } elseif ($status === DriverWithdrawalRequest::STATUS_APPROVED) {
+            $retiro->setStatus(DriverWithdrawalRequest::STATUS_APPROVED);
+            $retiro->setProcessedAt(new \DateTimeImmutable());
+        } elseif ($status === DriverWithdrawalRequest::STATUS_PAID) {
+            if ($retiro->getStatus() !== DriverWithdrawalRequest::STATUS_PAID) {
+                $retiro->setStatus(DriverWithdrawalRequest::STATUS_PAID);
+                $retiro->setProcessedAt(new \DateTimeImmutable());
+                $balanceService->recordWithdrawalPayout($retiro, $usuario instanceof \App\Entity\Usuario ? $usuario : null);
+            }
+        } else {
+            $retiro->setStatus(DriverWithdrawalRequest::STATUS_PENDING);
+            $retiro->setProcessedAt(null);
+        }
+
+        $this->em->persist($retiro);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Estado del retiro actualizado.');
+
+        return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/traslados/pago-efectivo/{id}', name: 'app_admin_transfer_cash_status', methods: ['POST'])]
+    public function updateCashPaymentStatus(Request $request, CashPayment $cashPayment, DriverBalanceService $balanceService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('admin_cash_' . $cashPayment->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $transfer = $cashPayment->getTransferRequest();
+        if (!$transfer instanceof TransferRequest) {
+            $this->addFlash('error', 'El pago seleccionado no corresponde a un traslado.');
+
+            return $this->redirectToRoute('app_admin_transfer_requests');
+        }
+
+        $status = (string) $request->request->get('status', CashPayment::STATUS_PENDING);
+        $usuario = $this->getUser();
+        $driver = null;
+        foreach ($transfer->getAsignaciones() as $asignacion) {
+            if ($asignacion->getChofer()) {
+                $driver = $asignacion->getChofer();
+                break;
+            }
+        }
+
+        if ($status === 'confirm') {
+            $cashPayment->setStatus(CashPayment::STATUS_CONFIRMED);
+            $cashPayment->setAdminConfirmedAt(new \DateTimeImmutable());
+            $this->addFlash('success', 'Pago en efectivo confirmado.');
+        } elseif ($status === 'driver_reported') {
+            $cashPayment->setStatus(CashPayment::STATUS_DRIVER_REPORTED);
+            $cashPayment->setAdminConfirmedAt(null);
+            if (!$cashPayment->getDriverReportedAt()) {
+                $cashPayment->setDriverReportedAt(new \DateTimeImmutable());
+            }
+            if (!$cashPayment->getDriverReportedBy() && $driver) {
+                $cashPayment->setDriverReportedBy($driver);
+            }
+            if (!$cashPayment->getDriverBalanceEntry() && $driver) {
+                $balanceService->recordCashDelivery(
+                    $cashPayment,
+                    $driver,
+                    $usuario instanceof \App\Entity\Usuario ? $usuario : null
+                );
+            }
+            $this->addFlash('info', 'Marcaste el pago como entregado por el chofer.');
+        } else {
+            $cashPayment->setStatus(CashPayment::STATUS_PENDING);
+            $cashPayment->setAdminConfirmedAt(null);
+            $cashPayment->setDriverReportedAt(null);
+            $cashPayment->setDriverReportedBy(null);
+            $balanceService->removeCashDelivery($cashPayment);
+            $this->addFlash('info', 'El pago volvió al estado pendiente.');
+        }
+
+        $this->em->persist($cashPayment);
+        $this->em->flush();
+
+        return $this->redirectToRoute('app_admin_transfer_request_show', ['id' => $transfer->getId()]);
     }
 
     private function hydrateTransferCombo(TransferCombo $combo, FormInterface $form, SluggerInterface $slugger): bool
