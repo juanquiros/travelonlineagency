@@ -1,5 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
-import loadLeaflet from '../utils/leaflet_loader.js';
+import { loadLeaflet } from '../utils/leaflet_loader.js';
 
 export default class extends Controller {
     static targets = ['map', 'lat', 'lng'];
