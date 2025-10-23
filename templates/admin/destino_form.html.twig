@@ -16,6 +16,7 @@
 
         <div class="card toa-card p-4">
             {{ form_start(form, { attr: { enctype: 'multipart/form-data', 'data-controller': 'destino-map', 'data-destino-map-default-lat-value': '-25.6000', 'data-destino-map-default-lng-value': '-54.5667' } }) }}
+                {{ form_errors(form) }}
                 <div class="row g-4">
                     <div class="col-lg-7 d-flex flex-column gap-4">
                         <div>
@@ -73,26 +74,29 @@
                                 <div class="ratio ratio-4x3 mb-3" data-destino-map-target="map"></div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        {{ form_widget(form.coordenadasLat, { attr: { class: 'form-control', step: 'any' } }) }}
+                                        <label class="form-label fw-semibold" for="{{ form.coordenadasLat.vars.id }}">Latitud</label>
+                                        {{ form_widget(form.coordenadasLat, { attr: { class: 'form-control', step: 'any', placeholder: '-25.5975' } }) }}
+                                        {{ form_errors(form.coordenadasLat) }}
                                     </div>
                                     <div class="col-md-6">
-                                        {{ form_widget(form.coordenadasLng, { attr: { class: 'form-control', step: 'any' } }) }}
+                                        <label class="form-label fw-semibold" for="{{ form.coordenadasLng.vars.id }}">Longitud</label>
+                                        {{ form_widget(form.coordenadasLng, { attr: { class: 'form-control', step: 'any', placeholder: '-54.5638' } }) }}
+                                        {{ form_errors(form.coordenadasLng) }}
                                     </div>
                                 </div>
                                 <div class="form-text">Seleccioná un punto en el mapa o ingresá las coordenadas manualmente.</div>
-                                {{ form_errors(form.coordenadasLat) }}
-                                {{ form_errors(form.coordenadasLng) }}
                             </div>
                         </div>
                     </div>
                 </div>
+                {{ form_rest(form) }}
                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <div class="text-muted small">Controle los datos antes de publicar; la información será visible para los viajeros.</div>
                     <button class="btn btn-primary" type="submit">
                         <span class="bi bi-save me-2"></span>{{ isNew ? 'Crear destino' : 'Guardar cambios' }}
                     </button>
                 </div>
-            {{ form_end(form) }}
+            {{ form_end(form, {'render_rest': false}) }}
         </div>
     </div>
 {% endblock %}
