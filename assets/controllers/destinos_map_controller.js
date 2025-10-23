@@ -93,7 +93,10 @@ export default class extends Controller {
         const bounds = [];
 
         destinos.forEach((destino) => {
-            if (typeof destino.lat !== 'number' || typeof destino.lng !== 'number') {
+            const lat = Number.parseFloat(destino.lat);
+            const lng = Number.parseFloat(destino.lng);
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                 return;
             }
 
@@ -103,7 +106,7 @@ export default class extends Controller {
                 </div>
             `;
 
-            const marker = L.marker([destino.lat, destino.lng], {
+            const marker = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: 'destino-marker-wrapper',
                     html: iconHtml,
@@ -127,7 +130,7 @@ export default class extends Controller {
             marker.bindPopup(popupContent, { className: 'destino-popup-container' });
             marker.addTo(this.mapInstance);
             this.markers.push(marker);
-            bounds.push([destino.lat, destino.lng]);
+            bounds.push([lat, lng]);
         });
 
         if (bounds.length > 0 && !this.singleValue) {
