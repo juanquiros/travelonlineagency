@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
+  <rect width="400" height="240" fill="#1f6bb3"/>
+  <rect x="40" y="80" width="320" height="120" rx="16" fill="#f5f5f5" opacity="0.9"/>
+  <path d="M60 120h280v20H60z" fill="#ff8b4c" opacity="0.8"/>
+  <text x="60" y="110" fill="#0c2d4a" font-family="Poppins, Arial, sans-serif" font-size="24" font-weight="600">Duty Free Shop Iguazú</text>
+  <text x="60" y="160" fill="#1f6bb3" font-family="Poppins, Arial, sans-serif" font-size="18">Marcas premium sin impuestos</text>
+</svg>

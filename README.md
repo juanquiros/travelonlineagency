@@ -110,10 +110,10 @@ Los partners que todavía no están habilitados o a quienes les falta el rol rec
 
 ## Gestión de destinos turísticos
 
-- El administrador cuenta con **Administrador → Destinos**, un CRUD completo para crear, buscar y filtrar atractivos turísticos. El formulario incluye dirección, categoría, estado de publicación, imagen optimizada con LiipImagineBundle, coordenadas seleccionables en un mapa Leaflet y editor enriquecido TinyMCE para la descripción detallada.
-- Las categorías se gestionan desde la misma sección (`Administrar → Destinos → Categorías`) y permiten definir íconos en HTML/Bootstrap Icons para personalizar tarjetas y marcadores.
-- En el frontend se agregó la ruta `/destinos` y una sección destacada en la home con tarjetas responsivas, mapa interactivo y CTA hacia el detalle de cada atractivo (`/destinos/{id}`). El mapa consume el endpoint público `/api/destinos`, agrupa por categoría y muestra pop-ups con imagen, resumen y enlace.
-- El catálogo inicial incluye cinco puntos de interés reales (Cataratas, Hito Tres Fronteras, Güirá Oga, Jardín de los Picaflores y Duty Free Shop) precargados en la semilla `phpmyadmin_seed.sql` con coordenadas listas para pruebas.
+- Dentro de **Administrador → Traslados → Destinos** se reutiliza la entidad `transfer_destination` para administrar los atractivos turísticos: dirección, categoría, estado de publicación, imagen optimizada con LiipImagineBundle, coordenadas seleccionables en Leaflet y descripción detallada vía TinyMCE.
+- Las categorías se gestionan en **Administrador → Traslados → Categorías de destinos**, donde se definen nombre e ícono (HTML/Bootstrap Icons) para personalizar tarjetas y marcadores.
+- En el frontend se mantiene la ruta `/destinos` y una sección destacada en la home con tarjetas responsivas, mapa interactivo y CTA hacia el detalle de cada atractivo (`/destinos/{id}`). El mapa consume el endpoint público `/api/destinos`, agrupa por categoría y muestra pop-ups con imagen, resumen y enlace.
+- El catálogo inicial incluye cinco puntos de interés reales (Cataratas, Hito Tres Fronteras, Güirá Oga, Jardín de los Picaflores y Duty Free Shop) precargados sobre `transfer_destination` en `phpmyadmin_seed.sql`, con coordenadas y categorías listas para pruebas.
 
 ## Pagos con Mercado Pago y split de comisiones
 

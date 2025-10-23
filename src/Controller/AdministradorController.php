@@ -23,6 +23,7 @@ use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
 use App\Entity\TransferComboDestination;
 use App\Entity\TransferDestination;
+use App\Entity\TransferDestinationCategory;
 use App\Entity\TransferFormField;
 use App\Entity\TransferRequest;
 use App\Entity\TransferRequestFieldValue;
@@ -40,6 +41,7 @@ use App\Form\RespuestaMensajeType;
 use App\Form\TransferAssignDriverType;
 use App\Form\TransferComboType;
 use App\Form\TransferDestinationType;
+use App\Form\TransferDestinationCategoryType;
 use App\Form\TransferFormFieldType;
 use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
@@ -89,6 +91,7 @@ class AdministradorController extends AbstractController
         'balance'=>false,
         'transfer_requests'=>false,
         'transfer_destinations'=>false,
+        'transfer_destination_categories'=>false,
         'transfer_combos'=>false,
         'transfer_campos'=>false,
         'drivers'=>false,
@@ -1161,7 +1164,14 @@ class AdministradorController extends AbstractController
             }
         }
 
-        $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
+        $categoriaId = $request->query->getInt('categoria', 0) ?: null;
+        $busqueda = trim((string) $request->query->get('q', ''));
+
+        $destinos = $this->em->getRepository(TransferDestination::class)->search(
+            $busqueda !== '' ? $busqueda : null,
+            $categoriaId
+        );
+        $categorias = $this->em->getRepository(TransferDestinationCategory::class)->findBy([], ['nombre' => 'ASC']);
 
         return $this->render('administrador/transfer/destinations.html.twig', [
             'plataforma' => $plataforma,
@@ -1173,6 +1183,11 @@ class AdministradorController extends AbstractController
             'destinos' => $destinos,
             'editing' => false,
             'mapDefaults' => $this->getTransferMapDefaults(),
+            'categorias' => $categorias,
+            'filtros' => [
+                'categoria' => $categoriaId,
+                'q' => $busqueda,
+            ],
         ]);
     }
 
@@ -1199,7 +1214,14 @@ class AdministradorController extends AbstractController
             }
         }
 
-        $destinos = $this->em->getRepository(TransferDestination::class)->findBy([], ['nombre' => 'ASC']);
+        $categoriaId = $request->query->getInt('categoria', 0) ?: null;
+        $busqueda = trim((string) $request->query->get('q', ''));
+
+        $destinos = $this->em->getRepository(TransferDestination::class)->search(
+            $busqueda !== '' ? $busqueda : null,
+            $categoriaId
+        );
+        $categorias = $this->em->getRepository(TransferDestinationCategory::class)->findBy([], ['nombre' => 'ASC']);
 
         return $this->render('administrador/transfer/destinations.html.twig', [
             'plataforma' => $plataforma,
@@ -1212,7 +1234,101 @@ class AdministradorController extends AbstractController
             'editing' => true,
             'editingDestination' => $destino,
             'mapDefaults' => $this->getTransferMapDefaults(),
+            'categorias' => $categorias,
+            'filtros' => [
+                'categoria' => $categoriaId,
+                'q' => $busqueda,
+            ],
         ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/categorias', name: 'app_admin_transfer_destination_categories')]
+    public function manageTransferDestinationCategories(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destination_categories'] = true;
+
+        $categoria = new TransferDestinationCategory();
+        $form = $this->createForm(TransferDestinationCategoryType::class, $categoria);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->persist($categoria);
+            $this->em->flush();
+            $this->addFlash('success', 'Categoría creada correctamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_categories');
+        }
+
+        $categorias = $this->em->getRepository(TransferDestinationCategory::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/destination_categories.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'categorias' => $categorias,
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/categorias/{id}', name: 'app_admin_transfer_destination_category_edit')]
+    public function editTransferDestinationCategory(Request $request, TransferDestinationCategory $categoria): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destination_categories'] = true;
+
+        $form = $this->createForm(TransferDestinationCategoryType::class, $categoria);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->flush();
+            $this->addFlash('success', 'Categoría actualizada.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_categories');
+        }
+
+        $categorias = $this->em->getRepository(TransferDestinationCategory::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/transfer/destination_categories.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'categorias' => $categorias,
+            'editing' => true,
+            'editingCategory' => $categoria,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/categorias/{id}/eliminar', name: 'app_admin_transfer_destination_category_delete', methods: ['POST'])]
+    public function deleteTransferDestinationCategory(Request $request, TransferDestinationCategory $categoria): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('delete_destination_category_' . $categoria->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido. Intente nuevamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_categories');
+        }
+
+        if ($categoria->getDestinos()->count() > 0) {
+            $this->addFlash('error', 'No podés eliminar la categoría mientras tenga destinos asociados.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_categories');
+        }
+
+        $this->em->remove($categoria);
+        $this->em->flush();
+        $this->addFlash('success', 'Categoría eliminada correctamente.');
+
+        return $this->redirectToRoute('app_admin_transfer_destination_categories');
     }
 
     #[Route('/administrador/traslados/combos', name: 'app_admin_transfer_combos')]
@@ -1892,14 +2008,14 @@ class AdministradorController extends AbstractController
         /** @var UploadedFile|null $cover */
         $cover = $form->get('imagenPortadaFile')->getData();
         if ($cover instanceof UploadedFile) {
-            $upload = $this->upload($cover, 'img_transfer', $slugger);
+            $upload = $this->upload($cover, 'img_destinos', $slugger);
             if (!$upload['upload']) {
                 $this->addFlash('error', 'No se pudo subir la imagen de portada del destino.');
 
                 return false;
             }
 
-            $destination->setImagenPortada($upload['filename']);
+            $destination->setImagenPrincipal($upload['filename']);
         }
 
         return true;

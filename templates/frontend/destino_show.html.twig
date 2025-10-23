@@ -3,72 +3,91 @@
 {% block title %}{{ destino.nombre }} - Travel Online Agency{% endblock %}
 
 {% block body %}
-    <section class="toa-hero" style="background-image: linear-gradient(135deg, rgba(12,45,74,0.92), rgba(31,107,179,0.92)), url({{ asset('img/iguazu-hero.svg') }}); background-size: cover; background-position: center;">
+    <section class="toa-hero" style="background-image: linear-gradient(135deg, rgba(12,45,74,0.92), rgba(31,107,179,0.92)), url({{ destino.imagenPrincipal ? asset('img/destinos/' ~ destino.imagenPrincipal) : asset('img/iguazu-hero.svg') }}); background-size: cover; background-position: center;">
         <div class="toa-hero-content">
             <div class="d-flex flex-column gap-3">
-                <span class="toa-hero-badge">{{ destino.categoria.icono|raw }} {{ destino.categoria.nombre }}</span>
+                <span class="toa-hero-badge"><span class="bi bi-map"></span> {{ destino.categoria ? destino.categoria.nombre : 'Destino destacado' }}</span>
                 <h1 class="toa-hero-title">{{ destino.nombre }}</h1>
-                <p class="toa-hero-subtitle">{{ destino.descripcionCorta }}</p>
+                {% if destino.descripcionCorta %}
+                    <p class="toa-hero-subtitle">{{ destino.descripcionCorta }}</p>
+                {% endif %}
                 <div class="toa-hero-actions">
-                    <a class="toa-btn-primary btn" href="#detalle">Ver detalles</a>
-                    <a class="toa-btn-outline btn" href="{{ path('app_destinos') }}">Volver a destinos</a>
+                    <a class="toa-btn-primary btn" href="#detalles">Ver detalles</a>
+                    <a class="toa-btn-outline btn" href="{{ path('app_destinos') }}">Volver al listado</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="detalle" class="toa-section" data-aos="fade-up">
+    <section id="detalles" class="toa-section" data-aos="fade-up">
         <div class="container">
             <div class="row g-4">
-                <div class="col-lg-7">
-                    <div class="card toa-card p-4 h-100">
-                        {% if destino.imagenPrincipal %}
-                            <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal)|imagine_filter('destino_cover_preview') }}" class="img-fluid rounded mb-4" alt="{{ destino.nombre }}">
-                        {% endif %}
-                        <h2 class="h4 mb-3">Descripción</h2>
-                        <div class="content-styled">
-                            {{ destino.descripcionDetallada|raw }}
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            {% if destino.imagenPrincipal %}
+                                <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal) }}" class="img-fluid rounded mb-4" alt="{{ destino.nombre }}">
+                            {% endif %}
+                            {% if destino.direccion %}
+                                <p class="text-muted"><span class="bi bi-geo-alt"></span> {{ destino.direccion }}</p>
+                            {% endif %}
+                            <div class="toa-content">{{ destino.descripcionDetallada ? destino.descripcionDetallada|raw : destino.descripcion|raw }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-5">
-                    <div class="card toa-card p-4 mb-4">
-                        <h2 class="h5 mb-3">Ubicación</h2>
-                        <p class="text-muted small mb-3"><span class="bi bi-geo-alt me-2"></span>{{ destino.direccion }}</p>
-                        <div class="ratio ratio-4x3" data-controller="destinos-map"
-                             data-destinos-map-src-value="{{ path('api_destinos_show', { id: destino.id }) }}"
-                             data-destinos-map-single-value-value="true"
-                             data-destinos-map-default-lat-value="{{ destino.coordenadasLat ?? '-25.6000' }}"
-                             data-destinos-map-default-lng-value="{{ destino.coordenadasLng ?? '-54.5667' }}">
-                            <div data-destinos-map-target="map" class="w-100 h-100"></div>
-                        </div>
-                        <div class="alert alert-warning mt-3 d-none" data-destinos-map-target="fallback">
-                            No pudimos cargar el mapa. Reintentá en unos instantes.
+                <div class="col-lg-4">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h2 class="h5 mb-3">Ubicación</h2>
+                            <div class="rounded border"
+                                 data-controller="destino-map"
+                                 data-destino-map-default-lat-value="{{ mapDefaults.lat }}"
+                                 data-destino-map-default-lng-value="{{ mapDefaults.lng }}"
+                                 data-destino-map-lat-value="{{ destino.latitude ?? mapDefaults.lat }}"
+                                 data-destino-map-lng-value="{{ destino.longitude ?? mapDefaults.lng }}"
+                                 data-destino-map-name-value="{{ destino.nombre }}"
+                                 style="height: 280px;"></div>
+                            {% if destino.categoria %}
+                                <div class="mt-3">
+                                    <span class="badge bg-info-subtle text-info-emphasis">
+                                        {% if destino.categoria.icono %}{{ destino.categoria.icono|raw }} {% endif %}{{ destino.categoria.nombre }}
+                                    </span>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="card toa-card p-4">
-                        <h2 class="h5 mb-3">Inspirate</h2>
-                        <p class="text-muted small">Reservá experiencias y traslados personalizados para completar tu visita.</p>
-                        <a class="btn btn-primary w-100" href="{{ path('app_inicio') }}#bookings">Buscar experiencias</a>
-                    </div>
+                    {% if destinosRelacionados is not empty %}
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h2 class="h6 text-uppercase text-muted mb-3">Destinos relacionados</h2>
+                                <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+                                    {% for relacionado in destinosRelacionados|slice(0,3) %}
+                                        <li>
+                                            <a class="d-flex gap-3 align-items-center text-decoration-none" href="{{ path('app_destino_show', {id: relacionado.id}) }}">
+                                                <div class="flex-shrink-0">
+                                                    {% if relacionado.imagenPrincipal %}
+                                                        <img src="{{ asset('img/destinos/' ~ relacionado.imagenPrincipal) }}" class="rounded" style="width: 72px; height: 72px; object-fit: cover;" alt="{{ relacionado.nombre }}">
+                                                    {% else %}
+                                                        <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 72px; height: 72px;">
+                                                            <span class="bi bi-image text-muted"></span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-semibold text-dark">{{ relacionado.nombre }}</div>
+                                                    {% if relacionado.descripcionCorta %}
+                                                        <div class="small text-muted">{{ relacionado.descripcionCorta|u.truncate(70, '…') }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </section>
-
-    {% if destinosRelacionados|length > 0 %}
-        <section class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1500">
-            <div class="container">
-                <h2 class="toa-section-title">También te puede interesar</h2>
-                <div class="section-divider"></div>
-                <div class="row g-4">
-                    {% for destinoRelacionado in destinosRelacionados|slice(0, 3) %}
-                        <div class="col-md-6 col-lg-4 d-flex">
-                            {% include 'components/destino_card.html.twig' with { destino: destinoRelacionado } %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
-    {% endif %}
 {% endblock %}

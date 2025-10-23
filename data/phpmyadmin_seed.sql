@@ -370,11 +370,81 @@ INSERT INTO solicitud_reserva (
    3
   );
 
--- Catálogo de destinos de traslado
-INSERT INTO transfer_destination (id, nombre, descripcion, tarifa_base, activo, imagen_portada, metadata) VALUES
-  (1, 'Aeropuerto Internacional Cataratas', 'Punto de partida habitual para los traslados.', 25.00, 1, NULL, '{"tipo":"aeropuerto"}'),
-  (2, 'Hotel Gran Meliá Iguazú', 'Ingreso principal sobre la Ruta 101.', 18.50, 1, NULL, '{"tipo":"hotel"}'),
-  (3, 'Hito Tres Fronteras', 'Mirador panorámico con vista a los tres países.', 15.00, 1, NULL, '{"tipo":"punto_turistico"}');
+-- Catálogo de destinos de traslado con categorías y coordenadas
+DELETE FROM transfer_destination_category;
+ALTER TABLE transfer_destination_category AUTO_INCREMENT = 1;
+INSERT INTO transfer_destination_category (id, nombre, icono) VALUES
+  (1, 'Parque Natural', '<i class="bi bi-tree"></i>'),
+  (2, 'Aventura', '<i class="bi bi-compass"></i>'),
+  (3, 'Cultura', '<i class="bi bi-bank"></i>'),
+  (4, 'Gastronomía', '<i class="bi bi-cup-straw"></i>');
+
+DELETE FROM transfer_destination;
+ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
+INSERT INTO transfer_destination (
+  id, nombre, direccion, coordenadas_lat, coordenadas_lng, categoria_id,
+  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada
+) VALUES
+  (1,
+   'Parque Nacional Iguazú',
+   'Acceso principal por Ruta Nacional 101, Puerto Iguazú',
+   -25.67875,
+   -54.44461,
+   1,
+   'El hogar de las Cataratas, senderos selváticos y fauna autóctona.',
+   '<p>Explorá las pasarelas superior e inferior, la Garganta del Diablo y los circuitos náuticos. El parque ofrece servicios de gastronomía, tiendas de recuerdos y traslados internos.</p>',
+   25.00,
+   1,
+   'parque-nacional.svg'
+  ),
+  (2,
+   'Hito Tres Fronteras',
+   'Avenida Costanera s/n, Puerto Iguazú',
+   -25.59973,
+   -54.58032,
+   3,
+   'Mirador icónico donde convergen Argentina, Brasil y Paraguay.',
+   '<p>Disfrutá del show de aguas danzantes al atardecer, feria de artesanías y gastronomía regional.</p>',
+   18.50,
+   1,
+   'hito-tres-fronteras.svg'
+  ),
+  (3,
+   'Güirá Oga',
+   'Ruta Nacional 12 km 5, Puerto Iguazú',
+   -25.60658,
+   -54.53512,
+   1,
+   'Refugio de fauna misionera con visitas guiadas para toda la familia.',
+   '<p>Centro de rehabilitación de animales silvestres rescatados. Ideal para descubrir la biodiversidad de la región.</p>',
+   22.00,
+   1,
+   'guira-oga.svg'
+  ),
+  (4,
+   'Jardín de los Picaflores',
+   'Fray Luis Beltrán 150, Puerto Iguazú',
+   -25.60031,
+   -54.57309,
+   4,
+   'Pequeño santuario urbano con más de 15 especies de colibríes.',
+   '<p>Una experiencia íntima para observar aves y disfrutar de un café en medio de la vegetación.</p>',
+   15.00,
+   1,
+   'jardin-picaflores.svg'
+  ),
+  (5,
+   'Duty Free Shop Iguazú',
+   'Ruta Nacional 12 km 1645, Puerto Iguazú',
+   -25.59788,
+   -54.56842,
+   4,
+   'Centro comercial libre de impuestos con marcas premium.',
+   '<p>Abierto todos los días con propuestas gastronómicas, perfumería, tecnología y moda.</p>',
+   20.00,
+   1,
+   'duty-free-iguazu.svg'
+  );
 
 -- Combos preconfigurados por el administrador
 INSERT INTO transfer_combo (id, nombre, descripcion, precio, activo, imagen_portada) VALUES
@@ -571,46 +641,5 @@ INSERT INTO detalle_pago_pay_pal (
    '{"gross_amount":210.50,"paypal_fee":6.30,"net_amount":204.20}'
   );
 
--- Catálogo de destinos turísticos
-DELETE FROM destino;
-ALTER TABLE destino AUTO_INCREMENT = 1;
-DELETE FROM destino_categoria;
-ALTER TABLE destino_categoria AUTO_INCREMENT = 1;
-
-INSERT INTO destino_categoria (id, nombre, icono) VALUES
-  (1, 'Parque Natural', '<i class="bi bi-water"></i>'),
-  (2, 'Cultura e Historia', '<i class="bi bi-bank"></i>'),
-  (3, 'Rescate y Naturaleza', '<i class="bi bi-tree"></i>'),
-  (4, 'Gastronomía y Compras', '<i class="bi bi-bag-check"></i>');
-
-INSERT INTO destino (
-  id, categoria_id, nombre, direccion, coordenadas_lat, coordenadas_lng,
-  descripcion_corta, descripcion_detallada, imagen_principal, activo
-) VALUES
-  (1, 1, 'Parque Nacional Iguazú', 'Ruta Nacional 101, Puerto Iguazú', -25.6953, -54.4367,
-   'Maravilla natural con circuitos superiores, inferiores y la Garganta del Diablo.',
-   '<p>El Parque Nacional Iguazú alberga una de las siete maravillas naturales del mundo. Caminos accesibles, pasarelas y excursiones náuticas acercan a los visitantes a las cascadas más imponentes de la región.</p><p>El acceso cuenta con centro de visitantes, gastronomía y traslados internos.</p>',
-   NULL,
-   1),
-  (2, 2, 'Hito Tres Fronteras', 'Avenida Río Iguazú y Río Paraná', -25.5925, -54.5787,
-   'Mirador emblemático donde confluyen Argentina, Brasil y Paraguay.',
-   '<p>El Hito Tres Fronteras ofrece vistas panorámicas únicas, ferias artesanales y espectáculos nocturnos.</p><p>Ideal para cerrar el día con una postal inolvidable del río Iguazú y Paraná.</p>',
-   NULL,
-   1),
-  (3, 3, 'Güirá Oga', 'Ruta Nacional 12 km 1638', -25.6124, -54.5349,
-   'Centro de rescate y rehabilitación de fauna autóctona.',
-   '<p>Güirá Oga rescata, rehabilita y reintroduce animales silvestres de la Selva Paranaense. Los recorridos guiados permiten conocer sus historias y el trabajo de conservación.</p>',
-   NULL,
-   1),
-  (4, 3, 'Jardín de los Picaflores', 'Fray Luis Beltrán 150, Puerto Iguazú', -25.5979, -54.5725,
-   'Refugio urbano para aves pequeñas con jardines y bebederos.',
-   '<p>Un espacio íntimo dedicado a la observación de colibríes, ideal para familias y amantes de la fotografía.</p><p>Abre todos los días con visitas guiadas breves.</p>',
-   NULL,
-   1),
-  (5, 4, 'Duty Free Shop Iguazú', 'Avenida Tres Fronteras 800, Puerto Iguazú', -25.5970, -54.5804,
-   'Centro comercial libre de impuestos con marcas internacionales.',
-   '<p>Ofrece perfumería, tecnología, moda y gastronomía en un ambiente climatizado, con estacionamiento y servicios para turistas.</p>',
-   NULL,
-   1);
 
 SET FOREIGN_KEY_CHECKS = 1;

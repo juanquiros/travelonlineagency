@@ -2,8 +2,8 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\Destino;
-use App\Repository\DestinoRepository;
+use App\Entity\TransferDestination;
+use App\Repository\TransferDestinationRepository;
 use Symfony\Component\Asset\Packages;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class ApiDestinoController extends AbstractController
 {
     public function __construct(
-        private readonly DestinoRepository $destinoRepository,
+        private readonly TransferDestinationRepository $destinoRepository,
         private readonly Packages $assetPackages,
     )
     {
@@ -24,22 +24,22 @@ class ApiDestinoController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(UrlGeneratorInterface $urlGenerator): JsonResponse
     {
-        $destinos = $this->destinoRepository->findActivos();
+        $destinos = $this->destinoRepository->findActivosConCategoria();
 
-        return $this->json(array_map(fn (Destino $destino) => $this->serializeDestino($destino, $urlGenerator), $destinos));
+        return $this->json(array_map(fn (TransferDestination $destino) => $this->serializeDestino($destino, $urlGenerator), $destinos));
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(?Destino $destino, UrlGeneratorInterface $urlGenerator): JsonResponse
+    public function show(?TransferDestination $destino, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
-        if (!$destino instanceof Destino || !$destino->isActivo()) {
+        if (!$destino instanceof TransferDestination || !$destino->isActivo()) {
             return $this->json(['message' => 'Destino no disponible'], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($this->serializeDestino($destino, $urlGenerator));
     }
 
-    private function serializeDestino(Destino $destino, UrlGeneratorInterface $urlGenerator): array
+    private function serializeDestino(TransferDestination $destino, UrlGeneratorInterface $urlGenerator): array
     {
         $imagenUrl = null;
         if ($destino->getImagenPrincipal()) {
@@ -47,6 +47,8 @@ class ApiDestinoController extends AbstractController
             $base = rtrim($urlGenerator->generate('app_inicio', [], UrlGeneratorInterface::ABSOLUTE_URL), '/');
             $imagenUrl = str_starts_with($relative, 'http') ? $relative : $base . '/' . ltrim($relative, '/');
         }
+
+        $categoria = $destino->getCategoria();
 
         return [
             'id' => $destino->getId(),
@@ -56,11 +58,11 @@ class ApiDestinoController extends AbstractController
             'lng' => $destino->getCoordenadasLng(),
             'descripcionCorta' => $destino->getDescripcionCorta(),
             'descripcionDetallada' => $destino->getDescripcionDetallada(),
-            'categoria' => [
-                'id' => $destino->getCategoria()->getId(),
-                'nombre' => $destino->getCategoria()->getNombre(),
-                'icono' => $destino->getCategoria()->getIcono(),
-            ],
+            'categoria' => $categoria ? [
+                'id' => $categoria->getId(),
+                'nombre' => $categoria->getNombre(),
+                'icono' => $categoria->getIcono(),
+            ] : null,
             'imagen' => $imagenUrl,
             'activo' => $destino->isActivo(),
         ];

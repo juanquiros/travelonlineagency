@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
+  <rect width="400" height="240" fill="#1f6bb3"/>
+  <g fill="#f5f5f5" opacity="0.85">
+    <path d="M60 200c30-80 80-120 120-120s90 40 120 120H60z"/>
+    <path d="M140 160c10-24 26-40 40-40s30 16 40 40H140z" fill="#ffd966" opacity="0.7"/>
+  </g>
+  <text x="24" y="220" fill="#f5f5f5" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="600">Güirá Oga</text>
+</svg>

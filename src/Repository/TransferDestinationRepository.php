@@ -28,4 +28,42 @@ class TransferDestinationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return TransferDestination[]
+     */
+    public function findActivosConCategoria(): array
+    {
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.categoria', 'c')
+            ->addSelect('c')
+            ->andWhere('d.activo = :activo')
+            ->setParameter('activo', true)
+            ->orderBy('d.nombre', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return TransferDestination[]
+     */
+    public function search(?string $query, ?int $categoriaId): array
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->leftJoin('d.categoria', 'c')
+            ->addSelect('c')
+            ->orderBy('d.nombre', 'ASC');
+
+        if ($query) {
+            $qb->andWhere('LOWER(d.nombre) LIKE :busqueda OR LOWER(d.descripcionCorta) LIKE :busqueda')
+                ->setParameter('busqueda', '%' . mb_strtolower($query) . '%');
+        }
+
+        if ($categoriaId) {
+            $qb->andWhere('c.id = :categoria')
+                ->setParameter('categoria', $categoriaId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

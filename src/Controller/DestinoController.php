@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Destino;
 use App\Entity\Plataforma;
-use App\Repository\DestinoRepository;
+use App\Entity\TransferDestination;
+use App\Repository\TransferDestinationRepository;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class DestinoController extends AbstractController
 {
     public function __construct(
-        private readonly DestinoRepository $destinoRepository,
+        private readonly TransferDestinationRepository $destinoRepository,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -28,7 +28,7 @@ class DestinoController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $usuario = $this->getUser();
 
-        $destinos = $this->destinoRepository->findActivos();
+        $destinos = $this->destinoRepository->findActivosConCategoria();
 
         return $this->render('frontend/destinos.html.twig', [
             'destinos' => $destinos,
@@ -40,7 +40,7 @@ class DestinoController extends AbstractController
     }
 
     #[Route('/destinos/{id}', name: 'app_destino_show', methods: ['GET'])]
-    public function show(Destino $destino, Request $request): Response
+    public function show(TransferDestination $destino, Request $request): Response
     {
         if (!$destino->isActivo()) {
             throw $this->createNotFoundException('Destino no disponible');
@@ -52,8 +52,8 @@ class DestinoController extends AbstractController
         $usuario = $this->getUser();
 
         $relacionados = array_filter(
-            $this->destinoRepository->findActivos(),
-            static fn (Destino $item) => $item->getId() !== $destino->getId()
+            $this->destinoRepository->findActivosConCategoria(),
+            static fn (TransferDestination $item) => $item->getId() !== $destino->getId()
         );
 
         return $this->render('frontend/destino_show.html.twig', [
@@ -63,6 +63,10 @@ class DestinoController extends AbstractController
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'usuario' => $usuario,
+            'mapDefaults' => [
+                'lat' => -25.5972,
+                'lng' => -54.5781,
+            ],
         ]);
     }
 }

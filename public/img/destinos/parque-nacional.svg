@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c2d4a"/>
+      <stop offset="1" stop-color="#1f6bb3"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="240" fill="url(#g)"/>
+  <g fill="#fff" opacity="0.85">
+    <path d="M40 200h320l-80-120-64 80-40-52z"/>
+    <circle cx="320" cy="60" r="26" fill="#ffd966" opacity="0.9"/>
+  </g>
+  <text x="24" y="220" fill="#fff" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="600">Parque Nacional Iguazú</text>
+</svg>

@@ -117,7 +117,7 @@
                             </a>
                         </li>
                         <li>
-                            <a {% if menu['destinos'] %}id="inbox"{% endif %} href="{{ path('app_admin_destino_index') }}">
+                            <a {% if menu['transfer_destinations'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destinations') }}">
                                 <ion-icon name="map-outline"></ion-icon>
                                 <span>Destinos</span>
                             </a>
@@ -147,6 +147,12 @@
                             <a {% if menu['transfer_destinations'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destinations') }}">
                                 <ion-icon name="location-outline"></ion-icon>
                                 <span>Destinos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a {% if menu['transfer_destination_categories'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destination_categories') }}">
+                                <ion-icon name="pricetags-outline"></ion-icon>
+                                <span>Categorías de destinos</span>
                             </a>
                         </li>
                         <li>

@@ -20,8 +20,24 @@ class TransferDestination
     #[ORM\Column(length: 255)]
     private string $nombre = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $descripcion = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $direccion = null;
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $coordenadasLat = null;
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $coordenadasLng = null;
+
+    #[ORM\ManyToOne(inversedBy: 'destinos')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?TransferDestinationCategory $categoria = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $descripcionCorta = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true, name: 'descripcion')]
+    private ?string $descripcionDetallada = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $tarifaBase = '0.00';
@@ -29,11 +45,8 @@ class TransferDestination
     #[ORM\Column]
     private bool $activo = true;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $imagenPortada = null;
-
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $metadata = null;
+    #[ORM\Column(length: 255, nullable: true, name: 'imagen_portada')]
+    private ?string $imagenPrincipal = null;
 
     /**
      * @var Collection<int, TransferComboDestination>
@@ -70,14 +83,74 @@ class TransferDestination
         return $this;
     }
 
-    public function getDescripcion(): ?string
+    public function getDireccion(): ?string
     {
-        return $this->descripcion;
+        return $this->direccion;
     }
 
-    public function setDescripcion(?string $descripcion): self
+    public function setDireccion(?string $direccion): self
     {
-        $this->descripcion = $descripcion;
+        $this->direccion = $direccion;
+
+        return $this;
+    }
+
+    public function getCoordenadasLat(): ?float
+    {
+        return $this->coordenadasLat;
+    }
+
+    public function setCoordenadasLat(?float $coordenadasLat): self
+    {
+        $this->coordenadasLat = $coordenadasLat;
+
+        return $this;
+    }
+
+    public function getCoordenadasLng(): ?float
+    {
+        return $this->coordenadasLng;
+    }
+
+    public function setCoordenadasLng(?float $coordenadasLng): self
+    {
+        $this->coordenadasLng = $coordenadasLng;
+
+        return $this;
+    }
+
+    public function getCategoria(): ?TransferDestinationCategory
+    {
+        return $this->categoria;
+    }
+
+    public function setCategoria(?TransferDestinationCategory $categoria): self
+    {
+        $this->categoria = $categoria;
+
+        return $this;
+    }
+
+    public function getDescripcionCorta(): ?string
+    {
+        return $this->descripcionCorta;
+    }
+
+    public function setDescripcionCorta(?string $descripcionCorta): self
+    {
+        $this->descripcionCorta = $descripcionCorta;
+
+        return $this;
+    }
+
+    public function getDescripcionDetallada(): ?string
+    {
+        return $this->descripcionDetallada;
+    }
+
+    public function setDescripcionDetallada(?string $descripcionDetallada): self
+    {
+        $this->descripcionDetallada = $descripcionDetallada;
 
         return $this;
     }
@@ -106,60 +179,52 @@ class TransferDestination
         return $this;
     }
 
+    public function getImagenPrincipal(): ?string
+    {
+        return $this->imagenPrincipal;
+    }
+
+    public function setImagenPrincipal(?string $imagenPrincipal): self
+    {
+        $this->imagenPrincipal = $imagenPrincipal;
+
+        return $this;
+    }
+
     public function getImagenPortada(): ?string
     {
-        return $this->imagenPortada;
+        return $this->imagenPrincipal;
     }
 
     public function setImagenPortada(?string $imagenPortada): self
     {
-        $this->imagenPortada = $imagenPortada;
-
-        return $this;
+        return $this->setImagenPrincipal($imagenPortada);
     }
 
-    public function getMetadata(): ?array
+    public function getDescripcion(): ?string
     {
-        return $this->metadata;
+        return $this->getDescripcionDetallada();
     }
 
-    public function setMetadata(?array $metadata): self
+    public function setDescripcion(?string $descripcion): self
     {
-        $this->metadata = $metadata;
-
-        return $this;
+        return $this->setDescripcionDetallada($descripcion);
     }
 
     public function getLatitude(): ?float
     {
-        if (!is_array($this->metadata) || !array_key_exists('lat', $this->metadata)) {
-            return null;
-        }
-
-        return (float) $this->metadata['lat'];
+        return $this->getCoordenadasLat();
     }
 
     public function getLongitude(): ?float
     {
-        if (!is_array($this->metadata) || !array_key_exists('lng', $this->metadata)) {
-            return null;
-        }
-
-        return (float) $this->metadata['lng'];
+        return $this->getCoordenadasLng();
     }
 
     public function withLocation(?float $lat, ?float $lng): self
     {
-        $metadata = $this->metadata ?? [];
-
-        if ($lat === null || $lng === null) {
-            unset($metadata['lat'], $metadata['lng']);
-        } else {
-            $metadata['lat'] = $lat;
-            $metadata['lng'] = $lng;
-        }
-
-        $this->metadata = !empty($metadata) ? $metadata : null;
+        $this->coordenadasLat = $lat;
+        $this->coordenadasLng = $lng;
 
         return $this;
     }

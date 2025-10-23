@@ -115,7 +115,9 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="me-3">
                                         <h3 class="h6 mb-1">{{ detalle.destino.nombre }}</h3>
-                                        {% if detalle.destino.descripcion %}
+                                        {% if detalle.destino.descripcionCorta %}
+                                            <p class="text-muted small mb-0">{{ detalle.destino.descripcionCorta }}</p>
+                                        {% elseif detalle.destino.descripcion %}
                                             <p class="text-muted small mb-0">{{ detalle.destino.descripcion|striptags }}</p>
                                         {% endif %}
                                     </div>

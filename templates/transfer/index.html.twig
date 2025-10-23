@@ -143,16 +143,18 @@
                             <div class="col-12">
                                 <div class="card h-100 border-0 bg-light">
                                     <div class="row g-0 align-items-center">
-                                        {% if destino.imagenPortada %}
+                                        {% if destino.imagenPrincipal %}
                                             <div class="col-md-4">
-                                                <img src="{{ asset('img/transfer/' ~ destino.imagenPortada) }}" class="img-fluid rounded-start" alt="{{ destino.nombre }}">
+                                                <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal) }}" class="img-fluid rounded-start" alt="{{ destino.nombre }}">
                                             </div>
                                         {% endif %}
                                         <div class="col">
                                             <div class="card-body">
                                                 <h3 class="h6 mb-1">{{ destino.nombre }}</h3>
                                                 <div class="text-success fw-semibold mb-1">Tarifa base: ${{ destino.tarifaBase }}</div>
-                                                {% if destino.descripcion %}
+                                                {% if destino.descripcionCorta %}
+                                                    <p class="small text-muted mb-0">{{ destino.descripcionCorta }}</p>
+                                                {% elseif destino.descripcion %}
                                                     <p class="small text-muted mb-0">{{ destino.descripcion|striptags|u.truncate(140, '…') }}</p>
                                                 {% endif %}
                                             </div>

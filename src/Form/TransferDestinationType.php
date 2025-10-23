@@ -3,6 +3,8 @@
 namespace App\Form;
 
 use App\Entity\TransferDestination;
+use App\Entity\TransferDestinationCategory;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -21,8 +23,30 @@ class TransferDestinationType extends AbstractType
             ->add('nombre', TextType::class, [
                 'label' => 'Nombre del destino',
             ])
-            ->add('descripcion', TextareaType::class, [
-                'label' => 'Descripción',
+            ->add('categoria', EntityType::class, [
+                'label' => 'Categoría',
+                'class' => TransferDestinationCategory::class,
+                'choice_label' => 'nombre',
+                'placeholder' => 'Seleccioná una categoría',
+                'required' => false,
+            ])
+            ->add('direccion', TextType::class, [
+                'label' => 'Dirección',
+                'required' => false,
+                'attr' => [
+                    'placeholder' => 'Ej: Ruta 12 km 5, Puerto Iguazú',
+                ],
+            ])
+            ->add('descripcionCorta', TextareaType::class, [
+                'label' => 'Descripción corta',
+                'required' => false,
+                'attr' => [
+                    'rows' => 3,
+                    'maxlength' => 255,
+                ],
+            ])
+            ->add('descripcionDetallada', TextareaType::class, [
+                'label' => 'Descripción detallada',
                 'required' => false,
                 'attr' => [
                     'rows' => 6,
@@ -38,7 +62,7 @@ class TransferDestinationType extends AbstractType
                 'scale' => 2,
             ])
             ->add('imagenPortadaFile', FileType::class, [
-                'label' => 'Imagen de portada',
+                'label' => 'Imagen principal',
                 'mapped' => false,
                 'required' => false,
                 'attr' => [
