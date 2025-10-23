@@ -571,4 +571,46 @@ INSERT INTO detalle_pago_pay_pal (
    '{"gross_amount":210.50,"paypal_fee":6.30,"net_amount":204.20}'
   );
 
+-- Catálogo de destinos turísticos
+DELETE FROM destino;
+ALTER TABLE destino AUTO_INCREMENT = 1;
+DELETE FROM destino_categoria;
+ALTER TABLE destino_categoria AUTO_INCREMENT = 1;
+
+INSERT INTO destino_categoria (id, nombre, icono) VALUES
+  (1, 'Parque Natural', '<i class="bi bi-water"></i>'),
+  (2, 'Cultura e Historia', '<i class="bi bi-bank"></i>'),
+  (3, 'Rescate y Naturaleza', '<i class="bi bi-tree"></i>'),
+  (4, 'Gastronomía y Compras', '<i class="bi bi-bag-check"></i>');
+
+INSERT INTO destino (
+  id, categoria_id, nombre, direccion, coordenadas_lat, coordenadas_lng,
+  descripcion_corta, descripcion_detallada, imagen_principal, activo
+) VALUES
+  (1, 1, 'Parque Nacional Iguazú', 'Ruta Nacional 101, Puerto Iguazú', -25.6953, -54.4367,
+   'Maravilla natural con circuitos superiores, inferiores y la Garganta del Diablo.',
+   '<p>El Parque Nacional Iguazú alberga una de las siete maravillas naturales del mundo. Caminos accesibles, pasarelas y excursiones náuticas acercan a los visitantes a las cascadas más imponentes de la región.</p><p>El acceso cuenta con centro de visitantes, gastronomía y traslados internos.</p>',
+   NULL,
+   1),
+  (2, 2, 'Hito Tres Fronteras', 'Avenida Río Iguazú y Río Paraná', -25.5925, -54.5787,
+   'Mirador emblemático donde confluyen Argentina, Brasil y Paraguay.',
+   '<p>El Hito Tres Fronteras ofrece vistas panorámicas únicas, ferias artesanales y espectáculos nocturnos.</p><p>Ideal para cerrar el día con una postal inolvidable del río Iguazú y Paraná.</p>',
+   NULL,
+   1),
+  (3, 3, 'Güirá Oga', 'Ruta Nacional 12 km 1638', -25.6124, -54.5349,
+   'Centro de rescate y rehabilitación de fauna autóctona.',
+   '<p>Güirá Oga rescata, rehabilita y reintroduce animales silvestres de la Selva Paranaense. Los recorridos guiados permiten conocer sus historias y el trabajo de conservación.</p>',
+   NULL,
+   1),
+  (4, 3, 'Jardín de los Picaflores', 'Fray Luis Beltrán 150, Puerto Iguazú', -25.5979, -54.5725,
+   'Refugio urbano para aves pequeñas con jardines y bebederos.',
+   '<p>Un espacio íntimo dedicado a la observación de colibríes, ideal para familias y amantes de la fotografía.</p><p>Abre todos los días con visitas guiadas breves.</p>',
+   NULL,
+   1),
+  (5, 4, 'Duty Free Shop Iguazú', 'Avenida Tres Fronteras 800, Puerto Iguazú', -25.5970, -54.5804,
+   'Centro comercial libre de impuestos con marcas internacionales.',
+   '<p>Ofrece perfumería, tecnología, moda y gastronomía en un ambiente climatizado, con estacionamiento y servicios para turistas.</p>',
+   NULL,
+   1);
+
 SET FOREIGN_KEY_CHECKS = 1;

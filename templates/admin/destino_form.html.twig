@@ -1,0 +1,98 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}{{ isNew ? 'Nuevo destino' : 'Editar destino' }} - Admin{% endblock %}
+
+{% block body %}
+    <div class="contenedor">
+        <div class="encabezado-section d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-1">{{ isNew ? 'Crear destino' : 'Editar destino' }}</h1>
+                <p class="text-muted mb-0">Completá la información para que aparezca en la web y en el mapa.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ path('app_admin_destino_index') }}">
+                <span class="bi bi-arrow-left me-2"></span>Volver al listado
+            </a>
+        </div>
+
+        <div class="card toa-card p-4">
+            {{ form_start(form, { attr: { enctype: 'multipart/form-data', 'data-controller': 'destino-map', 'data-destino-map-default-lat-value': '-25.6000', 'data-destino-map-default-lng-value': '-54.5667' } }) }}
+                <div class="row g-4">
+                    <div class="col-lg-7 d-flex flex-column gap-4">
+                        <div>
+                            <label class="form-label fw-semibold">Nombre del destino</label>
+                            {{ form_widget(form.nombre, { attr: { class: 'form-control' } }) }}
+                            {{ form_errors(form.nombre) }}
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold">Dirección</label>
+                            {{ form_widget(form.direccion, { attr: { class: 'form-control' } }) }}
+                            {{ form_errors(form.direccion) }}
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Categoría</label>
+                                {{ form_widget(form.categoria, { attr: { class: 'form-select' } }) }}
+                                <div class="form-text">¿Necesitás una categoría nueva? <a href="{{ path('app_admin_destino_categorias') }}">Creala aquí</a>.</div>
+                                {{ form_errors(form.categoria) }}
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    {{ form_widget(form.activo, { attr: { class: 'form-check-input' } }) }}
+                                    <label class="form-check-label" for="{{ form.activo.vars.id }}">Visible en la web</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold">Descripción breve</label>
+                            {{ form_widget(form.descripcionCorta, { attr: { class: 'form-control', rows: 3 } }) }}
+                            {{ form_errors(form.descripcionCorta) }}
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold">Descripción detallada</label>
+                            {{ form_widget(form.descripcionDetallada, { attr: { class: 'form-control' } }) }}
+                            {{ form_errors(form.descripcionDetallada) }}
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="d-flex flex-column gap-4">
+                            <div>
+                                <label class="form-label fw-semibold">Imagen principal</label>
+                                <div class="mb-3">
+                                    {% if destino.imagenPrincipal %}
+                                        <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal)|imagine_filter('destino_cover_preview') }}" alt="{{ destino.nombre }}" class="img-fluid rounded shadow-sm">
+                                    {% else %}
+                                        <div class="border border-dashed rounded p-4 text-center text-muted">Aún no se cargó una imagen.</div>
+                                    {% endif %}
+                                </div>
+                                {{ form_widget(form.imagenPrincipalUpload, { attr: { class: 'form-control' } }) }}
+                                {{ form_help(form.imagenPrincipalUpload) }}
+                                {{ form_errors(form.imagenPrincipalUpload) }}
+                            </div>
+                            <div>
+                                <label class="form-label fw-semibold">Coordenadas</label>
+                                <div class="ratio ratio-4x3 mb-3" data-destino-map-target="map"></div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form_widget(form.coordenadasLat, { attr: { class: 'form-control', step: 'any' } }) }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form_widget(form.coordenadasLng, { attr: { class: 'form-control', step: 'any' } }) }}
+                                    </div>
+                                </div>
+                                <div class="form-text">Seleccioná un punto en el mapa o ingresá las coordenadas manualmente.</div>
+                                {{ form_errors(form.coordenadasLat) }}
+                                {{ form_errors(form.coordenadasLng) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted small">Controle los datos antes de publicar; la información será visible para los viajeros.</div>
+                    <button class="btn btn-primary" type="submit">
+                        <span class="bi bi-save me-2"></span>{{ isNew ? 'Crear destino' : 'Guardar cambios' }}
+                    </button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

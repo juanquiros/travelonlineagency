@@ -76,6 +76,7 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
   - Partners habilitados y pendientes (con cuentas vinculadas a Mercado Pago en modo split).
   - Reservas en distintos estados (pendiente, confirmada, cancelada) con pagos asociados en Mercado Pago y PayPal.
   - Traslados configurados (destinos, combos, campos dinámicos) con solicitudes activas, asignaciones de chofer y pagos de prueba.
+  - Destinos turísticos activos con categorías, coordenadas y descripciones listas para el mapa y las tarjetas informativas.
   - Traducciones de plataforma, servicios y preguntas frecuentes en español, inglés y portugués.
   - Mensajes de contacto respondidos desde la administración y suscripciones a notificaciones push.
 - Las credenciales de acceso principales son:
@@ -106,6 +107,13 @@ Los partners que todavía no están habilitados o a quienes les falta el rol rec
 - Cada chofer cuenta con un balance propio accesible desde su panel y desde **Administrador → Choferes → Ver ficha completa**. Allí pueden registrar su CBU/CVU, solicitar retiros y descargar movimientos, mientras que el administrador administra la comisión por traslado, ajusta manualmente el saldo, confirma cobros en efectivo y marca pagos de retiros.
 - El panel de chofer muestra las paradas completadas, los datos del pasajero y el acceso al seguimiento público para coordinar con el turista o el administrador. Todas las acciones están protegidas con tokens CSRF.
 - Tanto el resumen como el tracking de cada traslado ofrecen los botones para pagar con Mercado Pago o PayPal reutilizando las credenciales configuradas en la plataforma. En entornos de desarrollo se aplica automáticamente el modo sandbox de Mercado Pago.
+
+## Gestión de destinos turísticos
+
+- El administrador cuenta con **Administrador → Destinos**, un CRUD completo para crear, buscar y filtrar atractivos turísticos. El formulario incluye dirección, categoría, estado de publicación, imagen optimizada con LiipImagineBundle, coordenadas seleccionables en un mapa Leaflet y editor enriquecido TinyMCE para la descripción detallada.
+- Las categorías se gestionan desde la misma sección (`Administrar → Destinos → Categorías`) y permiten definir íconos en HTML/Bootstrap Icons para personalizar tarjetas y marcadores.
+- En el frontend se agregó la ruta `/destinos` y una sección destacada en la home con tarjetas responsivas, mapa interactivo y CTA hacia el detalle de cada atractivo (`/destinos/{id}`). El mapa consume el endpoint público `/api/destinos`, agrupa por categoría y muestra pop-ups con imagen, resumen y enlace.
+- El catálogo inicial incluye cinco puntos de interés reales (Cataratas, Hito Tres Fronteras, Güirá Oga, Jardín de los Picaflores y Duty Free Shop) precargados en la semilla `phpmyadmin_seed.sql` con coordenadas listas para pruebas.
 
 ## Pagos con Mercado Pago y split de comisiones
 

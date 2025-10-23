@@ -4,6 +4,8 @@ import PushNotificationsController from './controllers/push_notifications_contro
 import TinymceController from './controllers/tinymce_controller.js';
 import TransferDestinationMapController from './controllers/transfer_destination_map_controller.js';
 import TransferDestinationsOverviewController from './controllers/transfer_destinations_overview_controller.js';
+import DestinosMapController from './controllers/destinos_map_controller.js';
+import DestinoMapController from './controllers/destino_map_controller.js';
 
 const app = startStimulusApp();
 // register any custom, 3rd party controllers here
@@ -12,3 +14,5 @@ app.register('push-notifications', PushNotificationsController);
 app.register('tinymce', TinymceController);
 app.register('transfer-destination-map', TransferDestinationMapController);
 app.register('transfer-destinations-overview', TransferDestinationsOverviewController);
+app.register('destinos-map', DestinosMapController);
+app.register('destino-map', DestinoMapController);

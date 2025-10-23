@@ -1,0 +1,28 @@
+<div class="destino-card card h-100 shadow-sm border-0 overflow-hidden">
+    {% if destino.imagenPrincipal %}
+        <div class="ratio ratio-4x3">
+            <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal)|imagine_filter('destino_card') }}" class="card-img-top object-fit-cover" alt="{{ destino.nombre }}">
+        </div>
+    {% else %}
+        <div class="ratio ratio-4x3 bg-light d-flex align-items-center justify-content-center text-muted">
+            <span class="bi bi-image"></span>
+        </div>
+    {% endif %}
+    <div class="card-body d-flex flex-column gap-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <h3 class="h5 mb-0">{{ destino.nombre }}</h3>
+            <span class="badge toa-badge-soft">{{ destino.categoria.nombre }}</span>
+        </div>
+        <p class="text-muted small mb-0">{{ destino.descripcionCorta }}</p>
+        <div class="d-flex gap-2 align-items-center text-muted small">
+            <span class="bi bi-geo-alt"></span>
+            <span>{{ destino.direccion }}</span>
+        </div>
+        <div class="mt-auto d-flex align-items-center justify-content-between">
+            <span class="destino-icono text-primary">{{ destino.categoria.icono|raw }}</span>
+            <a class="btn btn-outline-primary" href="{{ path('app_destino_show', { id: destino.id }) }}">
+                Ver más
+            </a>
+        </div>
+    </div>
+</div>

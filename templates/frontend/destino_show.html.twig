@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ destino.nombre }} - Travel Online Agency{% endblock %}
+
+{% block body %}
+    <section class="toa-hero" style="background-image: linear-gradient(135deg, rgba(12,45,74,0.92), rgba(31,107,179,0.92)), url({{ asset('img/iguazu-hero.svg') }}); background-size: cover; background-position: center;">
+        <div class="toa-hero-content">
+            <div class="d-flex flex-column gap-3">
+                <span class="toa-hero-badge">{{ destino.categoria.icono|raw }} {{ destino.categoria.nombre }}</span>
+                <h1 class="toa-hero-title">{{ destino.nombre }}</h1>
+                <p class="toa-hero-subtitle">{{ destino.descripcionCorta }}</p>
+                <div class="toa-hero-actions">
+                    <a class="toa-btn-primary btn" href="#detalle">Ver detalles</a>
+                    <a class="toa-btn-outline btn" href="{{ path('app_destinos') }}">Volver a destinos</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="detalle" class="toa-section" data-aos="fade-up">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="card toa-card p-4 h-100">
+                        {% if destino.imagenPrincipal %}
+                            <img src="{{ asset('img/destinos/' ~ destino.imagenPrincipal)|imagine_filter('destino_cover_preview') }}" class="img-fluid rounded mb-4" alt="{{ destino.nombre }}">
+                        {% endif %}
+                        <h2 class="h4 mb-3">Descripción</h2>
+                        <div class="content-styled">
+                            {{ destino.descripcionDetallada|raw }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card toa-card p-4 mb-4">
+                        <h2 class="h5 mb-3">Ubicación</h2>
+                        <p class="text-muted small mb-3"><span class="bi bi-geo-alt me-2"></span>{{ destino.direccion }}</p>
+                        <div class="ratio ratio-4x3" data-controller="destinos-map"
+                             data-destinos-map-src-value="{{ path('api_destinos_show', { id: destino.id }) }}"
+                             data-destinos-map-single-value-value="true"
+                             data-destinos-map-default-lat-value="{{ destino.coordenadasLat ?? '-25.6000' }}"
+                             data-destinos-map-default-lng-value="{{ destino.coordenadasLng ?? '-54.5667' }}">
+                            <div data-destinos-map-target="map" class="w-100 h-100"></div>
+                        </div>
+                        <div class="alert alert-warning mt-3 d-none" data-destinos-map-target="fallback">
+                            No pudimos cargar el mapa. Reintentá en unos instantes.
+                        </div>
+                    </div>
+                    <div class="card toa-card p-4">
+                        <h2 class="h5 mb-3">Inspirate</h2>
+                        <p class="text-muted small">Reservá experiencias y traslados personalizados para completar tu visita.</p>
+                        <a class="btn btn-primary w-100" href="{{ path('app_inicio') }}#bookings">Buscar experiencias</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% if destinosRelacionados|length > 0 %}
+        <section class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1500">
+            <div class="container">
+                <h2 class="toa-section-title">También te puede interesar</h2>
+                <div class="section-divider"></div>
+                <div class="row g-4">
+                    {% for destinoRelacionado in destinosRelacionados|slice(0, 3) %}
+                        <div class="col-md-6 col-lg-4 d-flex">
+                            {% include 'components/destino_card.html.twig' with { destino: destinoRelacionado } %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}

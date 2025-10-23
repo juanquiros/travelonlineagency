@@ -11,6 +11,7 @@ parameters:
     img_booking: '%kernel.project_dir%/public/img/booking'
     img_driver: '%kernel.project_dir%/public/img/drivers'
     img_transfer: '%kernel.project_dir%/public/img/transfer'
+    img_destinos: '%kernel.project_dir%/public/img/destinos'
     env(WKHTMLTOPDF_PATH): ''
     env(WKHTMLTOIMAGE_PATH): ''
 services:

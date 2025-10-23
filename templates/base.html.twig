@@ -66,6 +66,9 @@
                             <a class="nav-link" href="{{ path('app_inicio') }}#bookings">{{ tradMenu['menu:reservas']}}</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_destino' ? 'active' : '' }}" href="{{ path('app_destinos') }}">Destinos</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ path('app_ayuda') }}">{{ tradMenu['menu:faks']}}</a>
                         </li>
                     </ul>
@@ -137,6 +140,7 @@
                     <ul class="list-unstyled small mb-0">
                         <li class="mb-2"><a href="{{ path('app_inicio') }}">Inicio</a></li>
                         <li class="mb-2"><a href="{{ path('app_inicio') }}#bookings">Reservas</a></li>
+                        <li class="mb-2"><a href="{{ path('app_destinos') }}">Destinos</a></li>
                         <li class="mb-2"><a href="{{ path('app_transfers') }}">Traslados</a></li>
                         <li class="mb-2"><a href="{{ path('app_ayuda') }}">Preguntas frecuentes</a></li>
                     </ul>

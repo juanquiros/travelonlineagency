@@ -117,6 +117,12 @@
                             </a>
                         </li>
                         <li>
+                            <a {% if menu['destinos'] %}id="inbox"{% endif %} href="{{ path('app_admin_destino_index') }}">
+                                <ion-icon name="map-outline"></ion-icon>
+                                <span>Destinos</span>
+                            </a>
+                        </li>
+                        <li>
                             <a {% if menu['s_preguntas'] %}id="inbox"{% endif %} href="{{ path('app_plataforma_preguntas') }}">
                                 <ion-icon name="document-text-outline"></ion-icon>
                                 <span>FAK's</span>

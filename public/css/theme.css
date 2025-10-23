@@ -305,6 +305,17 @@ main {
     font-size: 0.85rem;
 }
 
+.toa-badge-soft {
+    background-color: rgba(255, 204, 112, 0.18);
+    color: #c77700;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 .toa-list-inline {
     display: flex;
     flex-wrap: wrap;
@@ -411,5 +422,111 @@ main {
 
     .toa-navbar .navbar-brand img {
         height: 40px;
+    }
+}
+
+.destino-card .card-body {
+    padding: 1.5rem;
+}
+
+.destino-card .destino-icono {
+    font-size: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.destino-marker-wrapper {
+    background: transparent;
+}
+
+.destino-marker {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(31, 107, 179, 0.95), rgba(12, 45, 74, 0.95));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(12, 45, 74, 0.35);
+}
+
+.destino-marker-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.destino-popup-container .leaflet-popup-content-wrapper {
+    border-radius: 18px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(12, 45, 74, 0.2);
+    padding: 0;
+    overflow: hidden;
+}
+
+.destino-popup-container .leaflet-popup-tip {
+    background: #fff;
+}
+
+.destino-popup {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    max-width: 360px;
+}
+
+.destino-popup-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.destino-popup-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.destino-popup-body h3 {
+    font-size: 1rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.destino-popup-category {
+    font-size: 0.75rem;
+    color: var(--toa-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.destino-popup-body p {
+    font-size: 0.85rem;
+    color: #5d6a76;
+    margin: 0;
+}
+
+.destino-popup-link {
+    margin-top: auto;
+    color: var(--toa-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.destino-popup-link:hover {
+    color: #10365d;
+}
+
+@media (max-width: 576px) {
+    .destino-popup {
+        grid-template-columns: 1fr;
+    }
+
+    .destino-popup-image {
+        width: 100%;
+        height: 180px;
     }
 }

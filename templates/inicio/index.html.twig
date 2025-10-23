@@ -93,73 +93,37 @@
                 {% endfor %}
             </div>
 
-            {% if transferDestinations %}
-                <div class="row gy-4 justify-content-center mt-1">
-                    {% for destino in transferDestinations %}
-                        <div class="col-md-6 col-lg-3 d-flex">
-                            <div class="card toa-card flex-fill h-100">
-                                {% if destino.imagenPortada %}
-                                    <img src="{{ asset('img/transfer/' ~ destino.imagenPortada) }}" class="card-img-top" alt="{{ destino.nombre }}">
-                                {% endif %}
-                                <div class="card-body d-flex flex-column gap-2">
-                                    <h4 class="h6 mb-0">{{ destino.nombre }}</h4>
-                                    <span class="toa-badge-muted">Tarifa base: ${{ destino.tarifaBase }}</span>
-                                    {% if destino.descripcion %}
-                                        <p class="small text-muted mb-0">{{ destino.descripcion|striptags|u.truncate(140, '…') }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            {% set mappedDestinations = [] %}
-            {% for destino in transferDestinations %}
-                {% if destino.latitude is not null and destino.longitude is not null %}
-                    {% set mappedDestinations = mappedDestinations|merge([
-                        {
-                            'nombre': destino.nombre,
-                            'lat': destino.latitude,
-                            'lng': destino.longitude,
-                            'descripcion': destino.descripcion ? destino.descripcion|striptags|u.truncate(120, '…') : null,
-                            'tarifa': destino.tarifaBase,
-                            'moneda': 'ARS'
-                        }
-                    ]) %}
-                {% endif %}
-            {% endfor %}
-
             <div class="text-center mt-4">
                 <a class="toa-btn-primary btn" href="{{ path('app_transfers') }}">Planificá tu traslado</a>
                 {% if not customTransfersEnabled %}
                     <p class="small text-muted mt-2">Los traslados personalizados se activarán pronto. Mientras tanto, podés reservar cualquiera de nuestros combos.</p>
                 {% endif %}
             </div>
+        </div>
+    </section>
 
-            {% if mappedDestinations|length > 0 %}
-                {% set firstPoint = mappedDestinations[0] %}
-                <div class="card toa-map-card mt-4 mx-auto" style="max-width: 960px;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <h3 class="h6 text-uppercase text-muted mb-1">Explorá los destinos</h3>
-                                <p class="small text-muted mb-0">Descubrí los puntos destacados con un vistazo interactivo.</p>
-                            </div>
-                        </div>
-                        <div class="ratio ratio-4x3"
-                             data-controller="transfer-destinations-overview"
-                             data-transfer-destinations-overview-destinations-value="{{ mappedDestinations|json_encode(constant('JSON_UNESCAPED_UNICODE'))|e('html_attr') }}"
-                             data-transfer-destinations-overview-lat-value="{{ firstPoint.lat }}"
-                             data-transfer-destinations-overview-lng-value="{{ firstPoint.lng }}">
-                            <div data-transfer-destinations-overview-target="map" class="w-100 h-100"></div>
-                        </div>
-                        <div class="alert alert-warning mt-3 d-none" data-transfer-destinations-overview-target="fallback">
-                            No pudimos cargar el mapa en este momento. Actualizá la página para volver a intentarlo.
-                        </div>
+    <section class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1500">
+        <div class="container">
+            <h2 class="toa-section-title">Destinos destacados</h2>
+            <div class="section-divider"></div>
+            <p class="toa-section-subtitle">Conocé los lugares que recomendamos para planificar tus experiencias en Iguazú.</p>
+            <div class="mb-4">
+                {% include 'home/_mapa.html.twig' with { apiUrl: path('api_destinos_index') } %}
+            </div>
+            <div class="row g-4">
+                {% for destino in destinosTuristicos|slice(0, 6) %}
+                    <div class="col-md-6 col-lg-4 d-flex">
+                        {% include 'components/destino_card.html.twig' with { destino: destino } %}
                     </div>
-                </div>
-            {% endif %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">Muy pronto publicaremos los primeros destinos destacados.</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-4">
+                <a class="btn btn-outline-primary" href="{{ path('app_destinos') }}">Ver todos los destinos</a>
+            </div>
         </div>
     </section>
 

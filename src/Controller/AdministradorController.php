@@ -85,6 +85,7 @@ class AdministradorController extends AbstractController
         'dashboard'=>false,
         's_preguntas'=>false,
         'partners'=>false,
+        'destinos'=>false,
         'balance'=>false,
         'transfer_requests'=>false,
         'transfer_destinations'=>false,

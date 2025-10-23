@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\Destino;
 use App\Entity\EstadoReserva;
 use App\Entity\CashPayment;
 use App\Entity\PayPalPago;
@@ -44,6 +45,7 @@ class InicioController extends AbstractController
         $usuario = $this->getUser();
         $transferCombos = $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
         $transferDestinations = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
+        $destinosTuristicos = $this->em->getRepository(Destino::class)->findActivos();
 
 
         $cfg_bookings['titulo'] = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['key_name'=>'app_inicio:bookings:titulo','lenguaje'=>$idioma->getId()]);
@@ -74,6 +76,7 @@ class InicioController extends AbstractController
             'usuario'=>$usuario,
             'transferCombos'=>$transferCombos,
             'transferDestinations'=>$transferDestinations,
+            'destinosTuristicos' => $destinosTuristicos,
             'customTransfersEnabled' => (bool) $plataforma->isTrasladosODLibres(),
         ]);
     }

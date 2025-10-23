@@ -1,0 +1,35 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Editar categoría de destino{% endblock %}
+
+{% block body %}
+    <div class="contenedor">
+        <div class="encabezado-section d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-1">Editar categoría</h1>
+                <p class="text-muted mb-0">Actualizá el nombre o el ícono utilizado en tarjetas y marcadores.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ path('app_admin_destino_categorias') }}">
+                <span class="bi bi-arrow-left me-2"></span>Volver a categorías
+            </a>
+        </div>
+
+        <div class="card toa-card p-4">
+            {{ form_start(form) }}
+                <div class="mb-3">
+                    {{ form_label(form.nombre, null, { label_attr: { class: 'form-label fw-semibold' } }) }}
+                    {{ form_widget(form.nombre, { attr: { class: 'form-control' } }) }}
+                    {{ form_errors(form.nombre) }}
+                </div>
+                <div class="mb-3">
+                    {{ form_label(form.icono, null, { label_attr: { class: 'form-label fw-semibold' } }) }}
+                    {{ form_widget(form.icono, { attr: { class: 'form-control font-monospace', rows: 2 } }) }}
+                    {{ form_errors(form.icono) }}
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    <span class="bi bi-save me-2"></span>Guardar cambios
+                </button>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

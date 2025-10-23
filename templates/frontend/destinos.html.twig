@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Destinos destacados - Travel Online Agency{% endblock %}
+
+{% block body %}
+    <section class="toa-hero" style="background-image: linear-gradient(135deg, rgba(12,45,74,0.92), rgba(31,107,179,0.92)), url({{ asset('img/iguazu-hero.svg') }}); background-size: cover; background-position: center;">
+        <div class="toa-hero-content">
+            <div class="d-flex flex-column gap-3">
+                <span class="toa-hero-badge"><span class="bi bi-geo-alt"></span> Descubrí Iguazú</span>
+                <h1 class="toa-hero-title">Destinos imperdibles</h1>
+                <p class="toa-hero-subtitle">Inspirate con atractivos naturales, culturales y gastronómicos curados por nuestro equipo.</p>
+                <div class="toa-hero-actions">
+                    <a class="toa-btn-primary btn" href="#mapa-destinos">Ver mapa interactivo</a>
+                    <a class="toa-btn-outline btn" href="#destinos">Ver todos los destinos</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="mapa-destinos" class="toa-section" data-aos="fade-up">
+        <div class="container">
+            {% include 'home/_mapa.html.twig' with { apiUrl: path('api_destinos_index') } %}
+        </div>
+    </section>
+
+    <section id="destinos" class="toa-section" data-aos="fade-up" data-aos-duration="1500">
+        <div class="container">
+            <h2 class="toa-section-title">Tarjetas informativas</h2>
+            <div class="section-divider"></div>
+            <p class="toa-section-subtitle">Explorá cada destino para ver galerías, datos útiles y los servicios que ofrecemos en la zona.</p>
+            <div class="row g-4">
+                {% for destino in destinos %}
+                    <div class="col-md-6 col-lg-4 d-flex">
+                        {% include 'components/destino_card.html.twig' with { destino: destino } %}
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">Pronto publicaremos los primeros destinos destacados. ¡Vuelvé más tarde!</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}
