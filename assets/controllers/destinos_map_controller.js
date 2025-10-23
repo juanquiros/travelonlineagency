@@ -9,12 +9,26 @@ export default class extends Controller {
         single: { type: Boolean, default: false }
     };
 
-    static targets = ['map', 'fallback'];
+    static targets = ['map', 'fallback', 'legend'];
 
-    async connect() {
+    connect() {
         this.mapInstance = null;
         this.markers = [];
+        this.categoryLegend = [];
+        this.categoryColors = new Map();
+        this.palette = [
+            '#1F6BB3',
+            '#2B8F6D',
+            '#D97B0D',
+            '#AD3572',
+            '#0F4C81',
+            '#48707E',
+        ];
 
+        this.init();
+    }
+
+    async init() {
         try {
             this.leaflet = await loadLeaflet();
             await this.initializeMap();
@@ -36,16 +50,18 @@ export default class extends Controller {
         container.innerHTML = '';
 
         const L = this.leaflet;
+        const lat = Number.isFinite(this.defaultLatValue) ? this.defaultLatValue : -25.6000;
+        const lng = Number.isFinite(this.defaultLngValue) ? this.defaultLngValue : -54.5667;
+
         this.mapInstance = L.map(container, {
             scrollWheelZoom: false,
-        }).setView([this.defaultLatValue, this.defaultLngValue], 12);
+        }).setView([lat, lng], 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.mapInstance);
 
-        // Highlight Iguazú area
         L.circle([-25.603, -54.573], {
             color: '#1f6bb3',
             fillColor: '#1f6bb3',
@@ -54,7 +70,7 @@ export default class extends Controller {
         }).addTo(this.mapInstance);
 
         const data = await this.fetchData();
-        if (!data || data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0) {
             this.showFallback();
             return;
         }
@@ -91,51 +107,129 @@ export default class extends Controller {
     renderMarkers(destinos) {
         const L = this.leaflet;
         const bounds = [];
+        this.categoryLegend = [];
+        this.categoryColors = new Map();
+
+        this.markers.forEach((marker) => marker.remove());
+        this.markers = [];
 
         destinos.forEach((destino) => {
-            const lat = Number.parseFloat(destino.lat);
-            const lng = Number.parseFloat(destino.lng);
+            const lat = Number.parseFloat(destino.lat ?? destino.latitude);
+            const lng = Number.parseFloat(destino.lng ?? destino.longitude);
 
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                 return;
             }
 
-            const iconHtml = `
-                <div class="destino-marker">
-                    <span class="destino-marker-icon">${destino.categoria?.icono ?? '<span class="bi bi-geo-alt"></span>'}</span>
-                </div>
-            `;
-
+            const category = destino.categoria ?? null;
+            const categoryId = category?.id ?? 'sin-categoria';
+            const color = this.getCategoryColor(categoryId);
+            const iconMarkup = this.buildMarkerIcon(category, color);
             const marker = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: 'destino-marker-wrapper',
-                    html: iconHtml,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40]
+                    html: iconMarkup,
+                    iconSize: [46, 52],
+                    iconAnchor: [23, 46]
                 })
             });
 
-            const popupContent = `
-                <div class="destino-popup">
-                    ${destino.imagen ? `<img src="${destino.imagen}" alt="${destino.nombre}" class="destino-popup-image" />` : ''}
-                    <div class="destino-popup-body">
-                        <h3>${destino.nombre}</h3>
-                        <span class="destino-popup-category">${destino.categoria?.nombre ?? ''}</span>
-                        <p>${destino.descripcionCorta ?? ''}</p>
-                        <a href="/destinos/${destino.id}" class="destino-popup-link">Ver más</a>
-                    </div>
-                </div>
-            `;
-
-            marker.bindPopup(popupContent, { className: 'destino-popup-container' });
+            marker.bindPopup(this.buildPopupContent(destino, category), { className: 'destino-popup-container' });
             marker.addTo(this.mapInstance);
             this.markers.push(marker);
             bounds.push([lat, lng]);
+
+            this.addLegendEntry(categoryId, category, color);
         });
 
         if (bounds.length > 0 && !this.singleValue) {
             this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
         }
+
+        this.renderLegend();
+    }
+
+    buildMarkerIcon(category, color) {
+        const iconHtml = category?.icono ?? '<span class="bi bi-geo-alt"></span>';
+
+        return `
+            <div class="destino-marker" style="background: linear-gradient(135deg, ${color}, rgba(12,45,74,0.95));">
+                <span class="destino-marker-icon">${iconHtml}</span>
+            </div>
+        `;
+    }
+
+    buildPopupContent(destino, category) {
+        const imagen = destino.imagen ? `<img src="${destino.imagen}" alt="${destino.nombre}" class="destino-popup-image" />` : '';
+        const categoria = category?.nombre ?? '';
+        const descripcion = destino.descripcionCorta ?? '';
+
+        return `
+            <div class="destino-popup">
+                ${imagen}
+                <div class="destino-popup-body">
+                    <h3>${destino.nombre}</h3>
+                    ${categoria ? `<span class="destino-popup-category">${categoria}</span>` : ''}
+                    ${descripcion ? `<p>${descripcion}</p>` : ''}
+                    <a href="/destinos/${destino.id}" class="destino-popup-link">Ver más</a>
+                </div>
+            </div>
+        `;
+    }
+
+    addLegendEntry(categoryId, category, color) {
+        const existing = this.categoryLegend.find((entry) => entry.id === categoryId);
+        if (existing) {
+            existing.count += 1;
+            return;
+        }
+
+        this.categoryLegend.push({
+            id: categoryId,
+            nombre: category?.nombre ?? 'Sin categoría',
+            icono: category?.icono ?? '<span class="bi bi-geo-alt"></span>',
+            color,
+            count: 1,
+        });
+    }
+
+    renderLegend() {
+        if (!this.hasLegendTarget) {
+            return;
+        }
+
+        if (this.categoryLegend.length === 0) {
+            this.legendTarget.classList.add('d-none');
+            this.legendTarget.innerHTML = '';
+            return;
+        }
+
+        const items = this.categoryLegend
+            .sort((a, b) => a.nombre.localeCompare(b.nombre))
+            .map((category) => `
+                <li class="destinos-map-legend-item">
+                    <span class="destinos-map-legend-color" style="background: ${category.color};"></span>
+                    <span class="destinos-map-legend-icon">${category.icono}</span>
+                    <span class="destinos-map-legend-label">${category.nombre}</span>
+                    <span class="destinos-map-legend-count">${category.count}</span>
+                </li>
+            `)
+            .join('');
+
+        this.legendTarget.innerHTML = `
+            <div class="destinos-map-legend-header">Categorías</div>
+            <ul class="destinos-map-legend-list">${items}</ul>
+        `;
+        this.legendTarget.classList.remove('d-none');
+    }
+
+    getCategoryColor(id) {
+        if (!this.categoryColors.has(id)) {
+            const index = this.categoryColors.size % this.palette.length;
+            this.categoryColors.set(id, this.palette[index]);
+        }
+
+        return this.categoryColors.get(id);
     }
 
     showFallback() {

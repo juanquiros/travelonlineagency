@@ -457,6 +457,71 @@ main {
     line-height: 1;
 }
 
+.destinos-map-legend {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    min-width: 220px;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(12, 45, 74, 0.18);
+    padding: 1rem 1.1rem;
+    backdrop-filter: blur(8px);
+    pointer-events: auto;
+}
+
+.destinos-map-legend-header {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: #0c2d4a;
+    margin-bottom: 0.75rem;
+}
+
+.destinos-map-legend-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.destinos-map-legend-item {
+    display: grid;
+    grid-template-columns: 14px auto 1fr auto;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.85rem;
+    color: #0c2d4a;
+}
+
+.destinos-map-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(12, 45, 74, 0.1);
+}
+
+.destinos-map-legend-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #1f6bb3;
+    font-size: 1rem;
+}
+
+.destinos-map-legend-label {
+    font-weight: 500;
+}
+
+.destinos-map-legend-count {
+    font-size: 0.75rem;
+    color: rgba(12, 45, 74, 0.55);
+    font-weight: 600;
+}
+
 .destino-popup-container .leaflet-popup-content-wrapper {
     border-radius: 18px;
     border: none;
@@ -528,5 +593,17 @@ main {
     .destino-popup-image {
         width: 100%;
         height: 180px;
+    }
+}
+@media (max-width: 767.98px) {
+    .destinos-map-legend {
+        position: static;
+        width: 100%;
+        margin-top: 0.75rem;
+        backdrop-filter: none;
+    }
+
+    .destinos-map-legend-list {
+        gap: 0.5rem;
     }
 }

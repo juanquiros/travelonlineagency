@@ -6,11 +6,12 @@
                 <p class="small text-muted mb-0">Mové el mapa, descubrí categorías y abrí cada marcador para ver más detalles.</p>
             </div>
         </div>
-        <div class="ratio ratio-16x9" data-controller="destinos-map"
+        <div class="ratio ratio-16x9 position-relative" data-controller="destinos-map"
              data-destinos-map-src-value="{{ apiUrl }}"
              data-destinos-map-default-lat-value="-25.6000"
              data-destinos-map-default-lng-value="-54.5667">
             <div data-destinos-map-target="map" class="w-100 h-100"></div>
+            <div data-destinos-map-target="legend" class="destinos-map-legend d-none"></div>
         </div>
         <div class="alert alert-warning mt-3 d-none" data-destinos-map-target="fallback">
             No pudimos cargar el mapa en este momento. Volvé a intentarlo más tarde.

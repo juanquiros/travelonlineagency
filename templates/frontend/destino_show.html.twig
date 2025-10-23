@@ -43,16 +43,16 @@
                                  data-controller="destino-map"
                                  data-destino-map-default-lat-value="{{ mapDefaults.lat }}"
                                  data-destino-map-default-lng-value="{{ mapDefaults.lng }}"
-                                 data-destino-map-lat-value="{{ destino.latitude ?? mapDefaults.lat }}"
-                                 data-destino-map-lng-value="{{ destino.longitude ?? mapDefaults.lng }}"
+                                 data-destino-map-lat-value="{{ destino.coordenadasLat ?? mapDefaults.lat }}"
+                                 data-destino-map-lng-value="{{ destino.coordenadasLng ?? mapDefaults.lng }}"
                                  data-destino-map-name-value="{{ destino.nombre }}"
                                  style="height: 280px;">
                                 <input type="hidden"
                                        data-destino-map-target="lat"
-                                       value="{{ destino.latitude ?? mapDefaults.lat }}">
+                                       value="{{ destino.coordenadasLat ?? mapDefaults.lat }}">
                                 <input type="hidden"
                                        data-destino-map-target="lng"
-                                       value="{{ destino.longitude ?? mapDefaults.lng }}">
+                                       value="{{ destino.coordenadasLng ?? mapDefaults.lng }}">
                                 <div data-destino-map-target="map" class="h-100"></div>
                             </div>
                             {% if destino.categoria %}
