@@ -1191,7 +1191,7 @@ class AdministradorController extends AbstractController
         ]);
     }
 
-    #[Route('/administrador/traslados/destinos/{id}', name: 'app_admin_transfer_destination_edit')]
+    #[Route('/administrador/traslados/destinos/{id<\\d+>}', name: 'app_admin_transfer_destination_edit')]
     public function editTransferDestination(Request $request, TransferDestination $destino, SluggerInterface $slugger): Response
     {
         $idiomas = LanguageService::getLenguajes($this->em);
