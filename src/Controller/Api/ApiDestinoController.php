@@ -50,12 +50,15 @@ class ApiDestinoController extends AbstractController
 
         $categoria = $destino->getCategoria();
 
+        $lat = $destino->getCoordenadasLat();
+        $lng = $destino->getCoordenadasLng();
+
         return [
             'id' => $destino->getId(),
             'nombre' => $destino->getNombre(),
             'direccion' => $destino->getDireccion(),
-            'lat' => $destino->getCoordenadasLat(),
-            'lng' => $destino->getCoordenadasLng(),
+            'lat' => null !== $lat ? (float) $lat : null,
+            'lng' => null !== $lng ? (float) $lng : null,
             'descripcionCorta' => $destino->getDescripcionCorta(),
             'descripcionDetallada' => $destino->getDescripcionDetallada(),
             'categoria' => $categoria ? [
