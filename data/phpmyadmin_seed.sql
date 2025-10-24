@@ -383,7 +383,8 @@ DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
 INSERT INTO transfer_destination (
   id, nombre, direccion, coordenadas_lat, coordenadas_lng, categoria_id,
-  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada
+  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada,
+  instagram, x, facebook, whatsapp, sitio_web
 ) VALUES
   (1,
    'Parque Nacional Iguazú',
@@ -395,7 +396,12 @@ INSERT INTO transfer_destination (
    '<p>Explorá las pasarelas superior e inferior, la Garganta del Diablo y los circuitos náuticos. El parque ofrece servicios de gastronomía, tiendas de recuerdos y traslados internos.</p>',
    25.00,
    1,
-   'parque-nacional.svg'
+   'parque-nacional.svg',
+   'https://www.instagram.com/parquenacionaliguazu',
+   'https://x.com/parqueiguazu',
+   'https://www.facebook.com/parquenacionaliguazu',
+   'https://wa.me/5493757430000',
+   'https://www.argentina.gob.ar/parquesnacionales/iguazu'
   ),
   (2,
    'Hito Tres Fronteras',
@@ -407,7 +413,12 @@ INSERT INTO transfer_destination (
    '<p>Disfrutá del show de aguas danzantes al atardecer, feria de artesanías y gastronomía regional.</p>',
    18.50,
    1,
-   'hito-tres-fronteras.svg'
+   'hito-tres-fronteras.svg',
+   'https://www.instagram.com/hitotresfronteras',
+   'https://x.com/hitotres',
+   'https://www.facebook.com/hitotresfronteras',
+   'https://wa.me/5493757421000',
+   'https://misiones.tur.ar/hito-tres-fronteras'
   ),
   (3,
    'Güirá Oga',
@@ -419,7 +430,12 @@ INSERT INTO transfer_destination (
    '<p>Centro de rehabilitación de animales silvestres rescatados. Ideal para descubrir la biodiversidad de la región.</p>',
    22.00,
    1,
-   'guira-oga.svg'
+   'guira-oga.svg',
+   'https://www.instagram.com/guiraoga',
+   'https://x.com/guiraoga',
+   'https://www.facebook.com/guiraoga',
+   'https://wa.me/5493757421800',
+   'https://www.guiraoga.com.ar/'
   ),
   (4,
    'Jardín de los Picaflores',
@@ -431,7 +447,12 @@ INSERT INTO transfer_destination (
    '<p>Una experiencia íntima para observar aves y disfrutar de un café en medio de la vegetación.</p>',
    15.00,
    1,
-   'jardin-picaflores.svg'
+   'jardin-picaflores.svg',
+   'https://www.instagram.com/jardindelospicaflores',
+   'https://x.com/jardinpicaflor',
+   'https://www.facebook.com/jardindelospicaflores',
+   'https://wa.me/5493757412300',
+   'https://www.jardindelospicaflores.com.ar'
   ),
   (5,
    'Duty Free Shop Iguazú',
@@ -443,7 +464,12 @@ INSERT INTO transfer_destination (
    '<p>Abierto todos los días con propuestas gastronómicas, perfumería, tecnología y moda.</p>',
    20.00,
    1,
-   'duty-free-iguazu.svg'
+   'duty-free-iguazu.svg',
+   'https://www.instagram.com/dutyfreeiguazu',
+   'https://x.com/dutyfreeiguazu',
+   'https://www.facebook.com/dutyfreeiguazu',
+   'https://wa.me/5493757414000',
+   'https://www.dutyfreeiguazu.com'
   );
 
 -- Combos preconfigurados por el administrador

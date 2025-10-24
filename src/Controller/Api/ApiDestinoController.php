@@ -68,6 +68,13 @@ class ApiDestinoController extends AbstractController
             ] : null,
             'imagen' => $imagenUrl,
             'activo' => $destino->isActivo(),
+            'redes' => [
+                'instagram' => $destino->getInstagram(),
+                'x' => $destino->getX(),
+                'facebook' => $destino->getFacebook(),
+                'whatsapp' => $destino->getWhatsapp(),
+                'sitioWeb' => $destino->getSitioWeb(),
+            ],
         ];
     }
 }

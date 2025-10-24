@@ -168,6 +168,7 @@ export default class extends Controller {
         const imagen = destino.imagen ? `<img src="${destino.imagen}" alt="${destino.nombre}" class="destino-popup-image" />` : '';
         const categoria = category?.nombre ?? '';
         const descripcion = destino.descripcionCorta ?? '';
+        const redes = this.buildSocialLinks(destino);
 
         return `
             <div class="destino-popup">
@@ -176,6 +177,7 @@ export default class extends Controller {
                     <h3>${destino.nombre}</h3>
                     ${categoria ? `<span class="destino-popup-category">${categoria}</span>` : ''}
                     ${descripcion ? `<p>${descripcion}</p>` : ''}
+                    ${redes}
                     <a href="/destinos/${destino.id}" class="destino-popup-link">Ver más</a>
                 </div>
             </div>
@@ -241,5 +243,31 @@ export default class extends Controller {
         if (this.hasFallbackTarget) {
             this.fallbackTarget.classList.remove('d-none');
         }
+    }
+
+    buildSocialLinks(destino) {
+        const redes = destino.redes ?? {};
+        const entries = [
+            { url: destino.sitioWeb ?? redes.sitioWeb ?? redes.sitio_web, icon: 'bi-globe', label: 'Sitio web' },
+            { url: destino.instagram ?? redes.instagram, icon: 'bi-instagram', label: 'Instagram' },
+            { url: destino.x ?? redes.x, icon: 'bi-twitter-x bi-twitter', label: 'X' },
+            { url: destino.facebook ?? redes.facebook, icon: 'bi-facebook', label: 'Facebook' },
+            { url: destino.whatsapp ?? redes.whatsapp, icon: 'bi-whatsapp', label: 'WhatsApp' },
+        ].filter((item) => typeof item.url === 'string' && item.url.trim().length > 0);
+
+        if (entries.length === 0) {
+            return '';
+        }
+
+        const links = entries
+            .map((item) => `
+                <a class="destino-popup-social" href="${item.url}" target="_blank" rel="noopener">
+                    <span class="bi ${item.icon}" aria-hidden="true"></span>
+                    <span class="visually-hidden">${item.label}</span>
+                </a>
+            `)
+            .join('');
+
+        return `<div class="destino-popup-socials" aria-label="Canales oficiales">${links}</div>`;
     }
 }

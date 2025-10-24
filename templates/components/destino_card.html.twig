@@ -24,6 +24,29 @@
             <span class="bi bi-geo-alt"></span>
             <span>{{ destino.direccion ?: 'Misiones, Argentina' }}</span>
         </div>
+        {% set redes = [
+            { 'url': destino.sitioWeb, 'icon': 'bi-globe', 'label': 'Sitio web' },
+            { 'url': destino.instagram, 'icon': 'bi-instagram', 'label': 'Instagram' },
+            { 'url': destino.x, 'icon': 'bi-twitter-x bi-twitter', 'label': 'X' },
+            { 'url': destino.facebook, 'icon': 'bi-facebook', 'label': 'Facebook' },
+            { 'url': destino.whatsapp, 'icon': 'bi-whatsapp', 'label': 'WhatsApp' }
+        ] %}
+        {% set redes_activas = [] %}
+        {% for red in redes %}
+            {% if red.url is not empty %}
+                {% set redes_activas = redes_activas|merge([red]) %}
+            {% endif %}
+        {% endfor %}
+        {% if redes_activas is not empty %}
+            <div class="d-flex flex-wrap gap-2 align-items-center small destino-card-social">
+                {% for red in redes_activas %}
+                    <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" href="{{ red.url }}" target="_blank" rel="noopener">
+                        <span class="bi {{ red.icon }}"></span>
+                        <span>{{ red.label }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
         <div class="mt-auto d-flex align-items-center justify-content-between">
             <span class="destino-icono text-primary">
                 {% if destino.categoria and destino.categoria.icono %}

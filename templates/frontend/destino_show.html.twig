@@ -64,6 +64,38 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% set redes = [
+                        { 'url': destino.sitioWeb, 'icon': 'bi-globe', 'label': 'Sitio web oficial' },
+                        { 'url': destino.instagram, 'icon': 'bi-instagram', 'label': 'Instagram' },
+                        { 'url': destino.x, 'icon': 'bi-twitter-x bi-twitter', 'label': 'X (Twitter)' },
+                        { 'url': destino.facebook, 'icon': 'bi-facebook', 'label': 'Facebook' },
+                        { 'url': destino.whatsapp, 'icon': 'bi-whatsapp', 'label': 'WhatsApp' }
+                    ] %}
+                    {% set redes_activas = [] %}
+                    {% for red in redes %}
+                        {% if red.url is not empty %}
+                            {% set redes_activas = redes_activas|merge([red]) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if redes_activas is not empty %}
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <h2 class="h6 text-uppercase text-muted mb-3">Conectá con el destino</h2>
+                                <p class="small text-muted">Visitá sus canales oficiales para conocer horarios, novedades y recomendaciones actualizadas.</p>
+                                <div class="d-flex flex-column gap-2">
+                                    {% for red in redes_activas %}
+                                        <a class="btn btn-outline-secondary d-flex align-items-center justify-content-between" href="{{ red.url }}" target="_blank" rel="noopener">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <span class="bi {{ red.icon }}"></span>
+                                                <span>{{ red.label }}</span>
+                                            </span>
+                                            <span class="bi bi-box-arrow-up-right"></span>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     {% if destinosRelacionados is not empty %}
                         <div class="card shadow-sm">
                             <div class="card-body">

@@ -429,6 +429,29 @@ main {
     padding: 1.5rem;
 }
 
+.destino-card-social {
+    margin-top: 0.5rem;
+}
+
+.destino-card-social .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    border-color: rgba(12, 45, 74, 0.12);
+    color: rgba(12, 45, 74, 0.75);
+    background-color: rgba(12, 45, 74, 0.03);
+}
+
+.destino-card-social .btn:hover {
+    background-color: rgba(31, 107, 179, 0.12);
+    border-color: rgba(31, 107, 179, 0.35);
+    color: #0C2D4A;
+}
+
+.destino-card-social .btn .bi {
+    font-size: 0.85rem;
+}
+
 .destino-card .destino-icono {
     font-size: 1.5rem;
     display: inline-flex;
@@ -572,6 +595,32 @@ main {
     font-size: 0.85rem;
     color: #5d6a76;
     margin: 0;
+}
+
+.destino-popup-socials {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.35rem;
+}
+
+.destino-popup-social {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba(12, 45, 74, 0.08);
+    color: #0C2D4A;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-size: 1rem;
+}
+
+.destino-popup-social:hover {
+    background: #1F6BB3;
+    color: #fff;
+    text-decoration: none;
 }
 
 .destino-popup-link {

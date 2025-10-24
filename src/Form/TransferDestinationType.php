@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -53,6 +54,48 @@ class TransferDestinationType extends AbstractType
                     'data-controller' => 'tinymce',
                     'data-tinymce-plugins-value' => 'advlist autolink lists link image preview code fullscreen table autoresize',
                     'data-tinymce-toolbar-value' => 'undo redo | styles | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image table | removeformat code fullscreen',
+                ],
+            ])
+            ->add('instagram', UrlType::class, [
+                'label' => 'Instagram',
+                'required' => false,
+                'default_protocol' => 'https',
+                'attr' => [
+                    'placeholder' => 'https://instagram.com/tu-destino',
+                ],
+                'help' => 'Pegá la URL pública del perfil en Instagram.',
+            ])
+            ->add('x', UrlType::class, [
+                'label' => 'Perfil en X (Twitter)',
+                'required' => false,
+                'default_protocol' => 'https',
+                'attr' => [
+                    'placeholder' => 'https://x.com/tu-destino',
+                ],
+                'help' => 'Opcional, se mostrará como ícono de X.',
+            ])
+            ->add('facebook', UrlType::class, [
+                'label' => 'Facebook',
+                'required' => false,
+                'default_protocol' => 'https',
+                'attr' => [
+                    'placeholder' => 'https://facebook.com/tu-destino',
+                ],
+            ])
+            ->add('whatsapp', TextType::class, [
+                'label' => 'WhatsApp',
+                'required' => false,
+                'attr' => [
+                    'placeholder' => 'https://wa.me/549XXXXXXXXX',
+                ],
+                'help' => 'Incluí el enlace completo generado por WhatsApp o un número con prefijo internacional.',
+            ])
+            ->add('sitioWeb', UrlType::class, [
+                'label' => 'Sitio web oficial',
+                'required' => false,
+                'default_protocol' => 'https',
+                'attr' => [
+                    'placeholder' => 'https://www.ejemplo.com',
                 ],
             ])
             ->add('tarifaBase', MoneyType::class, [

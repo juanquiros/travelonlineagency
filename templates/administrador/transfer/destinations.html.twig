@@ -14,6 +14,26 @@
                 {{ form_row(form.direccion) }}
                 {{ form_row(form.descripcionCorta) }}
                 {{ form_row(form.descripcionDetallada) }}
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                    <h3 class="h6 text-uppercase text-muted mb-3">Presencia digital</h3>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {{ form_row(form.sitioWeb) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(form.instagram) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(form.x) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(form.facebook) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(form.whatsapp) }}
+                        </div>
+                    </div>
+                </div>
                 {{ form_row(form.tarifaBase) }}
                 <div class="mb-3">
                     <label class="form-label">Imagen principal</label>

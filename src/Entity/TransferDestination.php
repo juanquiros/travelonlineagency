@@ -48,6 +48,21 @@ class TransferDestination
     #[ORM\Column(length: 255, nullable: true, name: 'imagen_portada')]
     private ?string $imagenPrincipal = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $instagram = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $x = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $facebook = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $whatsapp = null;
+
+    #[ORM\Column(length: 255, nullable: true, name: 'sitio_web')]
+    private ?string $sitioWeb = null;
+
     /**
      * @var Collection<int, TransferComboDestination>
      */
@@ -199,6 +214,66 @@ class TransferDestination
     public function setImagenPortada(?string $imagenPortada): self
     {
         return $this->setImagenPrincipal($imagenPortada);
+    }
+
+    public function getInstagram(): ?string
+    {
+        return $this->instagram;
+    }
+
+    public function setInstagram(?string $instagram): self
+    {
+        $this->instagram = $instagram;
+
+        return $this;
+    }
+
+    public function getX(): ?string
+    {
+        return $this->x;
+    }
+
+    public function setX(?string $x): self
+    {
+        $this->x = $x;
+
+        return $this;
+    }
+
+    public function getFacebook(): ?string
+    {
+        return $this->facebook;
+    }
+
+    public function setFacebook(?string $facebook): self
+    {
+        $this->facebook = $facebook;
+
+        return $this;
+    }
+
+    public function getWhatsapp(): ?string
+    {
+        return $this->whatsapp;
+    }
+
+    public function setWhatsapp(?string $whatsapp): self
+    {
+        $this->whatsapp = $whatsapp;
+
+        return $this;
+    }
+
+    public function getSitioWeb(): ?string
+    {
+        return $this->sitioWeb;
+    }
+
+    public function setSitioWeb(?string $sitioWeb): self
+    {
+        $this->sitioWeb = $sitioWeb;
+
+        return $this;
     }
 
     public function getDescripcion(): ?string
