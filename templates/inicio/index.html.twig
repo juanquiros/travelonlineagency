@@ -108,7 +108,10 @@
             <div class="section-divider"></div>
             <p class="toa-section-subtitle">Conocé los lugares que recomendamos para planificar tus experiencias en Iguazú.</p>
             <div class="mb-4">
-                {% include 'home/_mapa.html.twig' with { apiUrl: path('api_destinos_index') } %}
+                {% include 'home/_mapa.html.twig' with {
+                    apiUrl: path('api_destinos_index'),
+                    destinosData: destinosTuristicos
+                } %}
             </div>
             <div class="row g-4">
                 {% for destino in destinosTuristicos|slice(0, 6) %}

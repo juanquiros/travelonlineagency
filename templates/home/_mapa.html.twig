@@ -1,3 +1,29 @@
+{# Pre-build a lightweight destinos payload so the Stimulus controller can render markers even if the API request fails. #}
+{% set destinos_collection = destinosData is defined and destinosData is not empty ? destinosData : [] %}
+{% set destinos_payload = [] %}
+{% for destino in destinos_collection %}
+    {% if destino.activo %}
+        {% set categoria = destino.categoria %}
+        {% set destinos_payload = destinos_payload|merge([
+            {
+                id: destino.id,
+                nombre: destino.nombre,
+                direccion: destino.direccion,
+                lat: destino.coordenadasLat,
+                lng: destino.coordenadasLng,
+                descripcionCorta: destino.descripcionCorta,
+                descripcionDetallada: destino.descripcionDetallada,
+                imagen: destino.imagenPrincipal ? asset('img/destinos/' ~ destino.imagenPrincipal) : null,
+                categoria: categoria ? {
+                    id: categoria.id,
+                    nombre: categoria.nombre,
+                    icono: categoria.icono,
+                } : null,
+            }
+        ]) %}
+    {% endif %}
+{% endfor %}
+{% set destinos_json = destinos_payload is not empty ? destinos_payload|json_encode : null %}
 <div class="card toa-map-card mx-auto">
     <div class="card-body">
         <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
@@ -8,6 +34,7 @@
         </div>
         <div class="ratio ratio-16x9 position-relative" data-controller="destinos-map"
              data-destinos-map-src-value="{{ apiUrl }}"
+             {% if destinos_json %}data-destinos-map-destinos-value='{{ destinos_json|e('html_attr') }}'{% endif %}
              data-destinos-map-default-lat-value="-25.6000"
              data-destinos-map-default-lng-value="-54.5667">
             <div data-destinos-map-target="map" class="w-100 h-100"></div>

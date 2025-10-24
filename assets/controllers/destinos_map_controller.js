@@ -6,7 +6,8 @@ export default class extends Controller {
         src: String,
         defaultLat: Number,
         defaultLng: Number,
-        single: { type: Boolean, default: false }
+        single: { type: Boolean, default: false },
+        destinos: Array,
     };
 
     static targets = ['map', 'fallback', 'legend'];
@@ -79,6 +80,10 @@ export default class extends Controller {
     }
 
     async fetchData() {
+        if (this.hasDestinosValue && Array.isArray(this.destinosValue) && this.destinosValue.length > 0) {
+            return this.destinosValue;
+        }
+
         if (!this.hasSrcValue) {
             return [];
         }
