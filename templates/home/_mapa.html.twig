@@ -62,7 +62,6 @@
         </div>
         <div class="ratio ratio-16x9 position-relative destinos-map-frame">
             <div data-destinos-map-target="map" class="w-100 h-100 rounded"></div>
-            <div data-destinos-map-target="legend" class="destinos-map-legend d-none"></div>
             {% if destinos_json %}
                 <script type="application/json" data-destinos-map-target="dataset">{{ destinos_json|raw }}</script>
             {% endif %}

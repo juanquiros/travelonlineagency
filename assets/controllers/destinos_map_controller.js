@@ -10,12 +10,11 @@ export default class extends Controller {
         destinos: Array,
     };
 
-    static targets = ['map', 'fallback', 'legend', 'dataset', 'filterContainer', 'filterList'];
+    static targets = ['map', 'fallback', 'dataset', 'filterContainer', 'filterList'];
 
     connect() {
         this.mapInstance = null;
         this.markers = [];
-        this.categoryLegend = [];
         this.categoryColors = new Map();
         this.allDestinos = [];
         this.selectedCategory = '';
@@ -151,13 +150,11 @@ export default class extends Controller {
     renderMarkers(destinos) {
         const L = this.leaflet;
         const bounds = [];
-        this.categoryLegend = [];
         this.categoryColors = new Map();
 
         this.clearMarkers();
 
         if (!Array.isArray(destinos) || destinos.length === 0) {
-            this.clearLegend();
             this.showFallback('No hay destinos para la categoría seleccionada.');
             return;
         }
@@ -189,15 +186,11 @@ export default class extends Controller {
             marker.addTo(this.mapInstance);
             this.markers.push(marker);
             bounds.push([lat, lng]);
-
-            this.addLegendEntry(categoryId, category, color);
         });
 
         if (bounds.length > 0 && !this.singleValue) {
             this.mapInstance.fitBounds(bounds, { padding: [40, 40] });
         }
-
-        this.renderLegend();
     }
 
     clearMarkers() {
@@ -205,22 +198,13 @@ export default class extends Controller {
         this.markers = [];
     }
 
-    clearLegend() {
-        if (!this.hasLegendTarget) {
-            return;
-        }
-
-        this.categoryLegend = [];
-        this.legendTarget.innerHTML = '';
-        this.legendTarget.classList.add('d-none');
-    }
-
     buildMarkerIcon(category, color) {
         const iconHtml = this.normalizeIconMarkup(category?.icono);
 
         return `
-            <div class="destino-marker" style="background: linear-gradient(135deg, ${color}, rgba(12,45,74,0.95));">
+            <div class="destino-marker" style="--marker-color: ${color};">
                 <span class="destino-marker-icon">${iconHtml}</span>
+                <span class="destino-marker-pointer"></span>
             </div>
         `;
     }
@@ -245,51 +229,6 @@ export default class extends Controller {
         `;
     }
 
-    addLegendEntry(categoryId, category, color) {
-        const existing = this.categoryLegend.find((entry) => entry.id === categoryId);
-        if (existing) {
-            existing.count += 1;
-            return;
-        }
-
-        this.categoryLegend.push({
-            id: categoryId,
-            nombre: category?.nombre ?? 'Sin categoría',
-            icono: this.normalizeIconMarkup(category?.icono),
-            color,
-            count: 1,
-        });
-    }
-
-    renderLegend() {
-        if (!this.hasLegendTarget) {
-            return;
-        }
-
-        if (this.categoryLegend.length === 0) {
-            this.legendTarget.classList.add('d-none');
-            this.legendTarget.innerHTML = '';
-            return;
-        }
-
-        const items = this.categoryLegend
-            .sort((a, b) => a.nombre.localeCompare(b.nombre))
-            .map((category) => `
-                <li class="destinos-map-legend-item">
-                    <span class="destinos-map-legend-color" style="background: ${category.color};"></span>
-                    <span class="destinos-map-legend-icon">${category.icono}</span>
-                    <span class="destinos-map-legend-label">${category.nombre}</span>
-                    <span class="destinos-map-legend-count">${category.count}</span>
-                </li>
-            `)
-            .join('');
-
-        this.legendTarget.innerHTML = `
-            <div class="destinos-map-legend-header">Categorías</div>
-            <ul class="destinos-map-legend-list">${items}</ul>
-        `;
-        this.legendTarget.classList.remove('d-none');
-    }
 
     getCategoryColor(id) {
         if (!this.categoryColors.has(id)) {
