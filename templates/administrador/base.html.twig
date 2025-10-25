@@ -156,6 +156,12 @@
                             </a>
                         </li>
                         <li>
+                            <a {% if menu['transfer_destination_icons'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destination_icons') }}">
+                                <ion-icon name="aperture-outline"></ion-icon>
+                                <span>Iconos de destinos</span>
+                            </a>
+                        </li>
+                        <li>
                             <a {% if menu['transfer_campos'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_fields') }}">
                                 <ion-icon name="list-outline"></ion-icon>
                                 <span>Campos personalizados</span>

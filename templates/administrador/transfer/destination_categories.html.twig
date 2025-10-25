@@ -10,14 +10,14 @@
                 <h2 class="h5 mb-3">{{ editing ? 'Editar categoría' : 'Nueva categoría' }}</h2>
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
-                {{ form_row(form.icono) }}
+                {{ form_row(form.iconDefinition) }}
                 {{ form_row(form.color) }}
                 {{ form_row(form.Guardar, {'attr': {'class': 'btn btn-primary w-100'}}) }}
                 {{ form_end(form) }}
                 {% if editing %}
                     <a class="btn btn-link mt-2" href="{{ path('app_admin_transfer_destination_categories') }}">Crear una nueva categoría</a>
                 {% endif %}
-                <p class="small text-muted mt-3 mb-0">Los íconos aceptan HTML (por ejemplo, clases de Bootstrap Icons) para personalizar los marcadores y tarjetas.</p>
+                <p class="small text-muted mt-3 mb-0">Administrá los íconos disponibles desde la <a href="{{ path('app_admin_transfer_destination_icons') }}">biblioteca de íconos</a>.</p>
             </div>
         </div>
     </div>
@@ -31,6 +31,7 @@
                         <tr>
                             <th style="width: 80px;">Ícono</th>
                             <th>Nombre</th>
+                            <th>Ícono seleccionado</th>
                             <th style="width: 80px;" class="text-center">Color</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -48,6 +49,19 @@
                                 <td>
                                     <div class="fw-semibold">{{ categoria.nombre }}</div>
                                     <div class="text-muted small">{{ categoria.destinos|length }} destinos asociados</div>
+                                </td>
+                                <td>
+                                    {% if categoria.iconDefinition %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fs-5">{{ categoria.icono|raw }}</span>
+                                            <span class="text-muted small">{{ categoria.iconDefinition.nombre }}</span>
+                                        </div>
+                                    {% elseif categoria.icono %}
+                                        <span class="fs-5">{{ categoria.icono|raw }}</span>
+                                        <div class="text-muted small">Icono personalizado</div>
+                                    {% else %}
+                                        <span class="text-muted small">Sin icono</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-center">
                                     {% set color = categoria.color ?: '#1F6BB3' %}

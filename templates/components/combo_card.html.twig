@@ -1,0 +1,35 @@
+<div class="combo-card card h-100 shadow-sm border-0 overflow-hidden">
+    {% if combo.imagenPortada %}
+        <div class="ratio ratio-16x9">
+            <img src="{{ asset('img/transfer/' ~ combo.imagenPortada)|imagine_filter('destino_card') }}" class="card-img-top object-fit-cover" alt="{{ combo.nombre }}">
+        </div>
+    {% else %}
+        <div class="ratio ratio-16x9 bg-light d-flex align-items-center justify-content-center text-muted">
+            <span class="bi bi-shuffle"></span>
+        </div>
+    {% endif %}
+    <div class="card-body d-flex flex-column gap-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <h3 class="h5 mb-0">{{ combo.nombre }}</h3>
+            <span class="badge text-bg-primary">${{ combo.precio }}</span>
+        </div>
+        {% if combo.descripcion %}
+            <p class="text-muted small mb-0">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
+        {% endif %}
+        {% if combo.destinos|length > 0 %}
+            <div class="small text-muted">
+                <strong>Incluye:</strong>
+                {% for enlace in combo.destinos %}
+                    {% if enlace.destino %}
+                        <span class="badge bg-light text-dark border">{{ enlace.destino.nombre }}</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="mt-auto d-flex justify-content-end">
+            <a class="btn btn-outline-primary" href="{{ path('app_transfer_combo_show', { id: combo.id }) }}">
+                Ver detalles
+            </a>
+        </div>
+    </div>
+</div>

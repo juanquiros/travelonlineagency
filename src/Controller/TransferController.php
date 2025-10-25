@@ -72,6 +72,68 @@ final class TransferController extends AbstractController
         ]);
     }
 
+    #[Route('/traslados/combos/{id}', name: 'app_transfer_combo_show', methods: ['GET'])]
+    public function showCombo(TransferCombo $combo, Request $request): Response
+    {
+        if (!$combo->isActivo()) {
+            throw $this->createNotFoundException();
+        }
+
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $usuario = $this->getUser();
+
+        $mapDefaults = [
+            'lat' => -25.5972,
+            'lng' => -54.5781,
+        ];
+
+        $mapDestinos = [];
+        $destinosActivos = [];
+        foreach ($combo->getDestinos() as $detalle) {
+            $destino = $detalle->getDestino();
+            if (!$destino instanceof TransferDestination || !$destino->isActivo()) {
+                continue;
+            }
+
+            $destinosActivos[] = $destino;
+            $mapDestinos[] = [
+                'id' => $destino->getId(),
+                'nombre' => $destino->getNombre(),
+                'lat' => $destino->getCoordenadasLat(),
+                'lng' => $destino->getCoordenadasLng(),
+                'descripcionCorta' => $destino->getDescripcionCorta(),
+                'categoria' => $destino->getCategoria() ? [
+                    'id' => $destino->getCategoria()->getId(),
+                    'nombre' => $destino->getCategoria()->getNombre(),
+                    'icono' => $destino->getCategoria()->getIcono(),
+                    'color' => $destino->getCategoria()->getColor(),
+                ] : null,
+            ];
+        }
+
+        $otrosCombos = array_filter(
+            $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']),
+            static fn (TransferCombo $item) => $item->getId() !== $combo->getId()
+        );
+
+        $shareUrl = $this->generateUrl('app_transfer_combo_show', ['id' => $combo->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return $this->render('frontend/combo_show.html.twig', [
+            'combo' => $combo,
+            'destinos' => $destinosActivos,
+            'otrosCombos' => array_values($otrosCombos),
+            'mapDestinos' => $mapDestinos,
+            'mapDefaults' => $mapDefaults,
+            'shareUrl' => $shareUrl,
+            'plataforma' => $plataforma,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'usuario' => $usuario,
+        ]);
+    }
+
     #[Route('/traslados/resumen/{token}', name: 'app_transfer_summary')]
     public function summary(string $token, Request $request): Response
     {

@@ -1,0 +1,34 @@
+{% set encodedUrl = shareUrl|url_encode %}
+{% set encodedText = (shareText ?? '')|url_encode %}
+<div class="share-actions d-flex flex-column flex-md-row align-items-md-center gap-3">
+    <span class="share-actions__label text-uppercase small text-muted">Compartir</span>
+    <div class="share-actions__buttons d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+           href="https://api.whatsapp.com/send?text={{ encodedText }}%20{{ encodedUrl }}"
+           target="_blank" rel="noopener">
+            <span class="bi bi-whatsapp"></span>
+            <span>WhatsApp</span>
+        </a>
+        <a class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+           href="https://www.facebook.com/sharer/sharer.php?u={{ encodedUrl }}"
+           target="_blank" rel="noopener">
+            <span class="bi bi-facebook"></span>
+            <span>Facebook</span>
+        </a>
+        <a class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+           href="https://twitter.com/intent/tweet?url={{ encodedUrl }}&text={{ encodedText }}"
+           target="_blank" rel="noopener">
+            <span class="bi bi-twitter-x"></span>
+            <span>X</span>
+        </a>
+        {% if downloadUrl is defined and downloadUrl %}
+            <a class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2"
+               href="{{ downloadUrl }}"
+               target="_blank"
+               rel="noopener">
+                <span class="bi bi-download"></span>
+                <span>{{ downloadLabel|default('Descargar imagen') }}</span>
+            </a>
+        {% endif %}
+    </div>
+</div>

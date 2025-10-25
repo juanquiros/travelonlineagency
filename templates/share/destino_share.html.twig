@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', Arial, sans-serif; background: #0c2d4a; color: #0c2d4a; }
+        .share-card { width: 1080px; height: 1080px; display: grid; grid-template-rows: 60% 40%; border-radius: 48px; overflow: hidden; background: #ffffff; }
+        .share-image { background-size: cover; background-position: center; position: relative; }
+        .share-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,45,74,0.1) 0%, rgba(12,45,74,0.65) 100%); }
+        .share-body { padding: 48px; display: flex; flex-direction: column; gap: 24px; justify-content: space-between; }
+        .share-body h1 { font-size: 60px; line-height: 1.1; color: #0c2d4a; }
+        .share-body p { font-size: 28px; color: #4f6f8a; }
+        .share-footer { display: flex; justify-content: space-between; align-items: center; }
+        .share-brand { display: flex; flex-direction: column; gap: 8px; }
+        .share-brand span { font-size: 24px; color: #d97b0d; text-transform: uppercase; letter-spacing: 4px; }
+        .share-brand strong { font-size: 40px; color: #0c2d4a; }
+        .share-qr { background: #fff; padding: 12px; border-radius: 16px; box-shadow: 0 12px 40px rgba(12,45,74,0.18); }
+        .share-qr img { width: 200px; height: 200px; display: block; }
+    </style>
+</head>
+<body>
+<div class="share-card">
+    <div class="share-image" style="background-image: url('{{ imageUrl ?: fallbackImageUrl }}');"></div>
+    <div class="share-body">
+        <div>
+            <h1>{{ destino.nombre }}</h1>
+            <p>{{ destino.descripcionCorta ?: 'Viví Iguazú con Travel Online Agency.' }}</p>
+        </div>
+        <div class="share-footer">
+            <div class="share-brand">
+                <span>Travel Online Agency</span>
+                <strong>#DescubríIguazú</strong>
+            </div>
+            <div class="share-qr">
+                <img src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

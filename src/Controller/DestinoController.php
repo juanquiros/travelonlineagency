@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Plataforma;
 use App\Entity\TransferDestination;
+use App\Repository\TransferComboRepository;
 use App\Repository\TransferDestinationRepository;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -11,11 +12,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class DestinoController extends AbstractController
 {
     public function __construct(
         private readonly TransferDestinationRepository $destinoRepository,
+        private readonly TransferComboRepository $comboRepository,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -29,9 +32,11 @@ class DestinoController extends AbstractController
         $usuario = $this->getUser();
 
         $destinos = $this->destinoRepository->findActivosConCategoria();
+        $combos = $this->comboRepository->findActivosConDestinos();
 
         return $this->render('frontend/destinos.html.twig', [
             'destinos' => $destinos,
+            'combos' => $combos,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
@@ -56,13 +61,19 @@ class DestinoController extends AbstractController
             static fn (TransferDestination $item) => $item->getId() !== $destino->getId()
         );
 
+        $combos = $this->comboRepository->findActivosPorDestino($destino);
+
+        $shareUrl = $this->generateUrl('app_destino_show', ['id' => $destino->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
         return $this->render('frontend/destino_show.html.twig', [
             'destino' => $destino,
             'destinosRelacionados' => array_values($relacionados),
+            'combos' => $combos,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'usuario' => $usuario,
+            'shareUrl' => $shareUrl,
             'mapDefaults' => [
                 'lat' => -25.5972,
                 'lng' => -54.5781,

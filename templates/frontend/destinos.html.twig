@@ -26,6 +26,27 @@
         </div>
     </section>
 
+    {% if combos is defined and combos is not empty %}
+        <section id="combos" class="toa-section" data-aos="fade-up" data-aos-delay="150">
+            <div class="container">
+                <h2 class="toa-section-title">Combos de traslado destacados</h2>
+                <div class="section-divider"></div>
+                <p class="toa-section-subtitle">Elegí un paquete curado por nuestros especialistas para optimizar tu experiencia en Iguazú.</p>
+                <div class="row g-4">
+                    {% for combo in combos %}
+                        <div class="col-md-6 col-lg-4 d-flex">
+                            {% include 'components/combo_card.html.twig' with { combo: combo } %}
+                        </div>
+                    {% else %}
+                        <div class="col-12">
+                            <div class="alert alert-info">Estamos preparando nuevos combos de traslado. Volvé a visitarnos pronto.</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
     <section id="destinos" class="toa-section" data-aos="fade-up" data-aos-duration="1500">
         <div class="container">
             <h2 class="toa-section-title">Tarjetas informativas</h2>

@@ -2,7 +2,9 @@
 
 namespace App\Form;
 
+use App\Entity\BootstrapIcon;
 use App\Entity\TransferDestinationCategory;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -18,12 +20,13 @@ class TransferDestinationCategoryType extends AbstractType
             ->add('nombre', TextType::class, [
                 'label' => 'Nombre de la categoría',
             ])
-            ->add('icono', TextType::class, [
-                'label' => 'Ícono HTML',
+            ->add('iconDefinition', EntityType::class, [
+                'label' => 'Ícono de la biblioteca',
+                'class' => BootstrapIcon::class,
+                'choice_label' => fn (BootstrapIcon $icon) => sprintf('%s (%s)', $icon->getNombre(), $icon->getCssClass()),
+                'placeholder' => 'Seleccionar ícono',
                 'required' => false,
-                'attr' => [
-                    'placeholder' => '<i class="bi bi-tree"></i>',
-                ],
+                'help' => 'Gestioná la biblioteca desde el panel de iconos de destinos.',
             ])
             ->add('color', ColorType::class, [
                 'label' => 'Color de referencia',

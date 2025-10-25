@@ -370,14 +370,24 @@ INSERT INTO solicitud_reserva (
    3
   );
 
+-- Biblioteca de íconos para destinos
+DELETE FROM bootstrap_icon;
+ALTER TABLE bootstrap_icon AUTO_INCREMENT = 1;
+INSERT INTO bootstrap_icon (id, nombre, css_class) VALUES
+  (1, 'Parque natural', 'bi-tree'),
+  (2, 'Aventura', 'bi-compass'),
+  (3, 'Cultura', 'bi-bank'),
+  (4, 'Gastronomía', 'bi-cup-straw'),
+  (5, 'Compras', 'bi-bag');
+
 -- Catálogo de destinos de traslado con categorías y coordenadas
 DELETE FROM transfer_destination_category;
 ALTER TABLE transfer_destination_category AUTO_INCREMENT = 1;
-INSERT INTO transfer_destination_category (id, nombre, icono, color) VALUES
-  (1, 'Parque Natural', '<i class="bi bi-tree"></i>', '#2B8F6D'),
-  (2, 'Aventura', '<i class="bi bi-compass"></i>', '#1F6BB3'),
-  (3, 'Cultura', '<i class="bi bi-bank"></i>', '#D97B0D'),
-  (4, 'Gastronomía', '<i class="bi bi-cup-straw"></i>', '#AD3572');
+INSERT INTO transfer_destination_category (id, nombre, icono, color, bootstrap_icon_id) VALUES
+  (1, 'Parque Natural', '<span class="bi bi-tree"></span>', '#2B8F6D', 1),
+  (2, 'Aventura', '<span class="bi bi-compass"></span>', '#1F6BB3', 2),
+  (3, 'Cultura', '<span class="bi bi-bank"></span>', '#D97B0D', 3),
+  (4, 'Gastronomía', '<span class="bi bi-cup-straw"></span>', '#AD3572', 4);
 
 DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;

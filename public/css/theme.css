@@ -709,3 +709,39 @@ main {
         gap: 0.5rem;
     }
 }
+
+.share-actions {
+    background: rgba(15, 76, 129, 0.05);
+    border: 1px solid rgba(12, 45, 74, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+}
+
+.share-actions__label {
+    letter-spacing: 0.18em;
+    font-weight: 600;
+}
+
+.share-actions__buttons .btn {
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.share-actions__buttons .btn-primary {
+    background: linear-gradient(135deg, #1f6bb3, #0c2d4a);
+    border-color: transparent;
+}
+
+.share-actions__buttons .btn-outline-secondary {
+    color: #0c2d4a;
+    border-color: rgba(12, 45, 74, 0.18);
+}
+
+.combo-card .badge.text-bg-primary {
+    background: linear-gradient(135deg, #d97b0d, #ad3572);
+    border: none;
+}
+
+.combo-card .badge.bg-light {
+    border: 1px solid rgba(12, 45, 74, 0.15);
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', Arial, sans-serif; background: #0c2d4a; color: #0c2d4a; }
+        .share-card { width: 1200px; height: 675px; display: grid; grid-template-columns: 55% 45%; border-radius: 36px; overflow: hidden; background: #ffffff; }
+        .share-image { background-size: cover; background-position: center; position: relative; }
+        .share-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,45,74,0.1) 0%, rgba(12,45,74,0.55) 100%); }
+        .share-body { padding: 40px; display: flex; flex-direction: column; gap: 24px; justify-content: space-between; }
+        .share-body h1 { font-size: 48px; line-height: 1.1; color: #0c2d4a; }
+        .share-body p { font-size: 22px; color: #4f6f8a; }
+        .share-price { display: inline-flex; align-items: center; gap: 12px; background: rgba(31,107,179,0.1); color: #1f6bb3; padding: 12px 20px; border-radius: 999px; font-weight: 600; font-size: 24px; }
+        .share-destinos { display: flex; flex-direction: column; gap: 8px; }
+        .share-destinos span { font-size: 20px; color: #0c2d4a; }
+        .share-footer { display: flex; justify-content: space-between; align-items: flex-end; }
+        .share-brand span { font-size: 20px; color: #d97b0d; text-transform: uppercase; letter-spacing: 4px; }
+        .share-brand strong { font-size: 32px; color: #0c2d4a; }
+        .share-qr { background: #fff; padding: 10px; border-radius: 16px; box-shadow: 0 12px 40px rgba(12,45,74,0.18); }
+        .share-qr img { width: 160px; height: 160px; display: block; }
+    </style>
+</head>
+<body>
+<div class="share-card">
+    <div class="share-image" style="background-image: url('{{ imageUrl ?: fallbackImageUrl }}');"></div>
+    <div class="share-body">
+        <div>
+            <h1>{{ combo.nombre }}</h1>
+            <div class="share-price">${{ combo.precio }}</div>
+            {% if combo.descripcion %}
+                <p>{{ combo.descripcion|striptags|u.truncate(180, '…') }}</p>
+            {% endif %}
+            {% if destinos is not empty %}
+                <div class="share-destinos">
+                    {% for destino in destinos|slice(0,4) %}
+                        <span>• {{ destino.nombre }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="share-footer">
+            <div class="share-brand">
+                <span>Travel Online Agency</span>
+                <strong>#TrasladosIguazú</strong>
+            </div>
+            <div class="share-qr">
+                <img src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

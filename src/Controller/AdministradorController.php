@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\BootstrapIcon;
 use App\Entity\Booking;
 use App\Entity\BookingPartner;
 use App\Entity\CredencialesMercadoPago;
@@ -32,6 +33,7 @@ use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
 use App\Repository\DriverBalanceEntryRepository;
 use App\Repository\DriverWithdrawalRequestRepository;
+use App\Form\BootstrapIconType;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
@@ -46,6 +48,7 @@ use App\Form\TransferFormFieldType;
 use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
+use App\Repository\BootstrapIconRepository;
 use App\Services\DriverBalanceService;
 use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
@@ -92,6 +95,7 @@ class AdministradorController extends AbstractController
         'transfer_requests'=>false,
         'transfer_destinations'=>false,
         'transfer_destination_categories'=>false,
+        'transfer_destination_icons'=>false,
         'transfer_combos'=>false,
         'transfer_campos'=>false,
         'drivers'=>false,
@@ -1329,6 +1333,91 @@ class AdministradorController extends AbstractController
         $this->addFlash('success', 'Categoría eliminada correctamente.');
 
         return $this->redirectToRoute('app_admin_transfer_destination_categories');
+    }
+
+    #[Route('/administrador/traslados/destinos/iconos', name: 'app_admin_transfer_destination_icons')]
+    public function manageTransferDestinationIcons(Request $request, BootstrapIconRepository $iconRepository): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destination_icons'] = true;
+
+        $icon = new BootstrapIcon();
+        $form = $this->createForm(BootstrapIconType::class, $icon);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->persist($icon);
+            $this->em->flush();
+            $this->addFlash('success', 'Icono agregado correctamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_icons');
+        }
+
+        return $this->render('administrador/transfer/destination_icons.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'icons' => $iconRepository->findAllOrdered(),
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/iconos/{id}', name: 'app_admin_transfer_destination_icon_edit')]
+    public function editTransferDestinationIcon(Request $request, BootstrapIcon $icon, BootstrapIconRepository $iconRepository): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_destination_icons'] = true;
+
+        $form = $this->createForm(BootstrapIconType::class, $icon);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->flush();
+            $this->addFlash('success', 'Icono actualizado correctamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_icons');
+        }
+
+        return $this->render('administrador/transfer/destination_icons.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'icons' => $iconRepository->findAllOrdered(),
+            'editing' => true,
+            'editingIcon' => $icon,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destinos/iconos/{id}/eliminar', name: 'app_admin_transfer_destination_icon_delete', methods: ['POST'])]
+    public function deleteTransferDestinationIcon(Request $request, BootstrapIcon $icon): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('delete_destination_icon_' . $icon->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido. Intente nuevamente.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_icons');
+        }
+
+        if ($icon->getCategories()->count() > 0) {
+            $this->addFlash('error', 'No podés eliminar el icono porque está asignado a una o más categorías.');
+
+            return $this->redirectToRoute('app_admin_transfer_destination_icons');
+        }
+
+        $this->em->remove($icon);
+        $this->em->flush();
+        $this->addFlash('success', 'Icono eliminado correctamente.');
+
+        return $this->redirectToRoute('app_admin_transfer_destination_icons');
     }
 
     #[Route('/administrador/traslados/combos', name: 'app_admin_transfer_combos')]

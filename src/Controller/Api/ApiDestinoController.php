@@ -65,6 +65,7 @@ class ApiDestinoController extends AbstractController
                 'id' => $categoria->getId(),
                 'nombre' => $categoria->getNombre(),
                 'icono' => $categoria->getIcono(),
+                'iconClass' => $categoria->getIconCssClass(),
                 'color' => $categoria->getColor(),
             ] : null,
             'imagen' => $imagenUrl,

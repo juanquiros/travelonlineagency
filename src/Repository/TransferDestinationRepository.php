@@ -37,6 +37,8 @@ class TransferDestinationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('d')
             ->leftJoin('d.categoria', 'c')
             ->addSelect('c')
+            ->leftJoin('c.iconDefinition', 'icon')
+            ->addSelect('icon')
             ->andWhere('d.activo = :activo')
             ->setParameter('activo', true)
             ->orderBy('d.nombre', 'ASC')
@@ -52,6 +54,8 @@ class TransferDestinationRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('d')
             ->leftJoin('d.categoria', 'c')
             ->addSelect('c')
+            ->leftJoin('c.iconDefinition', 'icon')
+            ->addSelect('icon')
             ->orderBy('d.nombre', 'ASC');
 
         if ($query) {
