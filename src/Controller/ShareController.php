@@ -34,12 +34,14 @@ class ShareController extends AbstractController
             : null;
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
+        $logoUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
 
         $html = $this->renderView('share/destino_share.html.twig', [
             'destino' => $destino,
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
+            'logoUrl' => $logoUrl,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
@@ -47,6 +49,7 @@ class ShareController extends AbstractController
             'quality' => 90,
             'width' => 1080,
             'height' => 1080,
+            'enable-local-file-access' => true,
         ]);
 
         $filename = sprintf('destino-%s.png', $this->slugger->slug($destino->getNombre())->lower());
@@ -78,6 +81,7 @@ class ShareController extends AbstractController
         }
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
+        $logoUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
 
         $html = $this->renderView('share/combo_share.html.twig', [
             'combo' => $combo,
@@ -85,6 +89,7 @@ class ShareController extends AbstractController
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
+            'logoUrl' => $logoUrl,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
@@ -92,6 +97,7 @@ class ShareController extends AbstractController
             'quality' => 90,
             'width' => 1200,
             'height' => 675,
+            'enable-local-file-access' => true,
         ]);
 
         $filename = sprintf('combo-%s.png', $this->slugger->slug($combo->getNombre())->lower());

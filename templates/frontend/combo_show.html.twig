@@ -65,28 +65,29 @@
                 </div>
                 <div class="col-lg-4">
                     <div class="card shadow-sm mb-4">
-                        <div class="card-body">
-                            <h2 class="h6 text-uppercase text-muted mb-3">Destinos en el mapa</h2>
-                            {% set json_flags = constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_HEX_AMP') %}
-                            {% set mapa_json = mapDestinos is not empty ? mapDestinos|json_encode(json_flags) : null %}
-                            <div class="rounded border"
-                                 data-controller="destinos-map"
-                                 data-destinos-map-default-lat-value="{{ mapDefaults.lat }}"
-                                 data-destinos-map-default-lng-value="{{ mapDefaults.lng }}"
-                                 data-destinos-map-single-value="false"
-                                 {% if mapa_json %}data-destinos-map-destinos-value="{{ mapa_json|e('html_attr') }}"{% endif %}
-                                 style="height: 320px;">
-                                {% if mapa_json %}
-                                    <script type="application/json" data-destinos-map-target="dataset">{{ mapa_json|raw }}</script>
-                                {% endif %}
-                                <div data-destinos-map-target="map" class="h-100"></div>
-                                <div class="alert alert-warning mt-3 d-none" data-destinos-map-target="fallback">
-                                    No pudimos cargar el mapa en este momento.
-                                </div>
+                        {% set json_flags = constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_HEX_AMP') %}
+                        {% set mapa_json = mapDestinos is not empty ? mapDestinos|json_encode(json_flags) : null %}
+                        <div class="card-body destinos-map-wrapper"
+                             data-controller="destinos-map"
+                             data-destinos-map-default-lat-value="{{ mapDefaults.lat }}"
+                             data-destinos-map-default-lng-value="{{ mapDefaults.lng }}"
+                             data-destinos-map-single-value="false"
+                             {% if mapa_json %}data-destinos-map-destinos-value="{{ mapa_json|e('html_attr') }}"{% endif %}>
+                            <div class="d-flex justify-content-between flex-wrap align-items-center gap-3 mb-3">
+                                <h2 class="h6 text-uppercase text-muted mb-0">Destinos en el mapa</h2>
                                 <div class="destinos-map-filter d-none" data-destinos-map-target="filterContainer">
                                     <span class="form-label text-uppercase small text-muted mb-2 d-block">Filtrar por categoría</span>
                                     <div class="destinos-map-filter-list" data-destinos-map-target="filterList"></div>
                                 </div>
+                            </div>
+                            <div class="ratio ratio-4x3 position-relative destinos-map-frame">
+                                <div data-destinos-map-target="map" class="w-100 h-100 rounded"></div>
+                                {% if mapa_json %}
+                                    <script type="application/json" data-destinos-map-target="dataset">{{ mapa_json|raw }}</script>
+                                {% endif %}
+                            </div>
+                            <div class="alert alert-warning mt-3 d-none" data-destinos-map-target="fallback">
+                                No pudimos cargar el mapa en este momento.
                             </div>
                         </div>
                     </div>
