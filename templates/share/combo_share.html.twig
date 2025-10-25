@@ -125,7 +125,7 @@
         <span>Escaneá y reservá tu traslado</span>
     </div>
     {% if destinos is not empty %}
-        {% set destinoNombres = destinos|map(attribute='nombre') %}
+        {% set destinoNombres = destinos|column('nombre') %}
         <div class="share__list">
             <div class="share__list-title">Destinos del combo</div>
             {{ destinoNombres|join(', ') }}
