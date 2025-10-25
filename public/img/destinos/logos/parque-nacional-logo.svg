@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="pn-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2b8f6d"/>
+      <stop offset="100%" stop-color="#1f6bb3"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#pn-gradient)"/>
+  <path d="M60 24L34 74h14l-8 22 20-14 20 14-8-22h14z" fill="#ffffff" opacity="0.92"/>
+</svg>

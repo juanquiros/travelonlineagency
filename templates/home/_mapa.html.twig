@@ -14,6 +14,7 @@
                 descripcionCorta: destino.descripcionCorta,
                 descripcionDetallada: destino.descripcionDetallada,
                 imagen: destino.imagenPrincipal ? asset('img/destinos/' ~ destino.imagenPrincipal) : null,
+                logo: destino.logo ? asset('img/destinos/logos/' ~ destino.logo) : null,
                 categoria: categoria ? {
                     id: categoria.id,
                     nombre: categoria.nombre,

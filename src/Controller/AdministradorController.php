@@ -2107,6 +2107,19 @@ class AdministradorController extends AbstractController
             $destination->setImagenPrincipal($upload['filename']);
         }
 
+        /** @var UploadedFile|null $logo */
+        $logo = $form->get('logoFile')->getData();
+        if ($logo instanceof UploadedFile) {
+            $upload = $this->upload($logo, 'img_destinos_logo', $slugger);
+            if (!$upload['upload']) {
+                $this->addFlash('error', 'No se pudo subir el logo del destino.');
+
+                return false;
+            }
+
+            $destination->setLogo($upload['filename']);
+        }
+
         return true;
     }
 

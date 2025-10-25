@@ -1,0 +1,4 @@
+# Permitir subir logos SVG desde el repositorio manteniendo la carpeta limpia
+*
+!.gitignore
+!*.svg

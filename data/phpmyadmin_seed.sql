@@ -393,7 +393,7 @@ DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
 INSERT INTO transfer_destination (
   id, nombre, direccion, coordenadas_lat, coordenadas_lng, categoria_id,
-  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada,
+  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada, logo,
   instagram, x, facebook, whatsapp, sitio_web
 ) VALUES
   (1,
@@ -407,6 +407,7 @@ INSERT INTO transfer_destination (
    25.00,
    1,
    'parque-nacional.svg',
+   'parque-nacional-logo.svg',
    'https://www.instagram.com/parquenacionaliguazu',
    'https://x.com/parqueiguazu',
    'https://www.facebook.com/parquenacionaliguazu',
@@ -424,6 +425,7 @@ INSERT INTO transfer_destination (
    18.50,
    1,
    'hito-tres-fronteras.svg',
+   'hito-tres-fronteras-logo.svg',
    'https://www.instagram.com/hitotresfronteras',
    'https://x.com/hitotres',
    'https://www.facebook.com/hitotresfronteras',
@@ -441,6 +443,7 @@ INSERT INTO transfer_destination (
    22.00,
    1,
    'guira-oga.svg',
+   'guira-oga-logo.svg',
    'https://www.instagram.com/guiraoga',
    'https://x.com/guiraoga',
    'https://www.facebook.com/guiraoga',
@@ -458,6 +461,7 @@ INSERT INTO transfer_destination (
    15.00,
    1,
    'jardin-picaflores.svg',
+   'jardin-picaflores-logo.svg',
    'https://www.instagram.com/jardindelospicaflores',
    'https://x.com/jardinpicaflor',
    'https://www.facebook.com/jardindelospicaflores',
@@ -475,6 +479,7 @@ INSERT INTO transfer_destination (
    20.00,
    1,
    'duty-free-iguazu.svg',
+   'duty-free-iguazu-logo.svg',
    'https://www.instagram.com/dutyfreeiguazu',
    'https://x.com/dutyfreeiguazu',
    'https://www.facebook.com/dutyfreeiguazu',

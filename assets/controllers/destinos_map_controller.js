@@ -214,11 +214,13 @@ export default class extends Controller {
         const categoria = category?.nombre ?? '';
         const descripcion = destino.descripcionCorta ?? '';
         const redes = this.buildSocialLinks(destino);
+        const logo = this.buildLogo(destino);
 
         return `
             <div class="destino-popup">
                 ${imagen}
                 <div class="destino-popup-body">
+                    ${logo}
                     <h3>${destino.nombre}</h3>
                     ${categoria ? `<span class="destino-popup-category">${categoria}</span>` : ''}
                     ${descripcion ? `<p>${descripcion}</p>` : ''}
@@ -268,6 +270,22 @@ export default class extends Controller {
             .join('');
 
         return `<div class="destino-popup-socials" aria-label="Canales oficiales">${links}</div>`;
+    }
+
+    buildLogo(destino) {
+        const logo = destino.logo ?? destino.logoUrl ?? (destino.media?.logo ?? null);
+
+        if (typeof logo !== 'string' || logo.trim().length === 0) {
+            return '';
+        }
+
+        const url = logo.trim();
+
+        return `
+            <div class="destino-popup-logo" aria-hidden="true">
+                <img src="${url}" alt="Logo ${this.escapeHtml(destino.nombre ?? '')}">
+            </div>
+        `;
     }
 
     buildFilterOptions(destinos) {

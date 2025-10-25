@@ -48,6 +48,13 @@ class ApiDestinoController extends AbstractController
             $imagenUrl = str_starts_with($relative, 'http') ? $relative : $base . '/' . ltrim($relative, '/');
         }
 
+        $logoUrl = null;
+        if ($destino->getLogo()) {
+            $relativeLogo = $this->assetPackages->getUrl('img/destinos/logos/' . $destino->getLogo());
+            $base = rtrim($urlGenerator->generate('app_inicio', [], UrlGeneratorInterface::ABSOLUTE_URL), '/');
+            $logoUrl = str_starts_with($relativeLogo, 'http') ? $relativeLogo : $base . '/' . ltrim($relativeLogo, '/');
+        }
+
         $categoria = $destino->getCategoria();
 
         $lat = $destino->getCoordenadasLat();
@@ -69,6 +76,7 @@ class ApiDestinoController extends AbstractController
                 'color' => $categoria->getColor(),
             ] : null,
             'imagen' => $imagenUrl,
+            'logo' => $logoUrl,
             'activo' => $destino->isActivo(),
             'redes' => [
                 'instagram' => $destino->getInstagram(),

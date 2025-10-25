@@ -112,6 +112,15 @@ class TransferDestinationType extends AbstractType
                     'accept' => 'image/*',
                 ],
             ])
+            ->add('logoFile', FileType::class, [
+                'label' => 'Logo del destino',
+                'mapped' => false,
+                'required' => false,
+                'attr' => [
+                    'accept' => 'image/*',
+                ],
+                'help' => 'Idealmente un SVG o PNG transparente de al menos 200px de ancho.',
+            ])
             ->add('latitud', HiddenType::class, [
                 'mapped' => false,
                 'required' => false,

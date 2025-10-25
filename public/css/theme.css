@@ -537,6 +537,7 @@ main {
 .destinos-map-frame {
     border-radius: 1rem;
     overflow: hidden;
+    --bs-aspect-ratio: 56.25%;
 }
 
 .destinos-map-filter {
@@ -617,6 +618,25 @@ main {
     max-width: 360px;
 }
 
+.destino-popup-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid rgba(12, 45, 74, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 8px 18px rgba(12, 45, 74, 0.15);
+}
+
+.destino-popup-logo img {
+    max-width: 80%;
+    max-height: 80%;
+    object-fit: contain;
+}
+
 .destino-popup-image {
     width: 120px;
     height: 120px;
@@ -687,6 +707,55 @@ main {
     color: #10365d;
 }
 
+.destino-card {
+    position: relative;
+}
+
+.destino-card-media {
+    position: relative;
+}
+
+.destino-card-logo {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(12, 45, 74, 0.18);
+    border: 1px solid rgba(12, 45, 74, 0.08);
+    padding: 0.35rem;
+}
+
+.destino-card-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.destino-hero-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(6px);
+}
+
+.destino-hero-logo img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+}
+
 @media (max-width: 576px) {
     .destino-popup {
         grid-template-columns: 1fr;
@@ -695,6 +764,16 @@ main {
     .destino-popup-image {
         width: 100%;
         height: 180px;
+    }
+
+    .destinos-map-frame {
+        --bs-aspect-ratio: 110%;
+    }
+}
+
+@media (max-width: 768px) {
+    .destinos-map-frame {
+        --bs-aspect-ratio: 90%;
     }
 }
 @media (max-width: 767.98px) {

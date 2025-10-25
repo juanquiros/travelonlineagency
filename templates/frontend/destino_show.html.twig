@@ -6,6 +6,11 @@
     <section class="toa-hero" style="background-image: linear-gradient(135deg, rgba(12,45,74,0.92), rgba(31,107,179,0.92)), url({{ destino.imagenPrincipal ? asset('img/destinos/' ~ destino.imagenPrincipal) : asset('img/iguazu-hero.svg') }}); background-size: cover; background-position: center;">
         <div class="toa-hero-content">
             <div class="d-flex flex-column gap-3">
+                {% if destino.logo %}
+                    <div class="destino-hero-logo">
+                        <img src="{{ asset('img/destinos/logos/' ~ destino.logo) }}" alt="Logo {{ destino.nombre }}">
+                    </div>
+                {% endif %}
                 <span class="toa-hero-badge"><span class="bi bi-map"></span> {{ destino.categoria ? destino.categoria.nombre : 'Destino destacado' }}</span>
                 <h1 class="toa-hero-title">{{ destino.nombre }}</h1>
                 {% if destino.descripcionCorta %}
@@ -52,6 +57,7 @@
                                  data-destino-map-lat-value="{{ destino.coordenadasLat ?? mapDefaults.lat }}"
                                  data-destino-map-lng-value="{{ destino.coordenadasLng ?? mapDefaults.lng }}"
                                  data-destino-map-name-value="{{ destino.nombre }}"
+                                 data-destino-map-editable-value="false"
                                  style="height: 280px;">
                                 <input type="hidden"
                                        data-destino-map-target="lat"
@@ -66,6 +72,12 @@
                                     <span class="badge bg-info-subtle text-info-emphasis">
                                         {% if destino.categoria.icono %}{{ destino.categoria.icono|raw }} {% endif %}{{ destino.categoria.nombre }}
                                     </span>
+                                </div>
+                            {% endif %}
+                            {% if destino.logo %}
+                                <div class="mt-3 text-center">
+                                    <span class="text-muted small d-block mb-2">Identidad del destino</span>
+                                    <img src="{{ asset('img/destinos/logos/' ~ destino.logo) }}" alt="Logo {{ destino.nombre }}" style="width: 120px; height: 120px; object-fit: contain; background: #fff; border-radius: 24px; padding: 0.75rem; box-shadow: 0 10px 24px rgba(12, 45, 74, 0.08);">
                                 </div>
                             {% endif %}
                         </div>

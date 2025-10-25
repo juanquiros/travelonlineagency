@@ -49,6 +49,9 @@ class TransferDestination
     private ?string $imagenPrincipal = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    private ?string $logo = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $instagram = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -214,6 +217,18 @@ class TransferDestination
     public function setImagenPortada(?string $imagenPortada): self
     {
         return $this->setImagenPrincipal($imagenPortada);
+    }
+
+    public function getLogo(): ?string
+    {
+        return $this->logo;
+    }
+
+    public function setLogo(?string $logo): self
+    {
+        $this->logo = $logo;
+
+        return $this;
     }
 
     public function getInstagram(): ?string

@@ -17,15 +17,6 @@
         </div>
     </section>
 
-    <section id="mapa-destinos" class="toa-section" data-aos="fade-up">
-        <div class="container">
-            {% include 'home/_mapa.html.twig' with {
-                apiUrl: path('api_destinos_index'),
-                destinosData: destinos
-            } %}
-        </div>
-    </section>
-
     {% if combos is defined and combos is not empty %}
         <section id="combos" class="toa-section" data-aos="fade-up" data-aos-delay="150">
             <div class="container">
@@ -63,6 +54,15 @@
                     </div>
                 {% endfor %}
             </div>
+        </div>
+    </section>
+
+    <section id="mapa-destinos" class="toa-section" data-aos="fade-up" data-aos-delay="150">
+        <div class="container">
+            {% include 'home/_mapa.html.twig' with {
+                apiUrl: path('api_destinos_index'),
+                destinosData: destinos
+            } %}
         </div>
     </section>
 {% endblock %}

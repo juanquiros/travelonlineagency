@@ -12,6 +12,7 @@ parameters:
     img_driver: '%kernel.project_dir%/public/img/drivers'
     img_transfer: '%kernel.project_dir%/public/img/transfer'
     img_destinos: '%kernel.project_dir%/public/img/destinos'
+    img_destinos_logo: '%kernel.project_dir%/public/img/destinos/logos'
     env(WKHTMLTOPDF_PATH): ''
     env(WKHTMLTOIMAGE_PATH): ''
 services:

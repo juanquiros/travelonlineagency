@@ -9,7 +9,7 @@ use Symfony\Component\Asset\Packages;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ShareController extends AbstractController
@@ -17,7 +17,7 @@ class ShareController extends AbstractController
     public function __construct(
         private readonly Image $imageGenerator,
         private readonly Packages $assetPackages,
-        private readonly AsciiSlugger $slugger,
+        private readonly SluggerInterface $slugger,
     ) {
     }
 
