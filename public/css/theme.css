@@ -480,6 +480,18 @@ main {
     line-height: 1;
 }
 
+.destinos-map-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.destinos-map-frame {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
 .destinos-map-legend {
     position: absolute;
     top: 1rem;
@@ -491,6 +503,11 @@ main {
     padding: 1rem 1.1rem;
     backdrop-filter: blur(8px);
     pointer-events: auto;
+    z-index: 1040;
+}
+
+.destinos-map-filter select {
+    min-width: 220px;
 }
 
 .destinos-map-legend-header {

@@ -216,7 +216,7 @@ export default class extends Controller {
     }
 
     buildMarkerIcon(category, color) {
-        const iconHtml = category?.icono ?? '<span class="bi bi-geo-alt"></span>';
+        const iconHtml = this.normalizeIconMarkup(category?.icono);
 
         return `
             <div class="destino-marker" style="background: linear-gradient(135deg, ${color}, rgba(12,45,74,0.95));">
@@ -255,7 +255,7 @@ export default class extends Controller {
         this.categoryLegend.push({
             id: categoryId,
             nombre: category?.nombre ?? 'Sin categoría',
-            icono: category?.icono ?? '<span class="bi bi-geo-alt"></span>',
+            icono: this.normalizeIconMarkup(category?.icono),
             color,
             count: 1,
         });
@@ -387,6 +387,19 @@ export default class extends Controller {
         }
 
         this.filterContainerTarget.classList.toggle('d-none', !visible);
+    }
+
+    normalizeIconMarkup(icon) {
+        if (typeof icon !== 'string' || icon.trim().length === 0) {
+            return '<span class="bi bi-geo-alt"></span>';
+        }
+
+        const trimmed = icon.trim();
+        if (trimmed.startsWith('<')) {
+            return trimmed;
+        }
+
+        return `<span class="${trimmed}"></span>`;
     }
 
     onFilterChange(event) {

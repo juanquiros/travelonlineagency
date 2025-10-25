@@ -42,7 +42,14 @@
     b-or constant('JSON_HEX_AMP') %}
 {% set destinos_json = destinos_payload is not empty ? destinos_payload|json_encode(json_flags) : null %}
 <div class="card toa-map-card mx-auto">
-    <div class="card-body">
+    <div class="card-body destinos-map-wrapper"
+         data-controller="destinos-map"
+         data-destinos-map-src-value="{{ apiUrl }}"
+         data-destinos-map-default-lat-value="-25.6000"
+         data-destinos-map-default-lng-value="-54.5667"
+         {% if destinos_json %}
+             data-destinos-map-destinos-value="{{ destinos_json|e('html_attr') }}"
+         {% endif %}>
         <div class="d-flex justify-content-between flex-wrap align-items-center gap-3 mb-3">
             <div>
                 <h3 class="h6 text-uppercase text-muted mb-1">Explorá Iguazú</h3>
@@ -55,14 +62,8 @@
                 </select>
             </div>
         </div>
-        <div class="ratio ratio-16x9 position-relative" data-controller="destinos-map"
-             data-destinos-map-src-value="{{ apiUrl }}"
-             data-destinos-map-default-lat-value="-25.6000"
-             data-destinos-map-default-lng-value="-54.5667"
-             {% if destinos_json %}
-                 data-destinos-map-destinos-value="{{ destinos_json|e('html_attr') }}"
-             {% endif %}>
-            <div data-destinos-map-target="map" class="w-100 h-100"></div>
+        <div class="ratio ratio-16x9 position-relative destinos-map-frame">
+            <div data-destinos-map-target="map" class="w-100 h-100 rounded"></div>
             <div data-destinos-map-target="legend" class="destinos-map-legend d-none"></div>
             {% if destinos_json %}
                 <script type="application/json" data-destinos-map-target="dataset">{{ destinos_json|raw }}</script>
