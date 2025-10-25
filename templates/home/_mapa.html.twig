@@ -52,7 +52,10 @@
         <div class="ratio ratio-16x9 position-relative" data-controller="destinos-map"
              data-destinos-map-src-value="{{ apiUrl }}"
              data-destinos-map-default-lat-value="-25.6000"
-             data-destinos-map-default-lng-value="-54.5667">
+             data-destinos-map-default-lng-value="-54.5667"
+             {% if destinos_json %}
+                 data-destinos-map-destinos-value="{{ destinos_json|e('html_attr') }}"
+             {% endif %}>
             <div data-destinos-map-target="map" class="w-100 h-100"></div>
             <div data-destinos-map-target="legend" class="destinos-map-legend d-none"></div>
             {% if destinos_json %}
