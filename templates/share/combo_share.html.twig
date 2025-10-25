@@ -11,7 +11,7 @@
             'linear-gradient(168deg, #020711 0%, #0c192b 44%, #18344c 100%)',
             'linear-gradient(172deg, #010813 0%, #0e1d31 54%, #1b3a53 100%)'
         ] %}
-        {% set backgroundGradient = gradients|random %}
+        {% set backgroundGradient = random(gradients) %}
         body {
             width: 1080px;
             height: 1920px;
