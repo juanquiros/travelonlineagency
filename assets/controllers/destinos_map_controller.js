@@ -10,7 +10,7 @@ export default class extends Controller {
         destinos: Array,
     };
 
-    static targets = ['map', 'fallback', 'legend'];
+    static targets = ['map', 'fallback', 'legend', 'dataset'];
 
     connect() {
         this.mapInstance = null;
@@ -80,17 +80,19 @@ export default class extends Controller {
     }
 
     async fetchData() {
+        const inlineData = this.getInlineDestinos();
+
         if (this.hasDestinosValue && Array.isArray(this.destinosValue) && this.destinosValue.length > 0) {
             return this.destinosValue;
         }
 
         if (!this.hasSrcValue) {
-            return [];
+            return inlineData;
         }
 
         try {
             const response = await fetch(this.srcValue, {
-                headers: { 'Accept': 'application/json' }
+                headers: { Accept: 'application/json' },
             });
 
             if (!response.ok) {
@@ -98,13 +100,43 @@ export default class extends Controller {
             }
 
             const payload = await response.json();
+            let data;
             if (this.singleValue) {
-                return payload && payload.id ? [payload] : [];
+                data = payload && payload.id ? [payload] : [];
+            } else {
+                data = Array.isArray(payload) ? payload : [];
             }
 
-            return Array.isArray(payload) ? payload : [];
+            if (Array.isArray(data) && data.length > 0) {
+                return data;
+            }
+
+            return inlineData;
         } catch (error) {
             console.error('Error loading destinos data', error);
+            return inlineData;
+        }
+    }
+
+    getInlineDestinos() {
+        if (this.hasDestinosValue && Array.isArray(this.destinosValue)) {
+            return this.destinosValue;
+        }
+
+        if (!this.hasDatasetTarget) {
+            return [];
+        }
+
+        try {
+            const raw = this.datasetTarget.textContent.trim();
+            if (!raw) {
+                return [];
+            }
+
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.error('Error parsing inline destinos data', error);
             return [];
         }
     }
