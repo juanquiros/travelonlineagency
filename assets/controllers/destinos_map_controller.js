@@ -10,7 +10,7 @@ export default class extends Controller {
         destinos: Array,
     };
 
-    static targets = ['map', 'fallback', 'legend', 'dataset', 'filter', 'filterContainer'];
+    static targets = ['map', 'fallback', 'legend', 'dataset', 'filterContainer', 'filterList'];
 
     connect() {
         this.mapInstance = null;
@@ -341,7 +341,7 @@ export default class extends Controller {
     }
 
     buildFilterOptions(destinos) {
-        if (!this.hasFilterTarget) {
+        if (!this.hasFilterContainerTarget || !this.hasFilterListTarget) {
             return;
         }
 
@@ -360,25 +360,48 @@ export default class extends Controller {
                 categories.set(key, {
                     id: key,
                     nombre: category?.nombre ?? 'Sin categoría',
+                    icono: this.normalizeIconMarkup(category?.icono),
                 });
             }
         });
 
-        const options = [
-            { value: '', label: 'Todas las categorías' },
-            ...Array.from(categories.values()).sort((a, b) => a.nombre.localeCompare(b.nombre)),
-        ];
+        const items = Array.from(categories.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+        const hasCategories = items.length > 0;
 
-        this.filterTarget.innerHTML = options
-            .map((option) => `<option value="${option.value}">${option.label}</option>`)
-            .join('');
-
-        const hasCategories = options.length > 1;
         this.toggleFilter(hasCategories);
 
-        const validSelected = options.some((option) => option.value === this.selectedCategory);
-        this.filterTarget.value = validSelected ? this.selectedCategory : '';
-        this.selectedCategory = this.filterTarget.value;
+        if (!hasCategories) {
+            this.filterListTarget.innerHTML = '';
+            this.selectedCategory = '';
+            return;
+        }
+
+        const buttons = [
+            {
+                id: '',
+                nombre: 'Todas',
+                icono: '<span class="bi bi-geo-alt"></span>',
+            },
+            ...items,
+        ]
+            .map((category) => `
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm destinos-map-filter-button"
+                        data-category="${this.escapeHtml(category.id ?? '')}"
+                        data-action="destinos-map#onFilterClick">
+                    <span class="destinos-map-filter-icon">${category.icono}</span>
+                    <span class="destinos-map-filter-label">${this.escapeHtml(category.nombre ?? '')}</span>
+                </button>
+            `)
+            .join('');
+
+        this.filterListTarget.innerHTML = buttons;
+
+        if (!items.some((category) => category.id === this.selectedCategory)) {
+            this.selectedCategory = '';
+        }
+
+        this.updateFilterButtons();
     }
 
     toggleFilter(visible) {
@@ -402,10 +425,23 @@ export default class extends Controller {
         return `<span class="${trimmed}"></span>`;
     }
 
-    onFilterChange(event) {
-        this.selectedCategory = event.target.value;
-        const filtered = this.getFilteredDestinos();
-        this.renderMarkers(filtered);
+    onFilterClick(event) {
+        const button = event.currentTarget;
+        if (!(button instanceof HTMLElement)) {
+            return;
+        }
+
+        const category = button.getAttribute('data-category') ?? '';
+        const normalized = category === null ? '' : category;
+
+        if (this.selectedCategory === normalized) {
+            this.selectedCategory = '';
+        } else {
+            this.selectedCategory = normalized;
+        }
+
+        this.updateFilterButtons();
+        this.renderMarkers(this.getFilteredDestinos());
     }
 
     getFilteredDestinos() {
@@ -427,5 +463,33 @@ export default class extends Controller {
 
             return String(id) === targetId;
         });
+    }
+
+    updateFilterButtons() {
+        if (!this.hasFilterListTarget) {
+            return;
+        }
+
+        const buttons = this.filterListTarget.querySelectorAll('[data-category]');
+        buttons.forEach((button) => {
+            const value = button.getAttribute('data-category') ?? '';
+            const isActive = this.selectedCategory
+                ? value === this.selectedCategory
+                : value === '';
+            button.classList.toggle('active', isActive);
+        });
+    }
+
+    escapeHtml(value) {
+        if (typeof value !== 'string') {
+            return '';
+        }
+
+        return value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 }

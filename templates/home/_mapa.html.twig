@@ -56,10 +56,8 @@
                 <p class="small text-muted mb-0">Mové el mapa, descubrí categorías y abrí cada marcador para ver más detalles.</p>
             </div>
             <div class="destinos-map-filter d-none" data-destinos-map-target="filterContainer">
-                <span class="form-label text-uppercase small text-muted mb-1 d-block">Filtrar por categoría</span>
-                <select class="form-select form-select-sm" data-destinos-map-target="filter" data-action="change->destinos-map#onFilterChange">
-                    <option value="">Todas las categorías</option>
-                </select>
+                <span class="form-label text-uppercase small text-muted mb-2 d-block">Filtrar por categoría</span>
+                <div class="destinos-map-filter-list" data-destinos-map-target="filterList"></div>
             </div>
         </div>
         <div class="ratio ratio-16x9 position-relative destinos-map-frame">
