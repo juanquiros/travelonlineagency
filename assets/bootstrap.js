@@ -6,6 +6,7 @@ import TransferDestinationMapController from './controllers/transfer_destination
 import TransferDestinationsOverviewController from './controllers/transfer_destinations_overview_controller.js';
 import DestinosMapController from './controllers/destinos_map_controller.js';
 import DestinoMapController from './controllers/destino_map_controller.js';
+import IconSelectController from './controllers/icon_select_controller.js';
 
 const app = startStimulusApp();
 // register any custom, 3rd party controllers here
@@ -16,3 +17,4 @@ app.register('transfer-destination-map', TransferDestinationMapController);
 app.register('transfer-destinations-overview', TransferDestinationsOverviewController);
 app.register('destinos-map', DestinosMapController);
 app.register('destino-map', DestinoMapController);
+app.register('icon-select', IconSelectController);

@@ -23,10 +23,19 @@ class TransferDestinationCategoryType extends AbstractType
             ->add('iconDefinition', EntityType::class, [
                 'label' => 'Ícono de la biblioteca',
                 'class' => BootstrapIcon::class,
-                'choice_label' => fn (BootstrapIcon $icon) => sprintf('%s (%s)', $icon->getNombre(), $icon->getCssClass()),
+                'choice_label' => fn (BootstrapIcon $icon) => $icon->getNombre(),
+                'choice_attr' => fn (BootstrapIcon $icon) => [
+                    'data-icon-class' => $icon->getCssClass(),
+                    'data-icon-label' => $icon->getNombre(),
+                    'data-icon-description' => $icon->getCssClass(),
+                ],
                 'placeholder' => 'Seleccionar ícono',
                 'required' => false,
                 'help' => 'Gestioná la biblioteca desde el panel de iconos de destinos.',
+                'attr' => [
+                    'data-controller' => 'icon-select',
+                    'data-icon-select-placeholder-value' => 'Seleccioná un ícono',
+                ],
             ])
             ->add('color', ColorType::class, [
                 'label' => 'Color de referencia',
