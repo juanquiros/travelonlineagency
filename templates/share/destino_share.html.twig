@@ -15,8 +15,11 @@
         .share-brand { display: flex; flex-direction: column; gap: 8px; }
         .share-brand span { font-size: 24px; color: #d97b0d; text-transform: uppercase; letter-spacing: 4px; }
         .share-brand strong { font-size: 40px; color: #0c2d4a; }
-        .share-qr { background: #fff; padding: 12px; border-radius: 16px; box-shadow: 0 12px 40px rgba(12,45,74,0.18); }
-        .share-qr img { width: 200px; height: 200px; display: block; }
+        .share-qr { position: relative; display: inline-flex; padding: 18px; border-radius: 28px; background: linear-gradient(135deg, rgba(12,45,74,0.12), rgba(217,123,13,0.12)); box-shadow: 0 18px 48px rgba(12,45,74,0.22); }
+        .share-qr__frame { position: relative; border-radius: 24px; overflow: hidden; background: #fff; padding: 14px; }
+        .share-qr__code { width: 200px; height: 200px; display: block; filter: drop-shadow(0 8px 18px rgba(12,45,74,0.16)); }
+        .share-qr__logo { position: absolute; inset: 50%; transform: translate(-50%, -50%); width: 72px; height: 72px; border-radius: 24px; background: rgba(255,255,255,0.95); display: grid; place-items: center; box-shadow: 0 12px 24px rgba(12,45,74,0.25); border: 3px solid rgba(12,45,74,0.12); }
+        .share-qr__logo img { width: 46px; height: 46px; }
     </style>
 </head>
 <body>
@@ -33,7 +36,12 @@
                 <strong>#DescubríIguazú</strong>
             </div>
             <div class="share-qr">
-                <img src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
+                <div class="share-qr__frame">
+                    <img class="share-qr__code" src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
+                    <div class="share-qr__logo">
+                        <img src="{{ asset('img/logo-toa.svg') }}" alt="Travel Online Agency"/>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
