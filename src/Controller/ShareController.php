@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Plataforma;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
+use App\Repository\PlataformaRepository;
 use Knp\Snappy\Image;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Asset\Packages;
@@ -20,6 +22,7 @@ class ShareController extends AbstractController
         private readonly Packages $assetPackages,
         private readonly SluggerInterface $slugger,
         private readonly ParameterBagInterface $parameterBag,
+        private readonly PlataformaRepository $plataformaRepository,
     ) {
     }
 
@@ -36,15 +39,15 @@ class ShareController extends AbstractController
             : null;
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
-        $logoDataUri = $this->dataUriForPublicAsset('img/logo-toa.svg', 'image/svg+xml')
-            ?? $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
+        $branding = $this->resolvePlatformBranding($urlGenerator);
 
         $html = $this->renderView('share/destino_share.html.twig', [
             'destino' => $destino,
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
-            'logoUrl' => $logoDataUri,
+            'platformIconUrl' => $branding['icon'],
+            'platformName' => $branding['name'],
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
@@ -84,8 +87,15 @@ class ShareController extends AbstractController
         }
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
-        $logoDataUri = $this->dataUriForPublicAsset('img/logo-toa.svg', 'image/svg+xml')
-            ?? $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
+        $branding = $this->resolvePlatformBranding($urlGenerator);
+
+        $primaryAddress = null;
+        foreach ($destinos as $destino) {
+            if ($destino->getDireccion()) {
+                $primaryAddress = $destino->getDireccion();
+                break;
+            }
+        }
 
         $html = $this->renderView('share/combo_share.html.twig', [
             'combo' => $combo,
@@ -93,7 +103,9 @@ class ShareController extends AbstractController
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
-            'logoUrl' => $logoDataUri,
+            'platformIconUrl' => $branding['icon'],
+            'platformName' => $branding['name'],
+            'primaryAddress' => $primaryAddress,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
@@ -140,5 +152,55 @@ class ShareController extends AbstractController
         $base64 = base64_encode($contents);
 
         return sprintf('data:%s;base64,%s', $mimeType, $base64);
+    }
+
+    private function resolvePlatformBranding(UrlGeneratorInterface $urlGenerator): array
+    {
+        $plataforma = $this->plataformaRepository->find(1);
+        $name = $plataforma instanceof Plataforma && $plataforma->getNombre()
+            ? $plataforma->getNombre()
+            : 'Travel Online Agency';
+
+        $icon = null;
+        if ($plataforma instanceof Plataforma && $plataforma->getIcono()) {
+            $storedPath = $plataforma->getIcono();
+
+            if (str_starts_with($storedPath, 'http://') || str_starts_with($storedPath, 'https://')) {
+                $icon = $storedPath;
+            } else {
+                $relativePath = ltrim($storedPath, '/');
+                $mime = $this->guessMimeType($relativePath);
+
+                if ($mime) {
+                    $icon = $this->dataUriForPublicAsset($relativePath, $mime);
+                }
+
+                if (!$icon) {
+                    $assetPath = '/' . $relativePath;
+                    $icon = $this->absoluteAsset($this->assetPackages->getUrl($assetPath), $urlGenerator);
+                }
+            }
+        }
+
+        if (!$icon) {
+            $icon = $this->dataUriForPublicAsset('img/logo-toa.svg', 'image/svg+xml')
+                ?? $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
+        }
+
+        return [
+            'name' => $name,
+            'icon' => $icon,
+        ];
+    }
+
+    private function guessMimeType(string $path): ?string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'svg' => 'image/svg+xml',
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            default => null,
+        };
     }
 }
