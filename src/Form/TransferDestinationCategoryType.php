@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\TransferDestinationCategory;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ColorType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -22,6 +23,14 @@ class TransferDestinationCategoryType extends AbstractType
                 'required' => false,
                 'attr' => [
                     'placeholder' => '<i class="bi bi-tree"></i>',
+                ],
+            ])
+            ->add('color', ColorType::class, [
+                'label' => 'Color de referencia',
+                'required' => false,
+                'help' => 'Elegí un color para diferenciar esta categoría en el mapa.',
+                'attr' => [
+                    'class' => 'form-control form-control-color w-100',
                 ],
             ])
             ->add('Guardar', SubmitType::class, [

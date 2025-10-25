@@ -22,6 +22,9 @@ class TransferDestinationCategory
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $icono = null;
 
+    #[ORM\Column(length: 9, nullable: true)]
+    private ?string $color = null;
+
     /**
      * @var Collection<int, TransferDestination>
      */
@@ -58,6 +61,31 @@ class TransferDestinationCategory
     public function setIcono(?string $icono): self
     {
         $this->icono = $icono;
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(?string $color): self
+    {
+        if (null === $color) {
+            $this->color = null;
+
+            return $this;
+        }
+
+        $normalized = strtoupper(trim($color));
+        if ('' === $normalized) {
+            $this->color = null;
+
+            return $this;
+        }
+        $normalized = '#' . ltrim($normalized, '#');
+        $this->color = $normalized;
 
         return $this;
     }

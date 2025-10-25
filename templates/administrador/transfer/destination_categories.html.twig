@@ -11,6 +11,7 @@
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.icono) }}
+                {{ form_row(form.color) }}
                 {{ form_row(form.Guardar, {'attr': {'class': 'btn btn-primary w-100'}}) }}
                 {{ form_end(form) }}
                 {% if editing %}
@@ -30,6 +31,7 @@
                         <tr>
                             <th style="width: 80px;">Ícono</th>
                             <th>Nombre</th>
+                            <th style="width: 80px;" class="text-center">Color</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                         </thead>
@@ -46,6 +48,11 @@
                                 <td>
                                     <div class="fw-semibold">{{ categoria.nombre }}</div>
                                     <div class="text-muted small">{{ categoria.destinos|length }} destinos asociados</div>
+                                </td>
+                                <td class="text-center">
+                                    {% set color = categoria.color ?: '#1F6BB3' %}
+                                    <span class="badge rounded-pill text-bg-light border" style="--bs-bg-opacity: 1; background-color: {{ color }}; border-color: rgba(0,0,0,0.1); color: #fff;">&nbsp;</span>
+                                    <div class="small text-muted mt-1">{{ categoria.color ?: 'Automático' }}</div>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group">

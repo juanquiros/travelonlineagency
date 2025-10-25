@@ -29,6 +29,7 @@ export default class extends Controller {
             '#0F4C81',
             '#48707E',
         ];
+        this.defaultColor = '#1F6BB3';
 
         this.init();
     }
@@ -170,8 +171,7 @@ export default class extends Controller {
             }
 
             const category = destino.categoria ?? destino.category ?? null;
-            const categoryId = category?.id ?? 'sin-categoria';
-            const color = this.getCategoryColor(categoryId);
+            const color = this.resolveCategoryColor(category);
             const iconMarkup = this.buildMarkerIcon(category, color);
             const marker = L.marker([lat, lng], {
                 icon: L.divIcon({
@@ -230,15 +230,6 @@ export default class extends Controller {
     }
 
 
-    getCategoryColor(id) {
-        if (!this.categoryColors.has(id)) {
-            const index = this.categoryColors.size % this.palette.length;
-            this.categoryColors.set(id, this.palette[index]);
-        }
-
-        return this.categoryColors.get(id);
-    }
-
     showFallback(message = this.defaultFallbackMessage) {
         if (this.hasFallbackTarget) {
             this.fallbackTarget.textContent = message;
@@ -289,6 +280,7 @@ export default class extends Controller {
         destinos.forEach((destino) => {
             const category = destino.categoria ?? destino.category ?? null;
             const id = category?.id ?? null;
+            const color = this.resolveCategoryColor(category);
 
             if (id === null) {
                 return;
@@ -300,6 +292,7 @@ export default class extends Controller {
                     id: key,
                     nombre: category?.nombre ?? 'Sin categoría',
                     icono: this.normalizeIconMarkup(category?.icono),
+                    color,
                 });
             }
         });
@@ -320,6 +313,7 @@ export default class extends Controller {
                 id: '',
                 nombre: 'Todas',
                 icono: '<span class="bi bi-geo-alt"></span>',
+                color: this.defaultColor,
             },
             ...items,
         ]
@@ -327,7 +321,8 @@ export default class extends Controller {
                 <button type="button"
                         class="btn btn-outline-primary btn-sm destinos-map-filter-button"
                         data-category="${this.escapeHtml(category.id ?? '')}"
-                        data-action="destinos-map#onFilterClick">
+                        data-action="destinos-map#onFilterClick"
+                        style="--destinos-category-color: ${this.escapeHtml(category.color ?? this.defaultColor)};">
                     <span class="destinos-map-filter-icon">${category.icono}</span>
                     <span class="destinos-map-filter-label">${this.escapeHtml(category.nombre ?? '')}</span>
                 </button>
@@ -430,5 +425,47 @@ export default class extends Controller {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    resolveCategoryColor(category) {
+        if (!category || category.id === undefined || category.id === null) {
+            return this.defaultColor;
+        }
+
+        const key = String(category.id);
+        const provided = this.normalizeColorValue(category.color);
+
+        if (provided) {
+            this.categoryColors.set(key, provided);
+            return provided;
+        }
+
+        if (this.categoryColors.has(key)) {
+            return this.categoryColors.get(key);
+        }
+
+        const index = this.categoryColors.size % this.palette.length;
+        const fallback = this.palette[index] ?? this.defaultColor;
+        this.categoryColors.set(key, fallback);
+
+        return fallback;
+    }
+
+    normalizeColorValue(value) {
+        if (typeof value !== 'string') {
+            return null;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return null;
+        }
+
+        const hex = `#${trimmed.replace(/^#/u, '')}`;
+        if (!/^#([0-9A-F]{3}|[0-9A-F]{6}|[0-9A-F]{8})$/iu.test(hex)) {
+            return null;
+        }
+
+        return hex.toUpperCase();
     }
 }

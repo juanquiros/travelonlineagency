@@ -459,6 +459,18 @@ main {
     justify-content: center;
 }
 
+.destino-category-badge {
+    --destino-category-color: var(--destino-category-color, #1f6bb3);
+    background: color-mix(in srgb, var(--destino-category-color) 16%, #ffffff 84%);
+    color: var(--destino-category-color);
+    border: 1px solid color-mix(in srgb, var(--destino-category-color) 22%, #ffffff 78%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.destino-category-badge .bi {
+    color: currentColor;
+}
+
 .destino-marker-wrapper {
     background: transparent;
 }
@@ -542,6 +554,7 @@ main {
 }
 
 .destinos-map-filter-button {
+    --destinos-filter-color: var(--destinos-category-color, #1f6bb3);
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
@@ -549,7 +562,7 @@ main {
     padding: 0.35rem 0.85rem;
     transition: all 0.2s ease;
     background-color: rgba(255, 255, 255, 0.65);
-    border-color: rgba(12, 45, 74, 0.2);
+    border-color: rgba(12, 45, 74, 0.18);
     color: #0c2d4a;
 }
 
@@ -558,6 +571,7 @@ main {
     align-items: center;
     justify-content: center;
     font-size: 0.95rem;
+    color: var(--destinos-filter-color);
 }
 
 .destinos-map-filter-button .destinos-map-filter-label {
@@ -569,10 +583,19 @@ main {
 
 .destinos-map-filter-button:hover,
 .destinos-map-filter-button.active {
-    background: linear-gradient(135deg, rgba(31, 107, 179, 0.85), rgba(12, 45, 74, 0.9));
+    background: linear-gradient(
+        135deg,
+        var(--destinos-filter-color),
+        color-mix(in srgb, var(--destinos-filter-color) 70%, #0c2d4a)
+    );
     color: #fff;
     border-color: transparent;
     box-shadow: 0 6px 18px rgba(12, 45, 74, 0.25);
+}
+
+.destinos-map-filter-button:hover .destinos-map-filter-icon,
+.destinos-map-filter-button.active .destinos-map-filter-icon {
+    color: #fff;
 }
 
 .destino-popup-container .leaflet-popup-content-wrapper {

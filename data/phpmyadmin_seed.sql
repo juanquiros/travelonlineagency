@@ -373,11 +373,11 @@ INSERT INTO solicitud_reserva (
 -- Catálogo de destinos de traslado con categorías y coordenadas
 DELETE FROM transfer_destination_category;
 ALTER TABLE transfer_destination_category AUTO_INCREMENT = 1;
-INSERT INTO transfer_destination_category (id, nombre, icono) VALUES
-  (1, 'Parque Natural', '<i class="bi bi-tree"></i>'),
-  (2, 'Aventura', '<i class="bi bi-compass"></i>'),
-  (3, 'Cultura', '<i class="bi bi-bank"></i>'),
-  (4, 'Gastronomía', '<i class="bi bi-cup-straw"></i>');
+INSERT INTO transfer_destination_category (id, nombre, icono, color) VALUES
+  (1, 'Parque Natural', '<i class="bi bi-tree"></i>', '#2B8F6D'),
+  (2, 'Aventura', '<i class="bi bi-compass"></i>', '#1F6BB3'),
+  (3, 'Cultura', '<i class="bi bi-bank"></i>', '#D97B0D'),
+  (4, 'Gastronomía', '<i class="bi bi-cup-straw"></i>', '#AD3572');
 
 DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
