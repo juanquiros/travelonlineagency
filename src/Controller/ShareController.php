@@ -5,12 +5,13 @@ namespace App\Controller;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
 use Knp\Snappy\Image;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Asset\Packages;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ShareController extends AbstractController
 {
@@ -18,6 +19,7 @@ class ShareController extends AbstractController
         private readonly Image $imageGenerator,
         private readonly Packages $assetPackages,
         private readonly SluggerInterface $slugger,
+        private readonly ParameterBagInterface $parameterBag,
     ) {
     }
 
@@ -34,21 +36,22 @@ class ShareController extends AbstractController
             : null;
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
-        $logoUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
+        $logoDataUri = $this->dataUriForPublicAsset('img/logo-toa.svg', 'image/svg+xml')
+            ?? $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
 
         $html = $this->renderView('share/destino_share.html.twig', [
             'destino' => $destino,
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
-            'logoUrl' => $logoUrl,
+            'logoUrl' => $logoDataUri,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
             'format' => 'png',
             'quality' => 90,
             'width' => 1080,
-            'height' => 1080,
+            'height' => 1920,
             'enable-local-file-access' => true,
         ]);
 
@@ -81,7 +84,8 @@ class ShareController extends AbstractController
         }
 
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
-        $logoUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
+        $logoDataUri = $this->dataUriForPublicAsset('img/logo-toa.svg', 'image/svg+xml')
+            ?? $this->absoluteAsset($this->assetPackages->getUrl('img/logo-toa.svg'), $urlGenerator);
 
         $html = $this->renderView('share/combo_share.html.twig', [
             'combo' => $combo,
@@ -89,14 +93,14 @@ class ShareController extends AbstractController
             'shareUrl' => $shareUrl,
             'imageUrl' => $imageUrl,
             'fallbackImageUrl' => $fallbackImageUrl,
-            'logoUrl' => $logoUrl,
+            'logoUrl' => $logoDataUri,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [
             'format' => 'png',
             'quality' => 90,
-            'width' => 1200,
-            'height' => 675,
+            'width' => 1080,
+            'height' => 1920,
             'enable-local-file-access' => true,
         ]);
 
@@ -117,5 +121,24 @@ class ShareController extends AbstractController
         $base = rtrim($urlGenerator->generate('app_inicio', [], UrlGeneratorInterface::ABSOLUTE_URL), '/');
 
         return $base . '/' . ltrim($url, '/');
+    }
+
+    private function dataUriForPublicAsset(string $relativePath, string $mimeType): ?string
+    {
+        $publicPath = $this->parameterBag->get('kernel.project_dir') . '/public/' . ltrim($relativePath, '/');
+
+        if (!is_file($publicPath) || !is_readable($publicPath)) {
+            return null;
+        }
+
+        $contents = file_get_contents($publicPath);
+
+        if ($contents === false) {
+            return null;
+        }
+
+        $base64 = base64_encode($contents);
+
+        return sprintf('data:%s;base64,%s', $mimeType, $base64);
     }
 }
