@@ -10,13 +10,18 @@ export default class extends Controller {
         destinos: Array,
     };
 
-    static targets = ['map', 'fallback', 'legend', 'dataset'];
+    static targets = ['map', 'fallback', 'legend', 'dataset', 'filter', 'filterContainer'];
 
     connect() {
         this.mapInstance = null;
         this.markers = [];
         this.categoryLegend = [];
         this.categoryColors = new Map();
+        this.allDestinos = [];
+        this.selectedCategory = '';
+        this.defaultFallbackMessage = this.hasFallbackTarget
+            ? this.fallbackTarget.textContent.trim()
+            : 'No pudimos cargar el mapa en este momento. Volvé a intentarlo más tarde.';
         this.palette = [
             '#1F6BB3',
             '#2B8F6D',
@@ -76,7 +81,9 @@ export default class extends Controller {
             return;
         }
 
-        this.renderMarkers(data);
+        this.allDestinos = data;
+        this.buildFilterOptions(data);
+        this.renderMarkers(this.getFilteredDestinos());
     }
 
     async fetchData() {
@@ -147,8 +154,15 @@ export default class extends Controller {
         this.categoryLegend = [];
         this.categoryColors = new Map();
 
-        this.markers.forEach((marker) => marker.remove());
-        this.markers = [];
+        this.clearMarkers();
+
+        if (!Array.isArray(destinos) || destinos.length === 0) {
+            this.clearLegend();
+            this.showFallback('No hay destinos para la categoría seleccionada.');
+            return;
+        }
+
+        this.hideFallback();
 
         destinos.forEach((destino) => {
             const lat = Number.parseFloat(destino.lat ?? destino.latitude);
@@ -158,7 +172,7 @@ export default class extends Controller {
                 return;
             }
 
-            const category = destino.categoria ?? null;
+            const category = destino.categoria ?? destino.category ?? null;
             const categoryId = category?.id ?? 'sin-categoria';
             const color = this.getCategoryColor(categoryId);
             const iconMarkup = this.buildMarkerIcon(category, color);
@@ -184,6 +198,21 @@ export default class extends Controller {
         }
 
         this.renderLegend();
+    }
+
+    clearMarkers() {
+        this.markers.forEach((marker) => marker.remove());
+        this.markers = [];
+    }
+
+    clearLegend() {
+        if (!this.hasLegendTarget) {
+            return;
+        }
+
+        this.categoryLegend = [];
+        this.legendTarget.innerHTML = '';
+        this.legendTarget.classList.add('d-none');
     }
 
     buildMarkerIcon(category, color) {
@@ -271,9 +300,17 @@ export default class extends Controller {
         return this.categoryColors.get(id);
     }
 
-    showFallback() {
+    showFallback(message = this.defaultFallbackMessage) {
         if (this.hasFallbackTarget) {
+            this.fallbackTarget.textContent = message;
             this.fallbackTarget.classList.remove('d-none');
+        }
+    }
+
+    hideFallback() {
+        if (this.hasFallbackTarget) {
+            this.fallbackTarget.classList.add('d-none');
+            this.fallbackTarget.textContent = this.defaultFallbackMessage;
         }
     }
 
@@ -301,5 +338,81 @@ export default class extends Controller {
             .join('');
 
         return `<div class="destino-popup-socials" aria-label="Canales oficiales">${links}</div>`;
+    }
+
+    buildFilterOptions(destinos) {
+        if (!this.hasFilterTarget) {
+            return;
+        }
+
+        const categories = new Map();
+
+        destinos.forEach((destino) => {
+            const category = destino.categoria ?? destino.category ?? null;
+            const id = category?.id ?? null;
+
+            if (id === null) {
+                return;
+            }
+
+            const key = String(id);
+            if (!categories.has(key)) {
+                categories.set(key, {
+                    id: key,
+                    nombre: category?.nombre ?? 'Sin categoría',
+                });
+            }
+        });
+
+        const options = [
+            { value: '', label: 'Todas las categorías' },
+            ...Array.from(categories.values()).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+        ];
+
+        this.filterTarget.innerHTML = options
+            .map((option) => `<option value="${option.value}">${option.label}</option>`)
+            .join('');
+
+        const hasCategories = options.length > 1;
+        this.toggleFilter(hasCategories);
+
+        const validSelected = options.some((option) => option.value === this.selectedCategory);
+        this.filterTarget.value = validSelected ? this.selectedCategory : '';
+        this.selectedCategory = this.filterTarget.value;
+    }
+
+    toggleFilter(visible) {
+        if (!this.hasFilterContainerTarget) {
+            return;
+        }
+
+        this.filterContainerTarget.classList.toggle('d-none', !visible);
+    }
+
+    onFilterChange(event) {
+        this.selectedCategory = event.target.value;
+        const filtered = this.getFilteredDestinos();
+        this.renderMarkers(filtered);
+    }
+
+    getFilteredDestinos() {
+        if (!this.selectedCategory) {
+            return this.allDestinos ?? [];
+        }
+
+        const targetId = String(this.selectedCategory);
+        return (this.allDestinos ?? []).filter((destino) => {
+            const category = destino.categoria ?? destino.category ?? null;
+            if (!category) {
+                return false;
+            }
+
+            const id = category.id ?? category.ID ?? null;
+            if (id === null || id === undefined) {
+                return false;
+            }
+
+            return String(id) === targetId;
+        });
     }
 }
