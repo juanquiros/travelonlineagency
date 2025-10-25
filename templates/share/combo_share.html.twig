@@ -5,11 +5,18 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
+        {% set gradients = [
+            'linear-gradient(170deg, #030914 0%, #10213a 50%, #1a3b58 100%)',
+            'linear-gradient(165deg, #040b17 0%, #0f1f33 48%, #1c3a55 100%)',
+            'linear-gradient(168deg, #020711 0%, #0c192b 44%, #18344c 100%)',
+            'linear-gradient(172deg, #010813 0%, #0e1d31 54%, #1b3a53 100%)'
+        ] %}
+        {% set backgroundGradient = gradients|random %}
         body {
             width: 1080px;
             height: 1920px;
             font-family: 'Poppins', Arial, sans-serif;
-            background: linear-gradient(175deg, #05142a 0%, #0e3053 45%, #174f73 100%);
+            background: {{ backgroundGradient }};
             color: #f4f7ff;
             display: flex;
             flex-direction: column;
@@ -48,39 +55,16 @@
         .share__top {
             display: flex;
             flex-direction: column;
-            gap: 96px;
-        }
-        .share__brand {
-            display: flex;
             align-items: center;
-            gap: 56px;
+            text-align: center;
+            gap: 70px;
         }
         .share__logo {
             width: 220px;
             height: 220px;
-            border-radius: 48px;
-            background: rgba(255, 255, 255, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-        }
-        .share__logo img {
-            max-width: 150px;
-            max-height: 150px;
-        }
-        .share__text {
-            display: flex;
-            flex-direction: column;
-            gap: 26px;
-        }
-        .share__platform {
-            font-size: 34px;
-            letter-spacing: 6px;
-            text-transform: uppercase;
-            color: rgba(255, 211, 148, 0.95);
+            display: block;
+            object-fit: contain;
+            filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.55));
         }
         .share__title {
             font-size: 108px;
@@ -92,25 +76,8 @@
             font-size: 42px;
             color: rgba(244, 248, 255, 0.9);
         }
-        .share__destinos {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            margin-top: 12px;
-        }
-        .share__destino-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 22px;
-            border-radius: 999px;
-            background: rgba(6, 24, 44, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            font-size: 28px;
-            color: rgba(244, 248, 255, 0.92);
-        }
         .share__qr {
-            align-self: flex-end;
+            align-self: center;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -131,33 +98,39 @@
             text-transform: uppercase;
             color: #ffdca8;
         }
+        .share__list {
+            margin-top: 48px;
+            font-size: 32px;
+            color: rgba(244, 248, 255, 0.9);
+            text-align: center;
+            line-height: 1.6;
+        }
+        .share__list-title {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 28px;
+            color: rgba(255, 220, 168, 0.92);
+        }
     </style>
 </head>
 <body>
 <div class="share">
     <div class="share__top">
-        <div class="share__brand">
-            <div class="share__logo">
-                <img src="{{ platformIconUrl }}" alt="{{ platformName }}"/>
-            </div>
-            <div class="share__text">
-                <span class="share__platform">{{ platformName }}</span>
-                <h1 class="share__title">{{ combo.nombre }}</h1>
-                <p class="share__address">{{ primaryAddress ?: 'Puerto Iguazú, Misiones' }}</p>
-                {% if destinos is not empty %}
-                    <div class="share__destinos">
-                        {% for destino in destinos|slice(0, 4) %}
-                            <span class="share__destino-tag">{{ destino.nombre }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+        <img class="share__logo" src="{{ platformIconUrl }}" alt="{{ platformName }}"/>
+        <h1 class="share__title">{{ combo.nombre }}</h1>
+        <p class="share__address">{{ primaryAddress ?: 'Puerto Iguazú, Misiones' }}</p>
     </div>
     <div class="share__qr">
         <img src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
         <span>Escaneá y reservá tu traslado</span>
     </div>
+    {% if destinos is not empty %}
+        {% set destinoNombres = destinos|map(attribute='nombre') %}
+        <div class="share__list">
+            <div class="share__list-title">Destinos del combo</div>
+            {{ destinoNombres|join(', ') }}
+        </div>
+    {% endif %}
 </div>
 </body>
 </html>

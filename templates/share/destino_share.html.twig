@@ -5,11 +5,18 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; }
+        {% set gradients = [
+            'linear-gradient(162deg, #020b19 0%, #11233f 48%, #173a59 100%)',
+            'linear-gradient(168deg, #040a16 0%, #101d33 52%, #1b3a54 100%)',
+            'linear-gradient(170deg, #030611 0%, #091728 46%, #153349 100%)',
+            'linear-gradient(165deg, #010a1b 0%, #0c1f37 55%, #124260 100%)'
+        ] %}
+        {% set backgroundGradient = gradients|random %}
         body {
             width: 1080px;
             height: 1920px;
             font-family: 'Poppins', Arial, sans-serif;
-            background: linear-gradient(165deg, #031226 0%, #0b2f4f 50%, #125070 100%);
+            background: {{ backgroundGradient }};
             color: #f6f9ff;
             display: flex;
             flex-direction: column;
@@ -48,39 +55,16 @@
         .share__top {
             display: flex;
             flex-direction: column;
-            gap: 96px;
-        }
-        .share__brand {
-            display: flex;
             align-items: center;
-            gap: 56px;
+            text-align: center;
+            gap: 72px;
         }
         .share__logo {
             width: 220px;
             height: 220px;
-            border-radius: 48px;
-            background: rgba(255, 255, 255, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-        }
-        .share__logo img {
-            max-width: 150px;
-            max-height: 150px;
-        }
-        .share__text {
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-        }
-        .share__platform {
-            font-size: 34px;
-            letter-spacing: 6px;
-            text-transform: uppercase;
-            color: rgba(255, 211, 148, 0.95);
+            display: block;
+            object-fit: contain;
+            filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.55));
         }
         .share__title {
             font-size: 112px;
@@ -93,7 +77,7 @@
             color: rgba(244, 248, 255, 0.88);
         }
         .share__qr {
-            align-self: flex-end;
+            align-self: center;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -119,16 +103,9 @@
 <body>
 <div class="share">
     <div class="share__top">
-        <div class="share__brand">
-            <div class="share__logo">
-                <img src="{{ platformIconUrl }}" alt="{{ platformName }}"/>
-            </div>
-            <div class="share__text">
-                <span class="share__platform">{{ platformName }}</span>
-                <h1 class="share__title">{{ destino.nombre }}</h1>
-                <p class="share__address">{{ destino.direccion ?: 'Puerto Iguazú, Misiones' }}</p>
-            </div>
-        </div>
+        <img class="share__logo" src="{{ platformIconUrl }}" alt="{{ platformName }}"/>
+        <h1 class="share__title">{{ destino.nombre }}</h1>
+        <p class="share__address">{{ destino.direccion ?: 'Puerto Iguazú, Misiones' }}</p>
     </div>
     <div class="share__qr">
         <img src="{{ qr_code_data_uri(shareUrl, 'share_card') }}" alt="Código QR"/>
