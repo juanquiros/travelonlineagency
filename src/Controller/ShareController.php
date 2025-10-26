@@ -41,6 +41,20 @@ class ShareController extends AbstractController
         $fallbackImageUrl = $this->absoluteAsset($this->assetPackages->getUrl('img/iguazu-hero.svg'), $urlGenerator);
         $branding = $this->resolvePlatformBranding($urlGenerator);
 
+        $destinoLogoUrl = null;
+        if ($destino->getLogo()) {
+            $logoRelative = 'img/destinos/logos/' . ltrim($destino->getLogo(), '/');
+            $mime = $this->guessMimeType($logoRelative);
+
+            if ($mime) {
+                $destinoLogoUrl = $this->dataUriForPublicAsset($logoRelative, $mime);
+            }
+
+            if (!$destinoLogoUrl) {
+                $destinoLogoUrl = $this->absoluteAsset($this->assetPackages->getUrl($logoRelative), $urlGenerator);
+            }
+        }
+
         $html = $this->renderView('share/destino_share.html.twig', [
             'destino' => $destino,
             'shareUrl' => $shareUrl,
@@ -48,6 +62,7 @@ class ShareController extends AbstractController
             'fallbackImageUrl' => $fallbackImageUrl,
             'platformIconUrl' => $branding['icon'],
             'platformName' => $branding['name'],
+            'destinoLogoUrl' => $destinoLogoUrl,
         ]);
 
         $output = $this->imageGenerator->getOutputFromHtml($html, [

@@ -68,6 +68,7 @@
             display: block;
             object-fit: contain;
             filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.55));
+            margin: 0 auto;
         }
         .share__title {
             font-size: 108px;
@@ -102,17 +103,34 @@
             color: #ffdca8;
         }
         .share__list {
-            margin-top: 48px;
-            font-size: 32px;
-            color: rgba(244, 248, 255, 0.9);
+            margin-top: 52px;
+            padding: 40px 48px;
+            border-radius: 36px;
+            background: rgba(5, 21, 39, 0.72);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(10px);
             text-align: center;
-            line-height: 1.6;
+            color: rgba(246, 249, 255, 0.96);
         }
         .share__list-title {
             text-transform: uppercase;
             letter-spacing: 4px;
             font-size: 28px;
             color: rgba(255, 220, 168, 0.92);
+            margin-bottom: 20px;
+        }
+        .share__list-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 34px;
+            font-weight: 600;
+            line-height: 1.5;
+            text-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+        .share__list-item {
+            word-break: break-word;
         }
     </style>
 </head>
@@ -128,10 +146,13 @@
         <span>Escaneá y reservá tu traslado</span>
     </div>
     {% if destinos is not empty %}
-        {% set destinoNombres = destinos|column('nombre') %}
         <div class="share__list">
             <div class="share__list-title">Destinos del combo</div>
-            {{ destinoNombres|join(', ') }}
+            <ul class="share__list-items">
+                {% for destino in destinos %}
+                    <li class="share__list-item">{{ destino.nombre }}</li>
+                {% endfor %}
+            </ul>
         </div>
     {% endif %}
 </div>
