@@ -50,6 +50,51 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
    npm run dev -- --watch
    ```
 
+## Funcionalidades principales
+
+1. **Gestión administrativa integral**
+   - Panel centralizado para administrar configuraciones generales, comisiones, preguntas frecuentes y activos de marca.
+   - Dashboard de métricas, exportes en PDF/imagen y monitoreo de actividades clave.
+
+2. **Reservas de alojamiento (Booking)**
+   - Alta, edición y publicación de servicios con precios, disponibilidad y contenido enriquecido.
+   - Flujo de reservas con confirmaciones por correo, seguimiento en línea y generación de comprobantes en PDF con QR.
+   - Integración con partners externos que pueden cargar sus propios servicios tras aprobación del administrador.
+
+3. **Gestión de partners**
+   - Solicitud de registro mediante enlace privado, aprobación y asignación de comisiones personalizadas.
+   - Panel específico para administrar servicios, reservas asociadas, balances y vinculación con Mercado Pago.
+
+4. **Módulo de traslados y choferes**
+   - Configuración de destinos, combos prearmados y formularios dinámicos para solicitudes personalizadas.
+   - Panel de choferes para capturar viajes, registrar estados, cargar notas y gestionar pagos en efectivo.
+   - Balances individuales con registro de movimientos, solicitudes de retiro y exportes en PDF.
+
+5. **Pagos multicanal**
+   - Integración con Mercado Pago (split entre plataforma y partner) y PayPal, incluyendo modo sandbox en entornos de desarrollo.
+   - Soporte para pagos en efectivo con seguimiento administrativo y conciliación en balances.
+
+6. **Catálogo de destinos turísticos**
+   - Administración de atractivos con categorías, coordenadas, imágenes, logos y contenido multilingüe.
+   - Mapas interactivos (Leaflet) con filtros por categoría, iconografía personalizada y tarjetas informativas.
+   - Páginas de detalle con recursos para compartir (QR descargable, redes sociales) y combos relacionados.
+
+7. **Notificaciones y comunicación**
+   - Sistema de notificaciones push para administradores, partners y choferes.
+   - Correos transaccionales para confirmaciones, asignaciones de viajes y recordatorios de pagos.
+
+8. **Soporte multilenguaje**
+   - Gestión de traducciones a través del panel y archivos dedicados.
+   - Selector de idioma en el frontend que persiste la preferencia del usuario.
+
+9. **Herramientas de reporte y exportación**
+   - Generación de PDFs para reservas, traslados, balances y materiales de difusión.
+   - Descarga de flyers con QR para destinos y combos optimizados para redes sociales.
+
+10. **Datos de ejemplo y migraciones**
+    - Script de carga (`phpmyadmin_seed.sql`) con usuarios, servicios, destinos, pagos y balances listos para pruebas.
+    - Conjunto completo de migraciones Doctrine para reproducir el esquema actualizado en nuevos entornos.
+
 ### Configuración de wkhtmltopdf
 
 - La generación de PDFs (solicitudes de reservas, traslados, etc.) utiliza [wkhtmltopdf](https://wkhtmltopdf.org/). Desde la
