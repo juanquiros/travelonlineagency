@@ -50,50 +50,60 @@ Travel Online Agency es una plataforma web diseñada para gestionar servicios de
    npm run dev -- --watch
    ```
 
-## Funcionalidades principales
+## Historias de usuario por rol
 
-1. **Gestión administrativa integral**
-   - Panel centralizado para administrar configuraciones generales, comisiones, preguntas frecuentes y activos de marca.
-   - Dashboard de métricas, exportes en PDF/imagen y monitoreo de actividades clave.
+### Administrador
+- **Gestión operativa diaria**
+  - Como administrador, quiero configurar parámetros globales (marca, comisiones, FAQs, métodos de pago) para mantener alineada la operación de la agencia.
+  - Como administrador, quiero visualizar métricas, exportar reportes en PDF/imagen y auditar balances (partners, choferes y plataforma) para tomar decisiones informadas.
+- **Reservas y servicios**
+  - Como administrador, quiero crear, editar y publicar servicios de alojamiento o traslados con contenido enriquecido para ampliar la oferta comercial.
+  - Como administrador, quiero aprobar, suspender o ajustar servicios cargados por partners y choferes para asegurar la calidad del catálogo.
+- **Pagos y conciliación**
+  - Como administrador, quiero vincular mi cuenta de Mercado Pago, definir comisiones y registrar pagos en efectivo para conciliar ingresos y egresos de la plataforma.
+  - Como administrador, quiero procesar solicitudes de retiro de choferes y partners para mantener actualizado su balance individual.
+- **Ecosistema de usuarios**
+  - Como administrador, quiero invitar y aprobar partners/choferes mediante enlaces privados para controlar quién accede a los paneles especializados.
+  - Como administrador, quiero enviar notificaciones push y correos transaccionales para mantener informados a clientes, partners y choferes.
 
-2. **Reservas de alojamiento (Booking)**
-   - Alta, edición y publicación de servicios con precios, disponibilidad y contenido enriquecido.
-   - Flujo de reservas con confirmaciones por correo, seguimiento en línea y generación de comprobantes en PDF con QR.
-   - Integración con partners externos que pueden cargar sus propios servicios tras aprobación del administrador.
+### Partner de reservas
+- **Onboarding y catálogo**
+  - Como partner, quiero solicitar acceso exclusivo y ser aprobado para publicar mis servicios dentro de la plataforma.
+  - Como partner, quiero gestionar fichas de servicios con precios, calendarios, galerías e información adicional utilizando formularios enriquecidos (TinyMCE, subida de imágenes).
+- **Gestión de reservas**
+  - Como partner, quiero revisar reservas recibidas, desplegar detalles del pasajero y descargar comprobantes PDF/QR para coordinar mis operaciones.
+- **Finanzas del partner**
+  - Como partner, quiero vincular mi cuenta de Mercado Pago, consultar mi balance (ingresos, comisiones, split) y solicitar retiros o registrar pagos en efectivo para controlar mi rentabilidad.
 
-3. **Gestión de partners**
-   - Solicitud de registro mediante enlace privado, aprobación y asignación de comisiones personalizadas.
-   - Panel específico para administrar servicios, reservas asociadas, balances y vinculación con Mercado Pago.
+### Chofer
+- **Ingreso y elegibilidad**
+  - Como chofer, quiero registrarme mediante un enlace privado y completar mis datos (documentación, patente, foto del vehículo) para ser habilitado por el administrador.
+- **Gestión de viajes**
+  - Como chofer, quiero capturar traslados, avanzar paradas, cancelar o finalizar viajes y dejar observaciones para coordinar con el turista y el administrador.
+  - Como chofer, quiero marcar cobros en efectivo asociados a un traslado para que se descuenten automáticamente de mi balance.
+- **Balance y retiros**
+  - Como chofer, quiero configurar mis datos bancarios (CBU/CVU/Alias), revisar movimientos (pagos, ajustes, entregas de efectivo) y descargar mi resumen en PDF para llevar un control personal.
 
-4. **Módulo de traslados y choferes**
-   - Configuración de destinos, combos prearmados y formularios dinámicos para solicitudes personalizadas.
-   - Panel de choferes para capturar viajes, registrar estados, cargar notas y gestionar pagos en efectivo.
-   - Balances individuales con registro de movimientos, solicitudes de retiro y exportes en PDF.
+### Turista / Cliente final
+- **Exploración y descubrimiento**
+  - Como turista, quiero navegar la página de inicio y la sección de destinos para conocer servicios destacados mediante tarjetas informativas, mapas filtrables e imágenes atractivas.
+  - Como turista, quiero ver detalles completos de destinos y combos de traslados (itinerario, mapa, redes sociales, flyers con QR) para planificar mi viaje.
+- **Reservas y pagos**
+  - Como turista, quiero solicitar reservas de alojamiento o traslados personalizados indicando horarios, acompañantes y preferencias para recibir una propuesta acorde a mi viaje.
+  - Como turista, quiero pagar con Mercado Pago, PayPal o efectivo (cuando esté habilitado) y obtener confirmaciones y comprobantes descargables.
+- **Seguimiento y comunicación**
+  - Como turista, quiero rastrear el estado de mi reserva/traslado mediante enlaces con QR y recibir correos/notificaciones que me mantengan informado.
+  - Como turista, quiero calificar la experiencia al finalizar el viaje para brindar feedback a la agencia.
 
-5. **Pagos multicanal**
-   - Integración con Mercado Pago (split entre plataforma y partner) y PayPal, incluyendo modo sandbox en entornos de desarrollo.
-   - Soporte para pagos en efectivo con seguimiento administrativo y conciliación en balances.
+### Equipo de marketing / contenidos
+- **Promoción y difusión**
+  - Como responsable de marketing, quiero descargar flyers verticales con QR y branding oficial para difundir destinos y combos en redes sociales.
+  - Como responsable de marketing, quiero actualizar fácilmente los textos en múltiples idiomas y mantener coherencia visual con el tema gráfico de la plataforma.
 
-6. **Catálogo de destinos turísticos**
-   - Administración de atractivos con categorías, coordenadas, imágenes, logos y contenido multilingüe.
-   - Mapas interactivos (Leaflet) con filtros por categoría, iconografía personalizada y tarjetas informativas.
-   - Páginas de detalle con recursos para compartir (QR descargable, redes sociales) y combos relacionados.
-
-7. **Notificaciones y comunicación**
-   - Sistema de notificaciones push para administradores, partners y choferes.
-   - Correos transaccionales para confirmaciones, asignaciones de viajes y recordatorios de pagos.
-
-8. **Soporte multilenguaje**
-   - Gestión de traducciones a través del panel y archivos dedicados.
-   - Selector de idioma en el frontend que persiste la preferencia del usuario.
-
-9. **Herramientas de reporte y exportación**
-   - Generación de PDFs para reservas, traslados, balances y materiales de difusión.
-   - Descarga de flyers con QR para destinos y combos optimizados para redes sociales.
-
-10. **Datos de ejemplo y migraciones**
-    - Script de carga (`phpmyadmin_seed.sql`) con usuarios, servicios, destinos, pagos y balances listos para pruebas.
-    - Conjunto completo de migraciones Doctrine para reproducir el esquema actualizado en nuevos entornos.
+### Equipo de soporte
+- **Atención al cliente**
+  - Como agente de soporte, quiero buscar reservas por código, revisar detalles y reenviar comprobantes para asistir rápidamente a los clientes.
+  - Como agente de soporte, quiero registrar respuestas a preguntas frecuentes y gestionar notificaciones para coordinar incidencias con el resto del equipo.
 
 ### Configuración de wkhtmltopdf
 
