@@ -13,7 +13,7 @@
                         <th>#</th>
                         <th>Pasajero</th>
                         <th>Tipo</th>
-                        <th>Arribo</th>
+                        <th>Inicio del servicio</th>
                         <th>Estado</th>
                         <th>Total</th>
                         <th>Choferes</th>
@@ -35,6 +35,9 @@
                                 {{ solicitud.arribo|date('d/m/Y H:i') }}
                             {% else %}
                                 <span class="text-muted">Sin dato</span>
+                            {% endif %}
+                            {% if solicitud.cantidadPasajeros %}
+                                <div class="small text-muted">{{ solicitud.cantidadPasajeros }} pax</div>
                             {% endif %}
                         </td>
                         <td>

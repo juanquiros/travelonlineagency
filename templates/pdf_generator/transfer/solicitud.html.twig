@@ -22,11 +22,24 @@
         <tr><th>Nombre</th><td>{{ solicitud.nombrePasajero }}</td></tr>
         <tr><th>Correo</th><td>{{ solicitud.emailPasajero }}</td></tr>
         <tr><th>Teléfono</th><td>{{ solicitud.telefonoPasajero ?: 'No informado' }}</td></tr>
-        <tr><th>Arribo</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
-        <tr><th>Salida</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Cantidad de pasajeros</th><td>{{ solicitud.cantidadPasajeros ?: 'No informado' }}</td></tr>
+        <tr><th>Número de vuelo</th><td>{{ solicitud.vueloPasajero ?: 'No informado' }}</td></tr>
+        <tr><th>Inicio del servicio</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Fin del servicio</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
         <tr><th>Total</th><td>${{ solicitud.precioTotal }}</td></tr>
+        <tr><th>Orden de servicio</th><td>{{ solicitud.codigoServicio ?: 'No generado' }}</td></tr>
         <tr><th>Código de seguimiento</th><td>{{ solicitud.tokenSeguimiento }}</td></tr>
     </table>
+
+    {% if asignacion %}
+        <h2>Conductor asignado</h2>
+        <table>
+            <tr><th>Nombre</th><td>{{ asignacion.chofer.nombreCompleto }}</td></tr>
+            <tr><th>Teléfono</th><td>{{ asignacion.chofer.telefono }}</td></tr>
+            <tr><th>Vehículo</th><td>{{ asignacion.chofer.modeloVehiculo }} - {{ asignacion.chofer.tipoVehiculo }}</td></tr>
+            <tr><th>Patente</th><td>{{ asignacion.chofer.patente }}</td></tr>
+        </table>
+    {% endif %}
 
     <h2>Paradas</h2>
     <table>
@@ -70,5 +83,7 @@
     {% if plataforma %}
         <p class="muted">Emitido por {{ plataforma.nombre }}</p>
     {% endif %}
+
+    <p class="muted">SI EL PASAJERO PRESENTA "NO SHOW" AL ORIGEN DEL SERVICIO TRF, SE CONSIDERA EL SERVICIO COMO PERDIDO SIN DERECHO A REEMBOLSO. ESTA CONDICIÓN APLICA SEGÚN LAS POLÍTICAS DE CANCELACIÓN Y PENALIZACIÓN PARA EL PASAJERO Y EL CHOFER.</p>
 </body>
 </html>

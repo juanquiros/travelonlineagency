@@ -49,8 +49,11 @@
                                             <div>
                                                 <h3 class="h6 mb-1">{{ solicitud.nombrePasajero }}</h3>
                                                 <div class="small text-muted">Código: {{ solicitud.tokenSeguimiento }}</div>
-                                                <div class="small">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
-                                                <div class="small">Salida: {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Inicio del servicio: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Fin del servicio: {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                {% if solicitud.cantidadPasajeros %}
+                                                    <div class="small">Pasajeros: {{ solicitud.cantidadPasajeros }}</div>
+                                                {% endif %}
                                                 <div class="small">Total: ${{ solicitud.precioTotal }}</div>
                                                 <div class="mt-2">
                                                     <a class="btn btn-link p-0" href="{{ path('app_transfer_tracking', {token: solicitud.tokenSeguimiento}) }}" target="_blank">Ver seguimiento público</a>
@@ -143,8 +146,11 @@
                                 {% for solicitud in disponibles %}
                                     <div class="list-group-item">
                                         <div class="fw-semibold">{{ solicitud.nombrePasajero }}</div>
-                                        <div class="small text-muted">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                        <div class="small text-muted">Inicio del servicio: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
                                         <div class="small">Paradas: {{ solicitud.destinos|length }}</div>
+                                        {% if solicitud.cantidadPasajeros %}
+                                            <div class="small">Pasajeros: {{ solicitud.cantidadPasajeros }}</div>
+                                        {% endif %}
                                         <div class="small mb-2">Total: ${{ solicitud.precioTotal }}</div>
                                         <form method="post" action="{{ path('app_driver_capture', {id: solicitud.id}) }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('capture_transfer_' ~ solicitud.id) }}">

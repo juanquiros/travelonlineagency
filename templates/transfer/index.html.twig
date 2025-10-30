@@ -25,8 +25,16 @@
                         <input type="email" class="form-control" name="email" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" name="telefono">
+                        <label class="form-label">Teléfono del pasajero</label>
+                        <input type="tel" class="form-control" name="telefono" value="{{ app.request.get('telefono') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad de pasajeros</label>
+                        <input type="number" class="form-control" name="cantidad_pax" min="1" step="1" value="{{ app.request.get('cantidad_pax') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Número de vuelo</label>
+                        <input type="text" class="form-control" name="numero_vuelo" maxlength="50" value="{{ app.request.get('numero_vuelo') }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Tipo de vehículo</label>
@@ -39,11 +47,11 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Arribo a Iguazú</label>
+                            <label class="form-label">Inicio del servicio</label>
                             <input type="datetime-local" class="form-control" name="arribo">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Salida</label>
+                            <label class="form-label">Fin del servicio</label>
                             <input type="datetime-local" class="form-control" name="salida">
                         </div>
                     </div>

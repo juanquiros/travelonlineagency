@@ -17,9 +17,18 @@
                         {% if solicitud.telefonoPasajero %}
                             <li><strong>Teléfono:</strong> {{ solicitud.telefonoPasajero }}</li>
                         {% endif %}
-                        <li><strong>Arribo:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
-                        <li><strong>Salida:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        {% if solicitud.cantidadPasajeros %}
+                            <li><strong>Cantidad de pasajeros:</strong> {{ solicitud.cantidadPasajeros }}</li>
+                        {% endif %}
+                        {% if solicitud.vueloPasajero %}
+                            <li><strong>Número de vuelo:</strong> {{ solicitud.vueloPasajero }}</li>
+                        {% endif %}
+                        <li><strong>Inicio del servicio:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        <li><strong>Fin del servicio:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Tipo de vehículo solicitado:</strong> {{ solicitud.tipoVehiculo ?: 'No especificado' }}</li>
+                        {% if solicitud.codigoServicio %}
+                            <li><strong>Orden de servicio:</strong> {{ solicitud.codigoServicio }}</li>
+                        {% endif %}
                         <li><strong>Estado:</strong> {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}</li>
                     </ul>
 

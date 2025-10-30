@@ -45,6 +45,12 @@ class TransferRequest
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telefonoPasajero = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $cantidadPasajeros = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $vueloPasajero = null;
+
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $tipoVehiculo = null;
 
@@ -62,6 +68,9 @@ class TransferRequest
 
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $tokenSeguimiento = null;
+
+    #[ORM\Column(length: 40, unique: true, nullable: true)]
+    private ?string $codigoServicio = null;
 
     #[ORM\ManyToOne]
     private ?Usuario $usuario = null;
@@ -209,6 +218,32 @@ class TransferRequest
         return $this;
     }
 
+    public function getCantidadPasajeros(): ?int
+    {
+        return $this->cantidadPasajeros;
+    }
+
+    public function setCantidadPasajeros(?int $cantidadPasajeros): self
+    {
+        $this->cantidadPasajeros = $cantidadPasajeros;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getVueloPasajero(): ?string
+    {
+        return $this->vueloPasajero;
+    }
+
+    public function setVueloPasajero(?string $vueloPasajero): self
+    {
+        $this->vueloPasajero = $vueloPasajero;
+        $this->touch();
+
+        return $this;
+    }
+
     public function getTipoVehiculo(): ?string
     {
         return $this->tipoVehiculo;
@@ -282,6 +317,19 @@ class TransferRequest
     public function setTokenSeguimiento(?string $tokenSeguimiento): self
     {
         $this->tokenSeguimiento = $tokenSeguimiento;
+
+        return $this;
+    }
+
+    public function getCodigoServicio(): ?string
+    {
+        return $this->codigoServicio;
+    }
+
+    public function setCodigoServicio(?string $codigoServicio): self
+    {
+        $this->codigoServicio = $codigoServicio;
+        $this->touch();
 
         return $this;
     }

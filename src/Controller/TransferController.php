@@ -277,9 +277,23 @@ final class TransferController extends AbstractController
         $nombre = trim((string) $request->request->get('nombre'));
         $email = trim((string) $request->request->get('email'));
         $telefono = trim((string) $request->request->get('telefono'));
+        $cantidadPasajerosRaw = $request->request->get('cantidad_pax');
+        $cantidadPasajeros = null;
+        if ($cantidadPasajerosRaw !== null && $cantidadPasajerosRaw !== '') {
+            $cantidadPasajeros = (int) $cantidadPasajerosRaw;
+        }
+        $numeroVuelo = trim((string) $request->request->get('numero_vuelo'));
         $vehicleType = trim((string) $request->request->get('tipo_vehiculo'));
         if ($nombre === '' || $email === '') {
             $errores[] = 'Completá tu nombre y correo electrónico para avanzar.';
+        }
+
+        if ($telefono === '') {
+            $errores[] = 'Ingresá un teléfono de contacto para el pasajero.';
+        }
+
+        if ($cantidadPasajeros === null || $cantidadPasajeros <= 0) {
+            $errores[] = 'Indicá la cantidad de pasajeros que viajarán en el traslado.';
         }
 
         if ($vehicleType === '') {
@@ -315,10 +329,15 @@ final class TransferController extends AbstractController
         $solicitud->setNombrePasajero($nombre);
         $solicitud->setEmailPasajero($email);
         $solicitud->setTelefonoPasajero($telefono !== '' ? $telefono : null);
+        $solicitud->setCantidadPasajeros($cantidadPasajeros);
+        $solicitud->setVueloPasajero($numeroVuelo !== '' ? $numeroVuelo : null);
         $solicitud->setTipoVehiculo($vehicleType !== '' ? $vehicleType : null);
         $solicitud->setArribo($arribo);
         $solicitud->setSalida($salida);
         $solicitud->setTokenSeguimiento(bin2hex(random_bytes(12)));
+        if (!$solicitud->getCodigoServicio()) {
+            $solicitud->setCodigoServicio($this->generarCodigoServicio());
+        }
         $solicitud->setNotasCliente($request->request->get('notas'));
         $solicitud->setMoneda('ARS');
         if ($this->getUser() !== null) {
@@ -378,6 +397,17 @@ final class TransferController extends AbstractController
         $merged = array_unique(array_filter(array_merge($configured, $driverValues)));
 
         return array_values($merged);
+    }
+
+    private function generarCodigoServicio(): string
+    {
+        $repository = $this->em->getRepository(TransferRequest::class);
+
+        do {
+            $codigo = sprintf('TRF-%s', strtoupper(bin2hex(random_bytes(3))));
+        } while ($repository->findOneBy(['codigoServicio' => $codigo]) instanceof TransferRequest);
+
+        return $codigo;
     }
 
     private function agregarDestinoSolicitud(TransferRequest $solicitud, ?TransferDestination $destino, int $posicion): void
