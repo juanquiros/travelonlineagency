@@ -13,6 +13,13 @@ parameters:
     img_transfer: '%kernel.project_dir%/public/img/transfer'
     img_destinos: '%kernel.project_dir%/public/img/destinos'
     img_destinos_logo: '%kernel.project_dir%/public/img/destinos/logos'
+    img_transfer_showcase: '%kernel.project_dir%/public/img/transfer/showcase'
+    transfer_vehicle_types:
+        - 'Sedán'
+        - 'SUV'
+        - 'Van'
+        - 'Minibús'
+        - 'Premium'
     env(WKHTMLTOPDF_PATH): ''
     env(WKHTMLTOIMAGE_PATH): ''
 services:

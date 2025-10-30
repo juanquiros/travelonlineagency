@@ -28,6 +28,15 @@
                         <label class="form-label">Teléfono</label>
                         <input type="text" class="form-control" name="telefono">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de vehículo</label>
+                        <select class="form-select" name="tipo_vehiculo" required>
+                            <option value="">Seleccioná el tipo de vehículo</option>
+                            {% for tipo in vehicleTypes %}
+                                <option value="{{ tipo }}"{% if app.request.get('tipo_vehiculo') == tipo %} selected{% endif %}>{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Arribo a Iguazú</label>

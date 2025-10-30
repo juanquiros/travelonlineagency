@@ -10,6 +10,8 @@ use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
+use App\Entity\TransferRequest;
+use App\Entity\TransferShowcase;
 use App\Entity\TraduccionPlataforma;
 use App\Form\SolicitudReservaType;
 use App\Services\LanguageService;
@@ -43,8 +45,14 @@ class InicioController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $usuario = $this->getUser();
         $transferCombos = $this->em->getRepository(TransferCombo::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
-        $transferDestinations = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
-        $destinosTuristicos = $this->em->getRepository(TransferDestination::class)->findActivosConCategoria();
+
+        $destinosRepository = $this->em->getRepository(TransferDestination::class);
+        $destinosMapa = $destinosRepository->findActivosConCategoria();
+        $destinosDestacados = $destinosRepository->findDestacados(3);
+        $destinosTarjetas = array_slice($destinosMapa, 0, 6);
+
+        $transferShowcases = $this->em->getRepository(TransferShowcase::class)->findDestacados(3);
+        $testimoniosTraslados = $this->em->getRepository(TransferRequest::class)->findLatestTestimonials(6);
 
 
         $cfg_bookings['titulo'] = $this->em->getRepository(TraduccionPlataforma::class)->findOneBy(['key_name'=>'app_inicio:bookings:titulo','lenguaje'=>$idioma->getId()]);
@@ -74,8 +82,11 @@ class InicioController extends AbstractController
             'cfg_traslados'=>$cfg_traslados,
             'usuario'=>$usuario,
             'transferCombos'=>$transferCombos,
-            'transferDestinations'=>$transferDestinations,
-            'destinosTuristicos' => $destinosTuristicos,
+            'transferShowcases' => $transferShowcases,
+            'destinosMapa' => $destinosMapa,
+            'destinosDestacados' => $destinosDestacados,
+            'destinosTarjetas' => $destinosTarjetas,
+            'testimoniosTraslados' => $testimoniosTraslados,
             'customTransfersEnabled' => (bool) $plataforma->isTrasladosODLibres(),
         ]);
     }

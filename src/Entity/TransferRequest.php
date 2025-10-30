@@ -45,6 +45,9 @@ class TransferRequest
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telefonoPasajero = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $tipoVehiculo = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $arribo = null;
 
@@ -65,6 +68,15 @@ class TransferRequest
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notasCliente = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $calificacion = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $testimonioComentario = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $testimonioCreadoEn = null;
 
     #[ORM\Column]
     private \DateTimeImmutable $creadoEn;
@@ -197,6 +209,19 @@ class TransferRequest
         return $this;
     }
 
+    public function getTipoVehiculo(): ?string
+    {
+        return $this->tipoVehiculo;
+    }
+
+    public function setTipoVehiculo(?string $tipoVehiculo): self
+    {
+        $this->tipoVehiculo = $tipoVehiculo;
+        $this->touch();
+
+        return $this;
+    }
+
     public function getArribo(): ?\DateTimeInterface
     {
         return $this->arribo;
@@ -281,6 +306,49 @@ class TransferRequest
     public function setNotasCliente(?string $notasCliente): self
     {
         $this->notasCliente = $notasCliente;
+
+        return $this;
+    }
+
+    public function getCalificacion(): ?int
+    {
+        return $this->calificacion;
+    }
+
+    public function setCalificacion(?int $calificacion): self
+    {
+        if ($calificacion !== null) {
+            $calificacion = max(1, min(5, $calificacion));
+        }
+
+        $this->calificacion = $calificacion;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getTestimonioComentario(): ?string
+    {
+        return $this->testimonioComentario;
+    }
+
+    public function setTestimonioComentario(?string $testimonioComentario): self
+    {
+        $this->testimonioComentario = $testimonioComentario;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getTestimonioCreadoEn(): ?\DateTimeImmutable
+    {
+        return $this->testimonioCreadoEn;
+    }
+
+    public function setTestimonioCreadoEn(?\DateTimeImmutable $testimonioCreadoEn): self
+    {
+        $this->testimonioCreadoEn = $testimonioCreadoEn;
+        $this->touch();
 
         return $this;
     }

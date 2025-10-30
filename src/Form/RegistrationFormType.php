@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Usuario;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -58,6 +59,10 @@ class RegistrationFormType extends AbstractType
         }
 
         if ($options['driver_mode']) {
+            $vehicleChoices = [];
+            foreach ($options['vehicle_type_choices'] as $choice) {
+                $vehicleChoices[$choice] = $choice;
+            }
             $builder
                 ->add('driverDocumento', TextType::class, [
                     'label' => 'Documento',
@@ -78,6 +83,15 @@ class RegistrationFormType extends AbstractType
                     'mapped' => false,
                     'constraints' => [
                         new NotBlank(['message' => 'Ingresa la patente del vehículo']),
+                    ],
+                ])
+                ->add('driverTipoVehiculo', ChoiceType::class, [
+                    'label' => 'Tipo de vehículo',
+                    'mapped' => false,
+                    'choices' => $vehicleChoices,
+                    'placeholder' => 'Seleccioná el tipo de vehículo',
+                    'constraints' => [
+                        new NotBlank(['message' => 'Seleccioná el tipo de vehículo con el que operás']),
                     ],
                 ])
                 ->add('driverModeloVehiculo', TextType::class, [
@@ -107,8 +121,10 @@ class RegistrationFormType extends AbstractType
             'data_class' => Usuario::class,
             'show_partner_checkbox' => true,
             'driver_mode' => false,
+            'vehicle_type_choices' => [],
         ]);
         $resolver->setAllowedTypes('show_partner_checkbox', 'bool');
         $resolver->setAllowedTypes('driver_mode', 'bool');
+        $resolver->setAllowedTypes('vehicle_type_choices', 'array');
     }
 }

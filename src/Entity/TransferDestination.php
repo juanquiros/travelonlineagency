@@ -45,6 +45,12 @@ class TransferDestination
     #[ORM\Column]
     private bool $activo = true;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $destacadoInicio = false;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    private int $ordenDestacado = 0;
+
     #[ORM\Column(length: 255, nullable: true, name: 'imagen_portada')]
     private ?string $imagenPrincipal = null;
 
@@ -193,6 +199,30 @@ class TransferDestination
     public function setActivo(bool $activo): self
     {
         $this->activo = $activo;
+
+        return $this;
+    }
+
+    public function isDestacadoInicio(): bool
+    {
+        return $this->destacadoInicio;
+    }
+
+    public function setDestacadoInicio(bool $destacadoInicio): self
+    {
+        $this->destacadoInicio = $destacadoInicio;
+
+        return $this;
+    }
+
+    public function getOrdenDestacado(): int
+    {
+        return $this->ordenDestacado;
+    }
+
+    public function setOrdenDestacado(int $ordenDestacado): self
+    {
+        $this->ordenDestacado = $ordenDestacado;
 
         return $this;
     }

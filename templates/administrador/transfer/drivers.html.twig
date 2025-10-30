@@ -76,7 +76,9 @@
                                 <dl class="row mb-0 small">
                                     <dt class="col-sm-3">Correo</dt>
                                     <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
-                                    <dt class="col-sm-3">Vehículo</dt>
+                                    <dt class="col-sm-3">Tipo de vehículo</dt>
+                                    <dd class="col-sm-9">{{ driver.tipoVehiculo }}</dd>
+                                    <dt class="col-sm-3">Modelo</dt>
                                     <dd class="col-sm-9">{{ driver.modeloVehiculo }} ({{ driver.patente }})</dd>
                                     <dt class="col-sm-3">CBU</dt>
                                     <dd class="col-sm-9">{{ driver.cbu ?: 'No informado' }}</dd>
@@ -124,7 +126,10 @@
                                     {{ driver.nombreCompleto }}
                                 </button>
                             </td>
-                            <td>{{ driver.modeloVehiculo }} ({{ driver.patente }})</td>
+                            <td>
+                                <div class="fw-semibold">{{ driver.tipoVehiculo }}</div>
+                                <div class="small text-muted">{{ driver.modeloVehiculo }} ({{ driver.patente }})</div>
+                            </td>
                             <td>{{ driver.telefono }}</td>
                             <td class="text-end">
                                 <form method="post" action="{{ path('app_admin_driver_state', {id: driver.id}) }}" class="d-inline">
@@ -138,6 +143,8 @@
                                 <dl class="row mb-0 small">
                                     <dt class="col-sm-3">Correo</dt>
                                     <dd class="col-sm-9">{{ driver.usuario.email }}</dd>
+                                    <dt class="col-sm-3">Tipo de vehículo</dt>
+                                    <dd class="col-sm-9">{{ driver.tipoVehiculo }}</dd>
                                     <dt class="col-sm-3">Notas</dt>
                                     <dd class="col-sm-9">{{ driver.notas ?: '—' }}</dd>
                                     <dt class="col-sm-3">CBU</dt>

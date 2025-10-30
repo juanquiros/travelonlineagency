@@ -34,6 +34,9 @@ class DriverProfile
     #[ORM\Column(length: 120)]
     private string $modeloVehiculo = '';
 
+    #[ORM\Column(length: 100)]
+    private string $tipoVehiculo = '';
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fotoVehiculo = null;
 
@@ -144,6 +147,19 @@ class DriverProfile
     public function setModeloVehiculo(string $modeloVehiculo): self
     {
         $this->modeloVehiculo = $modeloVehiculo;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getTipoVehiculo(): string
+    {
+        return $this->tipoVehiculo;
+    }
+
+    public function setTipoVehiculo(string $tipoVehiculo): self
+    {
+        $this->tipoVehiculo = $tipoVehiculo;
         $this->touch();
 
         return $this;

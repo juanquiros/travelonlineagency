@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\DriverProfile;
 use App\Entity\Plataforma;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
@@ -11,6 +12,7 @@ use App\Entity\TransferRequest;
 use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\CashPayment;
+use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
 use App\Services\mailerServer;
@@ -41,9 +43,10 @@ final class TransferController extends AbstractController
         $destinos = $this->em->getRepository(TransferDestination::class)->findBy(['activo' => true], ['nombre' => 'ASC']);
         $campos = $this->em->getRepository(TransferFormField::class)->findForForm();
         $customEnabled = (bool) $plataforma->isTrasladosODLibres();
+        $vehicleTypes = $this->resolveVehicleTypes();
 
         if ($request->isMethod('POST')) {
-            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled);
+            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $vehicleTypes);
             if ($solicitud instanceof TransferRequest) {
                 $this->em->persist($solicitud);
                 $this->em->flush();
@@ -69,6 +72,7 @@ final class TransferController extends AbstractController
             'destinos' => $destinos,
             'campos' => $campos,
             'customEnabled' => $customEnabled,
+            'vehicleTypes' => $vehicleTypes,
         ]);
     }
 
@@ -201,6 +205,27 @@ final class TransferController extends AbstractController
             ['createdAt' => 'DESC']
         );
 
+        $ratingForm = null;
+        if ($solicitud->getEstado() === TransferRequest::ESTADO_COMPLETADO) {
+            $ratingForm = $this->createForm(TransferRatingType::class, [
+                'rating' => $solicitud->getCalificacion(),
+                'comment' => $solicitud->getTestimonioComentario(),
+            ]);
+            $ratingForm->handleRequest($request);
+
+            if ($ratingForm->isSubmitted() && $ratingForm->isValid()) {
+                $data = $ratingForm->getData();
+                $solicitud->setCalificacion((int) $data['rating']);
+                $solicitud->setTestimonioComentario(trim((string) $data['comment']));
+                $solicitud->setTestimonioCreadoEn(new \DateTimeImmutable());
+                $this->em->flush();
+
+                $this->addFlash('success', '¡Gracias por calificar tu traslado!');
+
+                return $this->redirectToRoute('app_transfer_tracking', ['token' => $token]);
+            }
+        }
+
         return $this->render('transfer/tracking.html.twig', [
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
@@ -211,10 +236,11 @@ final class TransferController extends AbstractController
             'asignacion' => $asignacionActiva,
             'opcionesPago' => $opciones,
             'pagoEfectivo' => $cashPayment,
+            'ratingForm' => $ratingForm ? $ratingForm->createView() : null,
         ]);
     }
 
-    private function crearSolicitud(Request $request, array $campos, bool $customEnabled): ?TransferRequest
+    private function crearSolicitud(Request $request, array $campos, bool $customEnabled, array $vehicleTypes): ?TransferRequest
     {
         $tipo = $request->request->get('tipo', 'combo');
         $combo = null;
@@ -251,8 +277,15 @@ final class TransferController extends AbstractController
         $nombre = trim((string) $request->request->get('nombre'));
         $email = trim((string) $request->request->get('email'));
         $telefono = trim((string) $request->request->get('telefono'));
+        $vehicleType = trim((string) $request->request->get('tipo_vehiculo'));
         if ($nombre === '' || $email === '') {
             $errores[] = 'Completá tu nombre y correo electrónico para avanzar.';
+        }
+
+        if ($vehicleType === '') {
+            $errores[] = 'Seleccioná el tipo de vehículo que preferís para tu traslado.';
+        } elseif (!in_array($vehicleType, $vehicleTypes, true)) {
+            $errores[] = 'Seleccioná un tipo de vehículo válido.';
         }
 
         $arribo = $this->parseDateTime($request->request->get('arribo'));
@@ -282,6 +315,7 @@ final class TransferController extends AbstractController
         $solicitud->setNombrePasajero($nombre);
         $solicitud->setEmailPasajero($email);
         $solicitud->setTelefonoPasajero($telefono !== '' ? $telefono : null);
+        $solicitud->setTipoVehiculo($vehicleType !== '' ? $vehicleType : null);
         $solicitud->setArribo($arribo);
         $solicitud->setSalida($salida);
         $solicitud->setTokenSeguimiento(bin2hex(random_bytes(12)));
@@ -329,6 +363,21 @@ final class TransferController extends AbstractController
         }
 
         return $solicitud;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function resolveVehicleTypes(): array
+    {
+        $repository = $this->em->getRepository(DriverProfile::class);
+        $driverValues = method_exists($repository, 'findDistinctVehicleTypes')
+            ? $repository->findDistinctVehicleTypes()
+            : [];
+        $configured = (array) $this->getParameter('transfer_vehicle_types');
+        $merged = array_unique(array_filter(array_merge($configured, $driverValues)));
+
+        return array_values($merged);
     }
 
     private function agregarDestinoSolicitud(TransferRequest $solicitud, ?TransferDestination $destino, int $posicion): void

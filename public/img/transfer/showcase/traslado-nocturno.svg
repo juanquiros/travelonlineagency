@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="night" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#121726"/>
+      <stop offset="100%" stop-color="#1d3557"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#night)"/>
+  <g fill="#f7c948" opacity="0.85">
+    <circle cx="1020" cy="130" r="70"/>
+    <circle cx="180" cy="120" r="6"/>
+    <circle cx="260" cy="80" r="4"/>
+    <circle cx="340" cy="160" r="5"/>
+    <circle cx="420" cy="90" r="7"/>
+  </g>
+  <g fill="#ffffff" opacity="0.3">
+    <path d="M0 520h1200v40H0z"/>
+    <path d="M60 500c120-80 260-120 420-80 160 40 300 20 420-40 120-60 200-80 300-40v120H60z"/>
+  </g>
+  <g fill="#ffffff">
+    <rect x="220" y="440" width="520" height="70" rx="20" opacity="0.2"/>
+    <rect x="280" y="420" width="520" height="70" rx="30" opacity="0.4"/>
+    <rect x="340" y="400" width="520" height="70" rx="35"/>
+    <circle cx="420" cy="480" r="36" fill="#0c2d4a"/>
+    <circle cx="700" cy="480" r="36" fill="#0c2d4a"/>
+  </g>
+  <text x="120" y="220" fill="#ffffff" font-family="'Montserrat', sans-serif" font-size="70" font-weight="700">Traslado nocturno</text>
+  <text x="120" y="280" fill="#a8dadc" font-family="'Montserrat', sans-serif" font-size="34">Servicio ejecutivo y chofer profesional</text>
+</svg>

@@ -70,4 +70,25 @@ class TransferDestinationRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * @return TransferDestination[]
+     */
+    public function findDestacados(int $limit = 3): array
+    {
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.categoria', 'c')
+            ->addSelect('c')
+            ->leftJoin('c.iconDefinition', 'icon')
+            ->addSelect('icon')
+            ->andWhere('d.activo = :activo')
+            ->andWhere('d.destacadoInicio = :destacado')
+            ->setParameter('activo', true)
+            ->setParameter('destacado', true)
+            ->orderBy('d.ordenDestacado', 'ASC')
+            ->addOrderBy('d.nombre', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

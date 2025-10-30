@@ -53,4 +53,23 @@ class TransferRequestRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return TransferRequest[]
+     */
+    public function findLatestTestimonials(int $limit = 6): array
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.calificacion IS NOT NULL')
+            ->andWhere('r.testimonioComentario IS NOT NULL')
+            ->andWhere('r.testimonioComentario <> :vacio')
+            ->andWhere('r.estado = :estado')
+            ->setParameter('vacio', '')
+            ->setParameter('estado', TransferRequest::ESTADO_COMPLETADO)
+            ->orderBy('r.testimonioCreadoEn', 'DESC')
+            ->addOrderBy('r.creadoEn', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

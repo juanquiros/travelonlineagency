@@ -144,6 +144,12 @@
                             </a>
                         </li>
                         <li>
+                            <a {% if menu['transfer_showcase'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_showcase') }}">
+                                <ion-icon name="images-outline"></ion-icon>
+                                <span>Material destacado</span>
+                            </a>
+                        </li>
+                        <li>
                             <a {% if menu['transfer_destinations'] %}id="inbox"{% endif %} href="{{ path('app_admin_transfer_destinations') }}">
                                 <ion-icon name="location-outline"></ion-icon>
                                 <span>Destinos</span>

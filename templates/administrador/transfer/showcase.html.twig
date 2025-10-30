@@ -1,0 +1,112 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Material destacado de traslados{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ editing ? 'Editar pieza destacada' : 'Nueva pieza destacada' }}</h2>
+                {{ form_start(form) }}
+                {{ form_row(form.titulo) }}
+                {{ form_row(form.descripcion) }}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.tipo) }}</div>
+                    <div class="col-md-6">{{ form_row(form.posicion) }}</div>
+                </div>
+                <div class="border rounded p-3 mb-3 bg-light-subtle">
+                    <h3 class="h6 text-uppercase text-muted mb-2">Contenido</h3>
+                    <p class="small text-muted mb-2">Subí una imagen o pegá la URL del video según el tipo seleccionado.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">{{ form_row(form.imagenFile) }}</div>
+                        <div class="col-md-6">{{ form_row(form.videoUrl) }}</div>
+                    </div>
+                </div>
+                {{ form_row(form.destacado) }}
+                <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear pieza' }}</button>
+                {{ form_end(form) }}
+                {% if editing %}
+                    <a class="btn btn-link mt-2" href="{{ path('app_admin_transfer_showcase') }}">Crear una nueva pieza</a>
+                {% endif %}
+                <p class="small text-muted mt-3 mb-0">Podés destacar hasta tres piezas a la vez. Las que tengan un orden más bajo aparecerán primero.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Listado de piezas</h2>
+                    <span class="badge bg-secondary-subtle text-secondary">{{ items|length }} en total</span>
+                </div>
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Vista previa</th>
+                            <th>Título</th>
+                            <th>Orden</th>
+                            <th>Destacado</th>
+                            <th class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for piece in items %}
+                        <tr>
+                            <td>
+                                {% if piece.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') %}
+                                    <span class="badge bg-info">Video</span>
+                                {% else %}
+                                    <span class="badge bg-success">Imagen</span>
+                                {% endif %}
+                            </td>
+                            <td style="width: 160px;">
+                                {% if piece.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and piece.imagen %}
+                                    <img src="{{ asset('img/transfer/showcase/' ~ piece.imagen) }}" alt="{{ piece.titulo }}" class="img-fluid rounded" style="max-height: 90px; object-fit: cover;">
+                                {% elseif piece.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') and piece.videoUrl %}
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ piece.videoUrl }}" target="_blank" rel="noopener">Ver video</a>
+                                {% else %}
+                                    <span class="text-muted small">Sin vista previa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ piece.titulo }}</div>
+                                {% if piece.descripcion %}
+                                    <div class="small text-muted">{{ piece.descripcion }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ piece.posicion }}</td>
+                            <td>
+                                {% if piece.destacado %}
+                                    <span class="badge bg-warning text-dark">Publicado</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted">Oculto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_showcase_edit', {id: piece.id}) }}">Editar</a>
+                                    <form method="post" action="{{ path('app_admin_transfer_showcase_toggle', {id: piece.id}) }}" class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('toggle_showcase_' ~ piece.id) }}">
+                                        <button class="btn btn-sm btn-outline-secondary" type="submit">{{ piece.destacado ? 'Ocultar' : 'Destacar' }}</button>
+                                    </form>
+                                    <form method="post" action="{{ path('app_admin_transfer_showcase_delete', {id: piece.id}) }}" class="d-inline" onsubmit="return confirm('¿Seguro que querés eliminar esta pieza?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_showcase_' ~ piece.id) }}">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Todavía no cargaste piezas destacadas.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

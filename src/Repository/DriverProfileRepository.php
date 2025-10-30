@@ -28,4 +28,21 @@ class DriverProfileRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return string[]
+     */
+    public function findDistinctVehicleTypes(): array
+    {
+        $results = $this->createQueryBuilder('d')
+            ->select('DISTINCT d.tipoVehiculo AS tipo')
+            ->andWhere('d.tipoVehiculo IS NOT NULL')
+            ->andWhere('d.tipoVehiculo <> :vacio')
+            ->setParameter('vacio', '')
+            ->orderBy('d.tipoVehiculo', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(static fn(array $row) => (string) $row['tipo'], $results);
+    }
 }

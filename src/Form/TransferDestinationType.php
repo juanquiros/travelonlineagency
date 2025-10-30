@@ -9,6 +9,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -140,6 +141,19 @@ class TransferDestinationType extends AbstractType
             ->add('activo', CheckboxType::class, [
                 'label' => 'Disponible para traslados',
                 'required' => false,
+            ])
+            ->add('destacadoInicio', CheckboxType::class, [
+                'label' => 'Mostrar en destacados de la página de inicio',
+                'required' => false,
+            ])
+            ->add('ordenDestacado', IntegerType::class, [
+                'label' => 'Orden de destaque',
+                'required' => false,
+                'attr' => [
+                    'min' => 0,
+                    'step' => 1,
+                ],
+                'help' => 'Usá valores bajos para aparecer primero (0, 1, 2…).',
             ]);
     }
 

@@ -75,9 +75,11 @@ class RegistrationController extends AbstractController
         bool $driverMode
     ): Response {
         $user = new Usuario();
+        $vehicleTypes = (array) $this->getParameter('transfer_vehicle_types');
         $form = $this->createForm(RegistrationFormType::class, $user, [
             'show_partner_checkbox' => $showPartnerCheckbox,
             'driver_mode' => $driverMode,
+            'vehicle_type_choices' => $vehicleTypes,
         ]);
         $form->handleRequest($request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
@@ -115,6 +117,7 @@ class RegistrationController extends AbstractController
                 $driverProfile->setTelefono((string) $form->get('driverTelefono')->getData());
                 $driverProfile->setPatente((string) $form->get('driverPatente')->getData());
                 $driverProfile->setModeloVehiculo((string) $form->get('driverModeloVehiculo')->getData());
+                $driverProfile->setTipoVehiculo((string) $form->get('driverTipoVehiculo')->getData());
                 $driverProfile->setNotas($form->get('driverNotas')->getData());
 
                 /** @var UploadedFile|null $foto */

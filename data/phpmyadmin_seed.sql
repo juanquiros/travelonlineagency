@@ -28,6 +28,8 @@ DELETE FROM transfer_combo;
 ALTER TABLE transfer_combo AUTO_INCREMENT = 1;
 DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
+DELETE FROM transfer_showcase;
+ALTER TABLE transfer_showcase AUTO_INCREMENT = 1;
 DELETE FROM transfer_form_field;
 ALTER TABLE transfer_form_field AUTO_INCREMENT = 1;
 DELETE FROM driver_profile;
@@ -217,10 +219,10 @@ INSERT INTO booking_partner (id, habilitado, usuario_id, comision_plataforma, me
 
 -- Choferes registrados
 INSERT INTO driver_profile (
-  id, usuario_id, nombre_completo, documento, telefono, patente, modelo_vehiculo,
+  id, usuario_id, nombre_completo, documento, telefono, patente, modelo_vehiculo, tipo_vehiculo,
   foto_vehiculo, aprobado, notas, commission_percentage, cbu, cvu, bank_alias, creado_en, actualizado_en
 ) VALUES
-  (1, 5, 'Diego Chofer', '32.123.456', '+54 9 3757 111222', 'AB123CD', 'Toyota Corolla 2022',
+  (1, 5, 'Diego Chofer', '32.123.456', '+54 9 3757 111222', 'AB123CD', 'Toyota Corolla 2022', 'SUV',
    'driver-diego.jpg', 1, 'Disponible para traslados aeropuerto-hotel.', 15.00,
    '1230001230001230001234', '0000000000000000000001', 'chofer.diego', '2024-11-20 09:00:00', '2024-11-20 09:00:00');
 
@@ -393,8 +395,8 @@ DELETE FROM transfer_destination;
 ALTER TABLE transfer_destination AUTO_INCREMENT = 1;
 INSERT INTO transfer_destination (
   id, nombre, direccion, coordenadas_lat, coordenadas_lng, categoria_id,
-  descripcion_corta, descripcion, tarifa_base, activo, imagen_portada, logo,
-  instagram, x, facebook, whatsapp, sitio_web
+  descripcion_corta, descripcion, tarifa_base, activo, destacado_inicio, orden_destacado,
+  imagen_portada, logo, instagram, x, facebook, whatsapp, sitio_web
 ) VALUES
   (1,
    'Parque Nacional Iguazú',
@@ -405,6 +407,8 @@ INSERT INTO transfer_destination (
    'El hogar de las Cataratas, senderos selváticos y fauna autóctona.',
    '<p>Explorá las pasarelas superior e inferior, la Garganta del Diablo y los circuitos náuticos. El parque ofrece servicios de gastronomía, tiendas de recuerdos y traslados internos.</p>',
    25.00,
+   1,
+   1,
    1,
    'parque-nacional.svg',
    'parque-nacional-logo.svg',
@@ -424,6 +428,8 @@ INSERT INTO transfer_destination (
    '<p>Disfrutá del show de aguas danzantes al atardecer, feria de artesanías y gastronomía regional.</p>',
    18.50,
    1,
+   1,
+   2,
    'hito-tres-fronteras.svg',
    'hito-tres-fronteras-logo.svg',
    'https://www.instagram.com/hitotresfronteras',
@@ -442,6 +448,8 @@ INSERT INTO transfer_destination (
    '<p>Centro de rehabilitación de animales silvestres rescatados. Ideal para descubrir la biodiversidad de la región.</p>',
    22.00,
    1,
+   1,
+   3,
    'guira-oga.svg',
    'guira-oga-logo.svg',
    'https://www.instagram.com/guiraoga',
@@ -460,6 +468,8 @@ INSERT INTO transfer_destination (
    '<p>Una experiencia íntima para observar aves y disfrutar de un café en medio de la vegetación.</p>',
    15.00,
    1,
+   0,
+   0,
    'jardin-picaflores.svg',
    'jardin-picaflores-logo.svg',
    'https://www.instagram.com/jardindelospicaflores',
@@ -478,6 +488,8 @@ INSERT INTO transfer_destination (
    '<p>Abierto todos los días con propuestas gastronómicas, perfumería, tecnología y moda.</p>',
    20.00,
    1,
+   0,
+   0,
    'duty-free-iguazu.svg',
    'duty-free-iguazu-logo.svg',
    'https://www.instagram.com/dutyfreeiguazu',
@@ -498,6 +510,48 @@ INSERT INTO transfer_combo_destination (id, combo_id, destino_id, posicion) VALU
   (3, 2, 1, 1),
   (4, 2, 3, 2);
 
+-- Piezas destacadas para la página de inicio de traslados
+INSERT INTO transfer_showcase (
+  id, titulo, descripcion, tipo, imagen, video_url, video_embed,
+  destacado, posicion, creado_en, actualizado_en
+) VALUES
+  (1,
+   'Bienvenida a Iguazú',
+   'Un vistazo panorámico a las Cataratas para inspirar a tus viajeros.',
+   'image',
+   'bienvenida-iguazu.svg',
+   NULL,
+   NULL,
+   1,
+   1,
+   '2024-11-19 09:00:00',
+   '2024-11-19 09:00:00'
+  ),
+  (2,
+   'Traslado Premium nocturno',
+   'Luces de la ciudad y servicio ejecutivo para llegadas nocturnas.',
+   'image',
+   'traslado-nocturno.svg',
+   NULL,
+   NULL,
+   1,
+   2,
+   '2024-11-19 10:30:00',
+   '2024-11-19 10:30:00'
+  ),
+  (3,
+   'Tips para tu viaje',
+   'Consejos prácticos para aprovechar Iguazú al máximo.',
+   'video',
+   NULL,
+   'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+   'https://www.youtube.com/embed/dQw4w9WgXcQ',
+   1,
+   3,
+   '2024-11-19 11:45:00',
+   '2024-11-19 11:45:00'
+  );
+
 -- Campos adicionales configurables
 INSERT INTO transfer_form_field (id, clave, etiqueta, tipo, requerido, opciones, orden) VALUES
   (1, 'vuelo', 'Número de vuelo', 'text', 1, NULL, 1),
@@ -506,15 +560,18 @@ INSERT INTO transfer_form_field (id, clave, etiqueta, tipo, requerido, opciones,
 -- Solicitudes de traslado de ejemplo
 INSERT INTO transfer_request (
   id, combo_id, usuario_id, tipo, precio_total, moneda,
-  nombre_pasajero, email_pasajero, telefono_pasajero,
+  nombre_pasajero, email_pasajero, telefono_pasajero, tipo_vehiculo,
   arribo, salida, estado, datos_extra, token_seguimiento,
-  notas_cliente, creado_en, actualizado_en
+  notas_cliente, calificacion, testimonio_comentario, testimonio_creado_en,
+  creado_en, actualizado_en
 ) VALUES
-  (1, 1, 4, 'combo', 40.00, 'ARS', 'Carla Cliente', 'carla@example.com', '+54 9 3757 333444',
-   '2024-12-01 14:30:00', '2024-12-05 11:00:00', 'en_curso', '{"vuelo":"AR1820"}', 'TRK123ABCDEF', 'Llega con equipaje voluminoso.',
-   '2024-11-20 08:30:00', '2024-11-20 10:00:00'),
-  (2, NULL, 4, 'custom', 40.00, 'ARS', 'Lucas Pereyra', 'lucas@example.com', '+54 9 3757 555666',
+  (1, 1, 4, 'combo', 40.00, 'ARS', 'Carla Cliente', 'carla@example.com', '+54 9 3757 333444', 'SUV',
+   '2024-12-01 14:30:00', '2024-12-05 11:00:00', 'completado', '{"vuelo":"AR1820"}', 'TRK123ABCDEF', 'Llega con equipaje voluminoso.',
+   5, 'Servicio impecable, chofer puntual y muy cordial.', '2024-11-20 12:15:00',
+   '2024-11-20 08:30:00', '2024-11-20 12:15:00'),
+  (2, NULL, 4, 'custom', 40.00, 'ARS', 'Lucas Pereyra', 'lucas@example.com', '+54 9 3757 555666', 'Sedán',
    '2024-12-10 09:00:00', '2024-12-12 18:00:00', 'pendiente', '{"pasajeros":"3"}', 'TRK456DEFABC', 'Agregar silla para niño.',
+   NULL, NULL, NULL,
    '2024-11-21 09:45:00', '2024-11-21 09:45:00');
 
 INSERT INTO transfer_request_destination (id, solicitud_id, destino_id, posicion) VALUES

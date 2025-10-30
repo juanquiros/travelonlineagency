@@ -74,6 +74,8 @@
                     {{ form_widget(form.longitud) }}
                 </div>
                 {{ form_row(form.activo) }}
+                {{ form_row(form.destacadoInicio) }}
+                {{ form_row(form.ordenDestacado) }}
                 <button class="btn btn-primary w-100" type="submit">{{ editing ? 'Guardar cambios' : 'Crear destino' }}</button>
                 {{ form_end(form) }}
                 {% if editing %}
@@ -125,6 +127,7 @@
                             <th>Tarifa base</th>
                             <th>Ubicación</th>
                             <th>Estado</th>
+                            <th>Destacado</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -184,12 +187,19 @@
                                     <span class="badge bg-secondary">Inactivo</span>
                                 {% endif %}
                             </td>
+                            <td class="align-middle">
+                                {% if destino.destacadoInicio %}
+                                    <span class="badge bg-warning text-dark">Home #{{ destino.ordenDestacado }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted">No</span>
+                                {% endif %}
+                            </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_destination_edit', {id: destino.id}) }}">Editar</a>
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="9" class="text-center text-muted">Aún no hay destinos configurados.</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">Aún no hay destinos configurados.</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>

@@ -19,6 +19,7 @@
                         {% endif %}
                         <li><strong>Arribo:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Salida:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        <li><strong>Tipo de vehículo solicitado:</strong> {{ solicitud.tipoVehiculo ?: 'No especificado' }}</li>
                         <li><strong>Estado:</strong> {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}</li>
                     </ul>
 
@@ -51,7 +52,8 @@
                             <h2 class="h6 mb-2">Chofer asignado</h2>
                             <p class="mb-1"><strong>{{ asignacion.chofer.nombreCompleto }}</strong></p>
                             <p class="mb-1">Contacto: {{ asignacion.chofer.telefono }}</p>
-                            <p class="mb-0">Vehículo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                            <p class="mb-1">Tipo de vehículo: {{ asignacion.chofer.tipoVehiculo }}</p>
+                            <p class="mb-0">Modelo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
                         </div>
                     {% else %}
                         <div class="alert alert-warning mt-4 mb-0">
@@ -90,6 +92,42 @@
                     {% endif %}
                 </div>
             </div>
+            {% if solicitud.calificacion and solicitud.testimonioComentario %}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h2 class="h6 mb-3">Tu opinión del traslado</h2>
+                        <div class="mb-2">
+                            {% for i in 1..5 %}
+                                {% if i <= solicitud.calificacion %}
+                                    <span class="bi bi-star-fill text-warning"></span>
+                                {% else %}
+                                    <span class="bi bi-star text-warning"></span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="mb-2">{{ solicitud.testimonioComentario }}</p>
+                        {% if solicitud.testimonioCreadoEn %}
+                            <p class="small text-muted mb-0">Enviado el {{ solicitud.testimonioCreadoEn|date('d/m/Y H:i') }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elseif ratingForm %}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h2 class="h6 mb-3">Calificá tu experiencia</h2>
+                        <p class="small text-muted">Contanos cómo fue tu traslado. Tu opinión nos ayuda a mejorar.</p>
+                        {{ form_start(ratingForm) }}
+                            <div class="mb-3 rating-fieldset">
+                                {{ form_row(ratingForm.rating) }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form_row(ratingForm.comment) }}
+                            </div>
+                            <button class="btn btn-primary w-100" type="submit">Enviar testimonio</button>
+                        {{ form_end(ratingForm) }}
+                    </div>
+                </div>
+            {% endif %}
             {% if pagoEfectivo %}
                 <div class="card shadow-sm border-warning mt-4">
                     <div class="card-body">

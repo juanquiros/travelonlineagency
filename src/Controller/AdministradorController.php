@@ -27,12 +27,14 @@ use App\Entity\TransferDestination;
 use App\Entity\TransferDestinationCategory;
 use App\Entity\TransferFormField;
 use App\Entity\TransferRequest;
+use App\Entity\TransferShowcase;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
 use App\Repository\DriverBalanceEntryRepository;
 use App\Repository\DriverWithdrawalRequestRepository;
+use App\Repository\TransferShowcaseRepository;
 use App\Form\BootstrapIconType;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
@@ -45,6 +47,7 @@ use App\Form\TransferComboType;
 use App\Form\TransferDestinationType;
 use App\Form\TransferDestinationCategoryType;
 use App\Form\TransferFormFieldType;
+use App\Form\TransferShowcaseType;
 use App\Form\TraduccionBookingType;
 use App\Form\TraduccionPlataformaType;
 use App\Form\TraduccionPreguntaFrecuenteType;
@@ -98,6 +101,7 @@ class AdministradorController extends AbstractController
         'transfer_destination_icons'=>false,
         'transfer_combos'=>false,
         'transfer_campos'=>false,
+        'transfer_showcase'=>false,
         'drivers'=>false,
     ];
 
@@ -1511,6 +1515,113 @@ class AdministradorController extends AbstractController
         return $this->redirectToRoute('app_admin_transfer_combos');
     }
 
+    #[Route('/administrador/traslados/destacados', name: 'app_admin_transfer_showcase')]
+    public function manageTransferShowcase(Request $request, SluggerInterface $slugger, TransferShowcaseRepository $repository): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_showcase'] = true;
+
+        $piece = new TransferShowcase();
+        $form = $this->createForm(TransferShowcaseType::class, $piece);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferShowcase($piece, $form, $slugger) && $this->validateShowcaseLimit($piece)) {
+                $this->em->persist($piece);
+                $this->em->flush();
+                $this->addFlash('success', 'Pieza destacada creada correctamente.');
+
+                return $this->redirectToRoute('app_admin_transfer_showcase');
+            }
+        }
+
+        return $this->render('administrador/transfer/showcase.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'items' => $repository->findBy([], ['posicion' => 'ASC', 'creadoEn' => 'DESC']),
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destacados/{id<\\d+>}', name: 'app_admin_transfer_showcase_edit')]
+    public function editTransferShowcase(Request $request, TransferShowcase $showcase, SluggerInterface $slugger, TransferShowcaseRepository $repository): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em, $request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['transfer_showcase'] = true;
+
+        $form = $this->createForm(TransferShowcaseType::class, $showcase);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->hydrateTransferShowcase($showcase, $form, $slugger) && $this->validateShowcaseLimit($showcase)) {
+                $this->em->flush();
+                $this->addFlash('success', 'Pieza destacada actualizada.');
+
+                return $this->redirectToRoute('app_admin_transfer_showcase');
+            }
+        }
+
+        return $this->render('administrador/transfer/showcase.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'form' => $form->createView(),
+            'items' => $repository->findBy([], ['posicion' => 'ASC', 'creadoEn' => 'DESC']),
+            'editing' => true,
+            'editingPiece' => $showcase,
+        ]);
+    }
+
+    #[Route('/administrador/traslados/destacados/{id<\\d+>}/toggle', name: 'app_admin_transfer_showcase_toggle', methods: ['POST'])]
+    public function toggleTransferShowcase(Request $request, TransferShowcase $showcase): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('toggle_showcase_' . $showcase->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido.');
+
+            return $this->redirectToRoute('app_admin_transfer_showcase');
+        }
+
+        $showcase->setDestacado(!$showcase->isDestacado());
+        if (!$this->validateShowcaseLimit($showcase)) {
+            // revert toggle
+            $showcase->setDestacado(!$showcase->isDestacado());
+
+            return $this->redirectToRoute('app_admin_transfer_showcase');
+        }
+
+        $this->em->flush();
+
+        $this->addFlash('success', 'Estado actualizado.');
+
+        return $this->redirectToRoute('app_admin_transfer_showcase');
+    }
+
+    #[Route('/administrador/traslados/destacados/{id<\\d+>}/eliminar', name: 'app_admin_transfer_showcase_delete', methods: ['POST'])]
+    public function deleteTransferShowcase(Request $request, TransferShowcase $showcase): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('delete_showcase_' . $showcase->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido.');
+
+            return $this->redirectToRoute('app_admin_transfer_showcase');
+        }
+
+        $this->em->remove($showcase);
+        $this->em->flush();
+        $this->addFlash('success', 'Pieza eliminada.');
+
+        return $this->redirectToRoute('app_admin_transfer_showcase');
+    }
+
     #[Route('/administrador/traslados/campos', name: 'app_admin_transfer_fields')]
     public function manageTransferFields(Request $request): Response
     {
@@ -2121,6 +2232,93 @@ class AdministradorController extends AbstractController
         }
 
         return true;
+    }
+
+    private function hydrateTransferShowcase(TransferShowcase $showcase, FormInterface $form, SluggerInterface $slugger): bool
+    {
+        $showcase->setPosicion(max(0, $showcase->getPosicion()));
+
+        if ($showcase->getTipo() === TransferShowcase::TYPE_IMAGE) {
+            /** @var UploadedFile|null $image */
+            $image = $form->get('imagenFile')->getData();
+            if ($image instanceof UploadedFile) {
+                $upload = $this->upload($image, 'img_transfer_showcase', $slugger);
+                if (!$upload['upload']) {
+                    $this->addFlash('error', 'No se pudo subir la imagen del destacado.');
+
+                    return false;
+                }
+
+                $showcase->setImagen($upload['filename']);
+            } elseif (!$showcase->getImagen()) {
+                $this->addFlash('error', 'Subí una imagen para la pieza destacada.');
+
+                return false;
+            }
+
+            $showcase->setVideoUrl(null);
+            $showcase->setVideoEmbed(null);
+        } else {
+            $videoUrl = trim((string) $form->get('videoUrl')->getData());
+            if ($videoUrl === '') {
+                $this->addFlash('error', 'Ingresá la URL del video de YouTube.');
+
+                return false;
+            }
+
+            $videoId = $this->extractYoutubeId($videoUrl);
+            if ($videoId === null) {
+                $this->addFlash('error', 'No pudimos reconocer el enlace de YouTube. Verificá que sea público.');
+
+                return false;
+            }
+
+            $showcase->setVideoUrl($videoUrl);
+            $showcase->setVideoEmbed(sprintf('https://www.youtube.com/embed/%s?rel=0&showinfo=0', $videoId));
+            $showcase->setImagen(null);
+        }
+
+        return true;
+    }
+
+    private function validateShowcaseLimit(TransferShowcase $showcase): bool
+    {
+        if (!$showcase->isDestacado()) {
+            return true;
+        }
+
+        $qb = $this->em->getRepository(TransferShowcase::class)
+            ->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s.destacado = :destacado')
+            ->setParameter('destacado', true);
+
+        if ($showcase->getId() !== null) {
+            $qb->andWhere('s != :actual')->setParameter('actual', $showcase);
+        }
+
+        $count = (int) $qb->getQuery()->getSingleScalarResult();
+        if ($count >= 3) {
+            $this->addFlash('error', 'Solo podés destacar tres piezas al mismo tiempo en la página de inicio.');
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function extractYoutubeId(string $url): ?string
+    {
+        if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w\-]{11})/i', $url, $matches)) {
+            return $matches[1];
+        }
+
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $params);
+        if (isset($params['v']) && is_string($params['v']) && strlen($params['v']) === 11) {
+            return $params['v'];
+        }
+
+        return null;
     }
 
     private function parseCoordinate(mixed $value): ?float
