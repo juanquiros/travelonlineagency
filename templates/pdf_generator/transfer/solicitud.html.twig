@@ -14,7 +14,24 @@
     </style>
 </head>
 <body>
-    <h1>Detalle de traslado</h1>
+    <table style="width: 100%; margin-bottom: 16px;">
+        <tr>
+            <td style="width: 70%; vertical-align: middle;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    {% if plataforma and plataforma.logo %}
+                        <img src="{{ absolute_url(asset('img/' ~ plataforma.logo)) }}" alt="{{ plataforma.nombre }}" style="max-height: 60px;">
+                    {% endif %}
+                    {% if plataforma %}
+                        <strong style="font-size: 20px;">{{ plataforma.nombre }}</strong>
+                    {% endif %}
+                </div>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+                <span class="muted">Detalle de traslado</span>
+            </td>
+        </tr>
+    </table>
+    <hr>
     <p class="muted">Generado el {{ generadoEn|date('d/m/Y H:i') }}</p>
 
     <h2>Pasajero</h2>
@@ -38,6 +55,20 @@
             <tr><th>Teléfono</th><td>{{ asignacion.chofer.telefono }}</td></tr>
             <tr><th>Vehículo</th><td>{{ asignacion.chofer.modeloVehiculo }} - {{ asignacion.chofer.tipoVehiculo }}</td></tr>
             <tr><th>Patente</th><td>{{ asignacion.chofer.patente }}</td></tr>
+            <tr>
+                <th>Características</th>
+                <td>
+                    {% if asignacion.chofer.vehicleFeatures|length > 0 %}
+                        {% set featureNames = [] %}
+                        {% for feature in asignacion.chofer.vehicleFeatures %}
+                            {% set featureNames = featureNames|merge([feature.nombre]) %}
+                        {% endfor %}
+                        {{ featureNames|join(', ') }}
+                    {% else %}
+                        Sin detalles
+                    {% endif %}
+                </td>
+            </tr>
         </table>
     {% endif %}
 

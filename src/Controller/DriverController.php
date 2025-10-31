@@ -12,8 +12,12 @@ use App\Entity\Usuario;
 use App\Repository\CashPaymentRepository;
 use App\Repository\DriverBalanceEntryRepository;
 use App\Repository\DriverWithdrawalRequestRepository;
+use App\Entity\VehicleType;
 use App\Repository\TransferAssignmentRepository;
 use App\Repository\TransferRequestRepository;
+use App\Repository\VehicleFeatureRepository;
+use App\Repository\VehicleTypeRepository;
+use App\Services\VehicleFeatureManager;
 use App\Services\DriverBalanceService;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,7 +40,13 @@ final class DriverController extends AbstractController
     }
 
     #[Route('', name: 'app_driver_dashboard', methods: ['GET'])]
-    public function dashboard(Request $request, TransferAssignmentRepository $assignmentRepository, TransferRequestRepository $requestRepository): Response
+    public function dashboard(
+        Request $request,
+        TransferAssignmentRepository $assignmentRepository,
+        TransferRequestRepository $requestRepository,
+        VehicleTypeRepository $vehicleTypeRepository,
+        VehicleFeatureRepository $vehicleFeatureRepository,
+    ): Response
     {
         $usuario = $this->requireAuthenticatedUser();
         $perfil = $this->em->getRepository(DriverProfile::class)->findOneBy(['usuario' => $usuario]);
@@ -44,6 +54,8 @@ final class DriverController extends AbstractController
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em, $request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $vehicleTypes = $vehicleTypeRepository->findActiveOrdered();
+        $vehicleFeatures = $vehicleFeatureRepository->findActiveOrdered();
 
         $asignaciones = [];
         $disponibles = [];
@@ -67,7 +79,53 @@ final class DriverController extends AbstractController
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
             'plataforma' => $plataforma,
+            'vehicleTypes' => $vehicleTypes,
+            'vehicleFeatures' => $vehicleFeatures,
         ]);
+    }
+
+    #[Route('/vehiculo', name: 'app_driver_vehicle_update', methods: ['POST'])]
+    public function updateVehicle(Request $request, VehicleFeatureManager $vehicleFeatureManager): RedirectResponse
+    {
+        $usuario = $this->requireAuthenticatedUser();
+        $perfil = $this->requireApprovedProfile($usuario);
+
+        if (!$this->isCsrfTokenValid('driver_vehicle_' . $perfil->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $vehicleTypeId = (int) $request->request->get('vehicle_type', 0);
+        $vehicleType = null;
+        if ($vehicleTypeId > 0) {
+            $vehicleType = $this->em->getRepository(VehicleType::class)->find($vehicleTypeId);
+        }
+
+        if ($vehicleType instanceof VehicleType && $vehicleType->isActivo()) {
+            $perfil->setVehicleType($vehicleType);
+        } elseif ($vehicleTypeId === 0) {
+            $perfil->setTipoVehiculo('');
+            $perfil->setVehicleType(null);
+        } else {
+            $this->addFlash('error', 'Seleccioná un tipo de vehículo válido.');
+
+            return $this->redirectToRoute('app_driver_dashboard');
+        }
+
+        $selectedFeatures = $request->request->all('features');
+        $newFeatures = $request->request->get('new_features');
+
+        $vehicleFeatureManager->syncDriverFeatures(
+            $perfil,
+            is_array($selectedFeatures) ? $selectedFeatures : [],
+            is_string($newFeatures) ? $newFeatures : null
+        );
+
+        $this->em->persist($perfil);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Actualizaste la información de tu vehículo.');
+
+        return $this->redirectToRoute('app_driver_dashboard');
     }
 
     #[Route('/solicitud/{id}/capturar', name: 'app_driver_capture', methods: ['POST'])]

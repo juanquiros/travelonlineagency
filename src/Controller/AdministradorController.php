@@ -32,9 +32,13 @@ use App\Entity\TransferRequestFieldValue;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
+use App\Entity\VehicleFeature;
+use App\Entity\VehicleType;
 use App\Repository\DriverBalanceEntryRepository;
 use App\Repository\DriverWithdrawalRequestRepository;
 use App\Repository\TransferShowcaseRepository;
+use App\Repository\VehicleFeatureRepository;
+use App\Repository\VehicleTypeRepository;
 use App\Form\BootstrapIconType;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
@@ -57,6 +61,7 @@ use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
 use App\Services\PartnerInvitationService;
 use App\Services\DriverInvitationService;
+use App\Services\VehicleFeatureManager;
 use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
@@ -1913,7 +1918,9 @@ class AdministradorController extends AbstractController
         DriverProfile $driver,
         DriverBalanceService $balanceService,
         DriverBalanceEntryRepository $entryRepository,
-        DriverWithdrawalRequestRepository $withdrawals
+        DriverWithdrawalRequestRepository $withdrawals,
+        VehicleTypeRepository $vehicleTypeRepository,
+        VehicleFeatureRepository $vehicleFeatureRepository,
     ): Response {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1934,6 +1941,8 @@ class AdministradorController extends AbstractController
             'stats' => $stats,
             'entries' => $entries,
             'solicitudes' => $solicitudes,
+            'vehicleTypes' => $vehicleTypeRepository->findBy([], ['orden' => 'ASC', 'nombre' => 'ASC']),
+            'vehicleFeatures' => $vehicleFeatureRepository->findBy([], ['nombre' => 'ASC']),
         ]);
     }
 
@@ -2021,6 +2030,221 @@ class AdministradorController extends AbstractController
         $this->addFlash('success', 'Comisión del chofer actualizada.');
 
         return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/choferes/{id}/vehiculo', name: 'app_admin_driver_vehicle', methods: ['POST'])]
+    public function updateDriverVehicle(
+        Request $request,
+        DriverProfile $driver,
+        VehicleFeatureManager $vehicleFeatureManager
+    ): RedirectResponse {
+        if (!$this->isCsrfTokenValid('admin_driver_vehicle_' . $driver->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $vehicleTypeId = (int) $request->request->get('vehicle_type', 0);
+        $vehicleType = null;
+        if ($vehicleTypeId > 0) {
+            $vehicleType = $this->em->getRepository(VehicleType::class)->find($vehicleTypeId);
+        }
+
+        if ($vehicleType instanceof VehicleType) {
+            $driver->setVehicleType($vehicleType);
+        } elseif ($vehicleTypeId === 0) {
+            $driver->setTipoVehiculo('');
+            $driver->setVehicleType(null);
+        } else {
+            $this->addFlash('error', 'Seleccioná un tipo de vehículo válido para el chofer.');
+
+            return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+        }
+
+        $selectedFeatures = $request->request->all('features');
+        $newFeatures = $request->request->get('new_features');
+
+        $vehicleFeatureManager->syncDriverFeatures(
+            $driver,
+            is_array($selectedFeatures) ? $selectedFeatures : [],
+            is_string($newFeatures) ? $newFeatures : null
+        );
+
+        $this->em->persist($driver);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Vehículo del chofer actualizado.');
+
+        return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/transfer/vehiculos', name: 'app_admin_vehicle_catalog', methods: ['GET'])]
+    public function vehicleCatalog(
+        Request $request,
+        VehicleTypeRepository $vehicleTypeRepository,
+        VehicleFeatureRepository $vehicleFeatureRepository
+    ): Response {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['drivers'] = true;
+
+        return $this->render('administrador/transfer/vehicle_catalog.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'vehicleTypes' => $vehicleTypeRepository->findBy([], ['orden' => 'ASC', 'nombre' => 'ASC']),
+            'vehicleFeatures' => $vehicleFeatureRepository->findBy([], ['nombre' => 'ASC']),
+        ]);
+    }
+
+    #[Route('/administrador/transfer/vehiculos/tipo', name: 'app_admin_vehicle_type_create', methods: ['POST'])]
+    public function createVehicleType(Request $request, VehicleTypeRepository $vehicleTypeRepository): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('create_vehicle_type', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $orden = (int) $request->request->get('order', 0);
+        $activo = (bool) $request->request->get('active', true);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para el tipo de vehículo.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $existing = $vehicleTypeRepository->createQueryBuilder('vt')
+            ->andWhere('LOWER(vt.nombre) = LOWER(:nombre)')
+            ->setParameter('nombre', $nombre)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($existing instanceof VehicleType) {
+            $this->addFlash('error', 'Ya existe un tipo de vehículo con ese nombre.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $tipo = (new VehicleType())
+            ->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setOrden($orden)
+            ->setActivo($activo);
+
+        $this->em->persist($tipo);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Tipo de vehículo creado.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/tipo/{id}', name: 'app_admin_vehicle_type_update', methods: ['POST'])]
+    public function updateVehicleType(Request $request, VehicleType $vehicleType): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('update_vehicle_type_' . $vehicleType->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $orden = (int) $request->request->get('order', $vehicleType->getOrden());
+        $activo = (bool) $request->request->get('active', false);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para el tipo de vehículo.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $vehicleType->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setOrden($orden)
+            ->setActivo($activo);
+
+        $this->refreshVehicleTypeAssociations($vehicleType);
+
+        $this->em->persist($vehicleType);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Tipo de vehículo actualizado.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/caracteristica', name: 'app_admin_vehicle_feature_create', methods: ['POST'])]
+    public function createVehicleFeature(Request $request, VehicleFeatureRepository $vehicleFeatureRepository): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('create_vehicle_feature', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $activo = (bool) $request->request->get('active', true);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para la característica.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $existing = $vehicleFeatureRepository->findOneByCaseInsensitiveName($nombre);
+        if ($existing instanceof VehicleFeature) {
+            $existing->setDescripcion($descripcion !== '' ? $descripcion : null)
+                ->setActivo($activo);
+            $this->em->persist($existing);
+            $this->em->flush();
+
+            $this->addFlash('info', 'La característica ya existía y fue actualizada.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $feature = (new VehicleFeature())
+            ->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setActivo($activo);
+
+        $this->em->persist($feature);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Característica creada.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/caracteristica/{id}', name: 'app_admin_vehicle_feature_update', methods: ['POST'])]
+    public function updateVehicleFeature(Request $request, VehicleFeature $vehicleFeature): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('update_vehicle_feature_' . $vehicleFeature->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $activo = (bool) $request->request->get('active', false);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para la característica.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $vehicleFeature->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setActivo($activo);
+
+        $this->em->persist($vehicleFeature);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Característica actualizada.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
     }
 
     #[Route('/administrador/choferes/{id}/balance/movimiento', name: 'app_admin_driver_balance_entry', methods: ['POST'])]
@@ -2441,5 +2665,18 @@ class AdministradorController extends AbstractController
         $field->setOpciones($decoded);
 
         return true;
+    }
+
+    private function refreshVehicleTypeAssociations(VehicleType $vehicleType): void
+    {
+        foreach ($vehicleType->getDrivers() as $driver) {
+            $driver->setVehicleType($vehicleType);
+            $this->em->persist($driver);
+        }
+
+        foreach ($vehicleType->getTransferRequests() as $solicitud) {
+            $solicitud->setVehicleType($vehicleType);
+            $this->em->persist($solicitud);
+        }
     }
 }

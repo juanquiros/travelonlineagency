@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Usuario;
+use App\Entity\VehicleType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\AbstractType;
@@ -59,9 +60,13 @@ class RegistrationFormType extends AbstractType
         }
 
         if ($options['driver_mode']) {
-            $vehicleChoices = [];
-            foreach ($options['vehicle_type_choices'] as $choice) {
-                $vehicleChoices[$choice] = $choice;
+            $vehicleChoices = array_filter(
+                $options['vehicle_type_choices'],
+                static fn ($choice) => $choice instanceof VehicleType
+            );
+            $vehicleConstraints = [];
+            if (!empty($vehicleChoices)) {
+                $vehicleConstraints[] = new NotBlank(['message' => 'Seleccioná el tipo de vehículo con el que operás']);
             }
             $builder
                 ->add('driverDocumento', TextType::class, [
@@ -89,10 +94,11 @@ class RegistrationFormType extends AbstractType
                     'label' => 'Tipo de vehículo',
                     'mapped' => false,
                     'choices' => $vehicleChoices,
-                    'placeholder' => 'Seleccioná el tipo de vehículo',
-                    'constraints' => [
-                        new NotBlank(['message' => 'Seleccioná el tipo de vehículo con el que operás']),
-                    ],
+                    'choice_label' => static fn (VehicleType $type) => (string) $type->getNombre(),
+                    'choice_value' => static fn (?VehicleType $type) => $type?->getId(),
+                    'placeholder' => empty($vehicleChoices) ? 'Sin tipos disponibles' : 'Seleccioná el tipo de vehículo',
+                    'disabled' => empty($vehicleChoices),
+                    'constraints' => $vehicleConstraints,
                 ])
                 ->add('driverModeloVehiculo', TextType::class, [
                     'label' => 'Modelo del vehículo',

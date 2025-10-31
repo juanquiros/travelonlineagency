@@ -54,6 +54,10 @@ class TransferRequest
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $tipoVehiculo = null;
 
+    #[ORM\ManyToOne(inversedBy: 'transferRequests')]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?VehicleType $vehicleType = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $arribo = null;
 
@@ -246,12 +250,35 @@ class TransferRequest
 
     public function getTipoVehiculo(): ?string
     {
+        if ($this->vehicleType instanceof VehicleType) {
+            return $this->vehicleType->getNombre();
+        }
+
         return $this->tipoVehiculo;
     }
 
     public function setTipoVehiculo(?string $tipoVehiculo): self
     {
-        $this->tipoVehiculo = $tipoVehiculo;
+        $this->tipoVehiculo = $tipoVehiculo !== null ? trim($tipoVehiculo) : null;
+        if ($tipoVehiculo === null) {
+            $this->vehicleType = null;
+        }
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getVehicleType(): ?VehicleType
+    {
+        return $this->vehicleType;
+    }
+
+    public function setVehicleType(?VehicleType $vehicleType): self
+    {
+        $this->vehicleType = $vehicleType;
+        if ($vehicleType instanceof VehicleType) {
+            $this->tipoVehiculo = $vehicleType->getNombre();
+        }
         $this->touch();
 
         return $this;

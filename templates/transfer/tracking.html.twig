@@ -62,7 +62,14 @@
                             <p class="mb-1"><strong>{{ asignacion.chofer.nombreCompleto }}</strong></p>
                             <p class="mb-1">Contacto: {{ asignacion.chofer.telefono }}</p>
                             <p class="mb-1">Tipo de vehículo: {{ asignacion.chofer.tipoVehiculo }}</p>
-                            <p class="mb-0">Modelo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                            <p class="mb-1">Modelo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                            {% set featureNames = [] %}
+                            {% for feature in asignacion.chofer.vehicleFeatures %}
+                                {% set featureNames = featureNames|merge([feature.nombre]) %}
+                            {% endfor %}
+                            {% if featureNames %}
+                                <p class="mb-0">Características: {{ featureNames|join(', ') }}</p>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="alert alert-warning mt-4 mb-0">

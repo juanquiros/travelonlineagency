@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\DriverProfile;
 use App\Entity\Plataforma;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
@@ -12,6 +11,7 @@ use App\Entity\TransferRequest;
 use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\CashPayment;
+use App\Entity\VehicleType;
 use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
@@ -46,7 +46,7 @@ final class TransferController extends AbstractController
         $vehicleTypes = $this->resolveVehicleTypes();
 
         if ($request->isMethod('POST')) {
-            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $vehicleTypes);
+            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled);
             if ($solicitud instanceof TransferRequest) {
                 $this->em->persist($solicitud);
                 $this->em->flush();
@@ -160,6 +160,17 @@ final class TransferController extends AbstractController
             ['createdAt' => 'DESC']
         );
 
+        $asignacionActiva = null;
+        foreach ($solicitud->getAsignaciones() as $asignacion) {
+            if (!in_array($asignacion->getEstado(), [
+                TransferAssignment::ESTADO_CANCELADO,
+                TransferAssignment::ESTADO_COMPLETADO,
+            ], true)) {
+                $asignacionActiva = $asignacion;
+                break;
+            }
+        }
+
         return $this->render('transfer/summary.html.twig', [
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
@@ -168,6 +179,7 @@ final class TransferController extends AbstractController
             'solicitud' => $solicitud,
             'opcionesPago' => $opciones,
             'pagoEfectivo' => $cashPayment,
+            'asignacion' => $asignacionActiva,
         ]);
     }
 
@@ -240,7 +252,7 @@ final class TransferController extends AbstractController
         ]);
     }
 
-    private function crearSolicitud(Request $request, array $campos, bool $customEnabled, array $vehicleTypes): ?TransferRequest
+    private function crearSolicitud(Request $request, array $campos, bool $customEnabled): ?TransferRequest
     {
         $tipo = $request->request->get('tipo', 'combo');
         $combo = null;
@@ -283,7 +295,8 @@ final class TransferController extends AbstractController
             $cantidadPasajeros = (int) $cantidadPasajerosRaw;
         }
         $numeroVuelo = trim((string) $request->request->get('numero_vuelo'));
-        $vehicleType = trim((string) $request->request->get('tipo_vehiculo'));
+        $vehicleTypeId = (int) $request->request->get('tipo_vehiculo');
+        $vehicleType = null;
         if ($nombre === '' || $email === '') {
             $errores[] = 'Completá tu nombre y correo electrónico para avanzar.';
         }
@@ -296,9 +309,11 @@ final class TransferController extends AbstractController
             $errores[] = 'Indicá la cantidad de pasajeros que viajarán en el traslado.';
         }
 
-        if ($vehicleType === '') {
-            $errores[] = 'Seleccioná el tipo de vehículo que preferís para tu traslado.';
-        } elseif (!in_array($vehicleType, $vehicleTypes, true)) {
+        if ($vehicleTypeId > 0) {
+            $vehicleType = $this->em->getRepository(VehicleType::class)->find($vehicleTypeId);
+        }
+
+        if (!$vehicleType instanceof VehicleType || !$vehicleType->isActivo()) {
             $errores[] = 'Seleccioná un tipo de vehículo válido.';
         }
 
@@ -331,7 +346,9 @@ final class TransferController extends AbstractController
         $solicitud->setTelefonoPasajero($telefono !== '' ? $telefono : null);
         $solicitud->setCantidadPasajeros($cantidadPasajeros);
         $solicitud->setVueloPasajero($numeroVuelo !== '' ? $numeroVuelo : null);
-        $solicitud->setTipoVehiculo($vehicleType !== '' ? $vehicleType : null);
+        if ($vehicleType instanceof VehicleType) {
+            $solicitud->setVehicleType($vehicleType);
+        }
         $solicitud->setArribo($arribo);
         $solicitud->setSalida($salida);
         $solicitud->setTokenSeguimiento(bin2hex(random_bytes(12)));
@@ -385,18 +402,11 @@ final class TransferController extends AbstractController
     }
 
     /**
-     * @return string[]
+     * @return VehicleType[]
      */
     private function resolveVehicleTypes(): array
     {
-        $repository = $this->em->getRepository(DriverProfile::class);
-        $driverValues = method_exists($repository, 'findDistinctVehicleTypes')
-            ? $repository->findDistinctVehicleTypes()
-            : [];
-        $configured = (array) $this->getParameter('transfer_vehicle_types');
-        $merged = array_unique(array_filter(array_merge($configured, $driverValues)));
-
-        return array_values($merged);
+        return $this->em->getRepository(VehicleType::class)->findActiveOrdered();
     }
 
     private function generarCodigoServicio(): string

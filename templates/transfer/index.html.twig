@@ -41,9 +41,12 @@
                         <select class="form-select" name="tipo_vehiculo" required>
                             <option value="">Seleccioná el tipo de vehículo</option>
                             {% for tipo in vehicleTypes %}
-                                <option value="{{ tipo }}"{% if app.request.get('tipo_vehiculo') == tipo %} selected{% endif %}>{{ tipo }}</option>
+                                <option value="{{ tipo.id }}"{% if app.request.get('tipo_vehiculo') == tipo.id %} selected{% endif %}>{{ tipo.nombre }}</option>
                             {% endfor %}
                         </select>
+                        {% if vehicleTypes is empty %}
+                            <small class="text-danger">Consultá con el administrador para habilitar tipos de vehículos.</small>
+                        {% endif %}
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
