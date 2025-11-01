@@ -289,44 +289,87 @@
 
                 const prevButton = carousel.querySelector('[data-carousel-prev]');
                 const nextButton = carousel.querySelector('[data-carousel-next]');
-                const scrollStep = carousel.dataset.carouselStep ? parseInt(carousel.dataset.carouselStep, 10) : 260;
-
-                const scrollByDirection = function (direction) {
-                    track.scrollBy({ left: scrollStep * direction, behavior: 'smooth' });
+                const firstCard = track.querySelector('.toa-category-card');
+                const styles = window.getComputedStyle(track);
+                const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+                const configuredStep = carousel.dataset.carouselStep ? parseInt(carousel.dataset.carouselStep, 10) : null;
+                const inferredStep = firstCard ? firstCard.getBoundingClientRect().width + gap : 260;
+                const scrollStep = configuredStep && !Number.isNaN(configuredStep) ? configuredStep : Math.max(inferredStep, 240);
+                const maxScrollable = function () {
+                    return Math.max(track.scrollWidth - track.clientWidth, 0);
+                };
+                const hasOverflow = function () {
+                    return maxScrollable() > 8;
                 };
 
-                let autoScroll = window.setInterval(function () {
-                    scrollByDirection(1);
-                }, 4500);
+                if (!hasOverflow()) {
+                    track.classList.add('is-centered');
+                    if (prevButton) {
+                        prevButton.setAttribute('disabled', 'disabled');
+                        prevButton.classList.add('disabled');
+                    }
+                    if (nextButton) {
+                        nextButton.setAttribute('disabled', 'disabled');
+                        nextButton.classList.add('disabled');
+                    }
+                }
 
-                const restartAutoScroll = function () {
+                const performScroll = function (direction) {
+                    if (!hasOverflow()) {
+                        return;
+                    }
+
+                    const maxLeft = maxScrollable();
+                    if (maxLeft <= 0) {
+                        return;
+                    }
+
+                    const nextLeft = track.scrollLeft + scrollStep * direction;
+                    if (direction > 0 && nextLeft >= maxLeft - 1) {
+                        track.scrollTo({ left: 0, behavior: 'smooth' });
+                    } else if (direction < 0 && nextLeft <= 1) {
+                        track.scrollTo({ left: maxLeft, behavior: 'smooth' });
+                    } else {
+                        track.scrollTo({ left: Math.min(Math.max(nextLeft, 0), maxLeft), behavior: 'smooth' });
+                    }
+                };
+
+                let autoScroll = null;
+                const startAutoScroll = function () {
+                    if (!hasOverflow()) {
+                        return;
+                    }
+
                     window.clearInterval(autoScroll);
                     autoScroll = window.setInterval(function () {
-                        scrollByDirection(1);
+                        performScroll(1);
                     }, 4500);
+                };
+
+                const stopAutoScroll = function () {
+                    window.clearInterval(autoScroll);
                 };
 
                 if (prevButton) {
                     prevButton.addEventListener('click', function () {
-                        scrollByDirection(-1);
-                        restartAutoScroll();
+                        performScroll(-1);
+                        startAutoScroll();
                     });
                 }
 
                 if (nextButton) {
                     nextButton.addEventListener('click', function () {
-                        scrollByDirection(1);
-                        restartAutoScroll();
+                        performScroll(1);
+                        startAutoScroll();
                     });
                 }
 
-                carousel.addEventListener('mouseenter', function () {
-                    window.clearInterval(autoScroll);
-                });
+                carousel.addEventListener('mouseenter', stopAutoScroll);
+                carousel.addEventListener('mouseleave', startAutoScroll);
+                carousel.addEventListener('touchstart', stopAutoScroll, { passive: true });
+                carousel.addEventListener('touchend', startAutoScroll, { passive: true });
 
-                carousel.addEventListener('mouseleave', function () {
-                    restartAutoScroll();
-                });
+                startAutoScroll();
             });
         });
     </script>
