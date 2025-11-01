@@ -15,4 +15,19 @@ class TransferDestinationCategoryRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, TransferDestinationCategory::class);
     }
+
+    /**
+     * @return TransferDestinationCategory[]
+     */
+    public function findWithActiveDestinations(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.destinos', 'd')
+            ->andWhere('d.activo = :activo')
+            ->setParameter('activo', true)
+            ->orderBy('c.nombre', 'ASC')
+            ->groupBy('c.id')
+            ->getQuery()
+            ->getResult();
+    }
 }

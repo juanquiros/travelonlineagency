@@ -56,6 +56,8 @@ class TransferDestinationRepository extends ServiceEntityRepository
             ->addSelect('c')
             ->leftJoin('c.iconDefinition', 'icon')
             ->addSelect('icon')
+            ->andWhere('d.activo = :activo')
+            ->setParameter('activo', true)
             ->orderBy('d.nombre', 'ASC');
 
         if ($query) {

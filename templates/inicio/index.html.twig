@@ -20,6 +20,34 @@
         </div>
     </section>
 
+    {% if destinoCategorias %}
+        <section class="toa-section pt-0" data-aos="fade-up" data-aos-duration="1500">
+            <div class="container">
+                <div class="toa-section-heading">
+                    <h2 class="toa-section-title mb-1">Categorías de destinos</h2>
+                    <p class="toa-section-subtitle mb-0">Descubrí experiencias agrupadas por temática y encontrá lo que más te inspira.</p>
+                </div>
+                <div class="toa-category-carousel" data-carousel>
+                    <button class="toa-category-nav btn btn-outline-primary btn-sm" type="button" data-carousel-prev aria-label="Categoría anterior">
+                        <span class="bi bi-chevron-left"></span>
+                    </button>
+                    <div class="toa-category-track" data-carousel-track>
+                        {% for categoria in destinoCategorias %}
+                            {% set iconClass = categoria.iconCssClass ?? 'bi-compass' %}
+                            <a class="toa-category-card" href="{{ path('app_destinos', { categoria: categoria.id }) }}" title="Ver destinos de {{ categoria.nombre }}">
+                                <span class="toa-category-icon"><span class="bi {{ iconClass }}"></span></span>
+                                <span class="toa-category-name">{{ categoria.nombre }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <button class="toa-category-nav btn btn-outline-primary btn-sm" type="button" data-carousel-next aria-label="Categoría siguiente">
+                        <span class="bi bi-chevron-right"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
     <section id="destacados" class="toa-section" data-aos="fade-up" data-aos-duration="1500">
         <div class="container">
             <h2 class="toa-section-title">Destinos destacados</h2>
@@ -35,6 +63,20 @@
                         <div class="alert alert-info mb-0">Muy pronto publicaremos nuestros primeros destinos destacados.</div>
                     </div>
                 {% endfor %}
+            </div>
+
+            <div class="toa-search-card" data-aos="fade-up" data-aos-delay="100">
+                <form class="row g-3 align-items-center" action="{{ path('app_destinos') }}" method="get">
+                    <div class="col-lg-8">
+                        <label class="form-label text-uppercase small fw-semibold text-muted" for="busqueda-destinos">Buscar destinos</label>
+                        <input type="search" class="form-control form-control-lg" id="busqueda-destinos" name="q" placeholder="Ingresá una actividad, lugar o palabra clave">
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-end">
+                        <button class="btn btn-primary w-100 btn-lg" type="submit">
+                            <span class="bi bi-search me-2"></span>Ir a destinos
+                        </button>
+                    </div>
+                </form>
             </div>
 
             {% if transferShowcases %}
@@ -233,4 +275,59 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-carousel]').forEach(function (carousel) {
+                const track = carousel.querySelector('[data-carousel-track]');
+                if (!track) {
+                    return;
+                }
+
+                const prevButton = carousel.querySelector('[data-carousel-prev]');
+                const nextButton = carousel.querySelector('[data-carousel-next]');
+                const scrollStep = carousel.dataset.carouselStep ? parseInt(carousel.dataset.carouselStep, 10) : 260;
+
+                const scrollByDirection = function (direction) {
+                    track.scrollBy({ left: scrollStep * direction, behavior: 'smooth' });
+                };
+
+                let autoScroll = window.setInterval(function () {
+                    scrollByDirection(1);
+                }, 4500);
+
+                const restartAutoScroll = function () {
+                    window.clearInterval(autoScroll);
+                    autoScroll = window.setInterval(function () {
+                        scrollByDirection(1);
+                    }, 4500);
+                };
+
+                if (prevButton) {
+                    prevButton.addEventListener('click', function () {
+                        scrollByDirection(-1);
+                        restartAutoScroll();
+                    });
+                }
+
+                if (nextButton) {
+                    nextButton.addEventListener('click', function () {
+                        scrollByDirection(1);
+                        restartAutoScroll();
+                    });
+                }
+
+                carousel.addEventListener('mouseenter', function () {
+                    window.clearInterval(autoScroll);
+                });
+
+                carousel.addEventListener('mouseleave', function () {
+                    restartAutoScroll();
+                });
+            });
+        });
+    </script>
 {% endblock %}

@@ -17,6 +17,42 @@
         </div>
     </section>
 
+    <section class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1200">
+        <div class="container">
+            <div class="toa-search-card shadow-sm">
+                <form class="row g-3 align-items-end" action="{{ path('app_destinos') }}" method="get">
+                    <div class="col-lg-5">
+                        <label class="form-label text-uppercase small fw-semibold text-muted" for="buscar-destinos">Buscar destinos</label>
+                        <input type="search" id="buscar-destinos" name="q" value="{{ term }}" class="form-control" placeholder="Cataratas, gastronomía, aventura…">
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label text-uppercase small fw-semibold text-muted" for="filtrar-categoria">Filtrar por categoría</label>
+                        <select id="filtrar-categoria" name="categoria" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria.id }}" {{ categoriaSeleccionada == categoria.id ? 'selected' : '' }}>{{ categoria.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-3 d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" type="submit"><span class="bi bi-search me-2"></span>Buscar</button>
+                        {% if term or categoriaSeleccionada %}
+                            <a class="btn btn-outline-secondary" href="{{ path('app_destinos') }}">Limpiar</a>
+                        {% endif %}
+                    </div>
+                </form>
+                {% if term or categoriaSeleccionada %}
+                    <p class="small text-muted mb-0 mt-3"><span class="bi bi-funnel-fill me-1"></span>Mostrando resultados
+                        {% if term %} que coinciden con “<strong>{{ term }}</strong>”{% endif %}
+                        {% if categoriaSeleccionadaNombre %}
+                            en la categoría <strong>{{ categoriaSeleccionadaNombre }}</strong>
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
     {% if combos is defined and combos is not empty %}
         <section id="combos" class="toa-section" data-aos="fade-up" data-aos-delay="150">
             <div class="container">
@@ -50,7 +86,13 @@
                     </div>
                 {% else %}
                     <div class="col-12">
-                        <div class="alert alert-info">Pronto publicaremos los primeros destinos destacados. ¡Vuelvé más tarde!</div>
+                        <div class="alert alert-info">
+                            {% if term or categoriaSeleccionada %}
+                                No encontramos destinos con los filtros seleccionados. <a href="{{ path('app_destinos') }}" class="alert-link">Limpiar filtros</a> para volver a ver el listado completo.
+                            {% else %}
+                                Pronto publicaremos los primeros destinos destacados. ¡Vuelvé más tarde!
+                            {% endif %}
+                        </div>
                     </div>
                 {% endfor %}
             </div>
