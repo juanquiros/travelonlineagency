@@ -4,13 +4,23 @@
     <meta charset="UTF-8">
     <title>Detalle de traslado</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; }
+        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; margin-bottom: 140px; }
         h1 { font-size: 22px; margin-bottom: 5px; }
         h2 { font-size: 16px; margin-top: 24px; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         th, td { padding: 8px; border: 1px solid #ddd; }
         .qr { text-align: center; margin-top: 20px; }
         .muted { color: #666; font-size: 12px; }
+        footer {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -111,10 +121,10 @@
         <p class="muted">Escaneá el código para seguir el viaje: {{ trackingUrl }}</p>
     </div>
 
-    {% if plataforma %}
-        <p class="muted">Emitido por {{ plataforma.nombre }}</p>
-    {% endif %}
-
-    <p class="muted">SI EL PASAJERO PRESENTA "NO SHOW" AL ORIGEN DEL SERVICIO TRF, SE CONSIDERA EL SERVICIO COMO PERDIDO SIN DERECHO A REEMBOLSO. ESTA CONDICIÓN APLICA SEGÚN LAS POLÍTICAS DE CANCELACIÓN Y PENALIZACIÓN PARA EL PASAJERO Y EL CHOFER.</p>
+    <footer>
+        <p><strong>Emitido por Travel Online Agency</strong>{% if plataforma %} - {{ plataforma.nombre }}{% endif %}</p>
+        <p>SI EL PASAJERO PRESENTA "NO SHOW" AL ORIGEN DEL SERVICIO TRF, SE CONSIDERA EL SERVICIO COMO PERDIDO SIN DERECHO A REEMBOLSO.</p>
+        <p>ESTA CONDICIÓN APLICA SEGÚN LAS POLÍTICAS DE CANCELACIÓN Y PENALIZACIÓN PARA EL PASAJERO Y EL CHOFER.</p>
+    </footer>
 </body>
 </html>
