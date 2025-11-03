@@ -80,13 +80,13 @@ main {
 .toa-hero {
     position: relative;
     overflow: hidden;
-    border-radius: clamp(1.5rem, 3vw, 2.75rem);
-    background-color: #0c2d4a;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    background-color: #101216;
     color: #fff;
-    padding: clamp(3rem, 6vw, 4.5rem);
-    margin: clamp(2rem, 4vw, 3.5rem) auto;
-    max-width: 1200px;
-    box-shadow: 0 25px 65px rgba(8, 29, 50, 0.18);
+    padding: clamp(4rem, 8vw, 6rem) clamp(1.5rem, 5vw, 4rem);
+    box-shadow: none;
 }
 
 .toa-hero::before {
@@ -94,8 +94,8 @@ main {
     position: absolute;
     inset: 0;
     z-index: 2;
-    background: radial-gradient(circle at 20% 20%, rgba(242, 148, 42, 0.35), transparent 55%),
-        radial-gradient(circle at 80% 20%, rgba(42, 164, 214, 0.35), transparent 55%);
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 55%),
+        radial-gradient(circle at 80% 25%, rgba(120, 120, 120, 0.18), transparent 55%);
     mix-blend-mode: screen;
     pointer-events: none;
 }
@@ -149,7 +149,7 @@ main {
     position: absolute;
     inset: 0;
     z-index: 1;
-    background: linear-gradient(135deg, rgba(12, 45, 74, 0.88), rgba(31, 107, 179, 0.88));
+    background: linear-gradient(135deg, rgba(10, 10, 12, 0.88), rgba(52, 52, 58, 0.72));
     pointer-events: none;
 }
 
@@ -159,6 +159,9 @@ main {
     display: grid;
     gap: clamp(1.5rem, 3vw, 2.5rem);
     align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 .toa-hero-badge {
