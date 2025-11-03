@@ -1046,7 +1046,7 @@ main {
 }
 
 .toa-search-card--floating {
-    transform: translateY(-50%);
+    transform: translateY(0%);
     margin-bottom: 0;
 }
 
