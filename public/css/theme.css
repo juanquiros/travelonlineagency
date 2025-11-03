@@ -81,8 +81,7 @@ main {
     position: relative;
     overflow: hidden;
     border-radius: clamp(1.5rem, 3vw, 2.75rem);
-    background: linear-gradient(135deg, rgba(12, 45, 74, 0.92), rgba(31, 107, 179, 0.92)),
-        linear-gradient(120deg, rgba(242, 148, 42, 0.6), rgba(42, 164, 214, 0.2));
+    background-color: #0c2d4a;
     color: #fff;
     padding: clamp(3rem, 6vw, 4.5rem);
     margin: clamp(2rem, 4vw, 3.5rem) auto;
@@ -94,14 +93,69 @@ main {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 2;
     background: radial-gradient(circle at 20% 20%, rgba(242, 148, 42, 0.35), transparent 55%),
         radial-gradient(circle at 80% 20%, rgba(42, 164, 214, 0.35), transparent 55%);
     mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.toa-hero-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.toa-hero-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+}
+
+.toa-hero-slide.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.toa-hero-slide-media {
+    position: absolute;
+    inset: -4%;
+    background-size: cover;
+    background-position: center;
+    filter: saturate(1.05);
+    transform: scale(1.05);
+    transition: transform 7s ease;
+}
+
+.toa-hero-slide.is-active .toa-hero-slide-media {
+    transform: scale(1);
+}
+
+.toa-hero-slide iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 177.78%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    border: none;
+}
+
+.toa-hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(12, 45, 74, 0.88), rgba(31, 107, 179, 0.88));
+    pointer-events: none;
 }
 
 .toa-hero-content {
     position: relative;
-    z-index: 2;
+    z-index: 3;
     display: grid;
     gap: clamp(1.5rem, 3vw, 2.5rem);
     align-items: center;

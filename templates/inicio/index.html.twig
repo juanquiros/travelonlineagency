@@ -3,7 +3,45 @@
 {% block title %}Home - Travel Online Agency{% endblock %}
 
 {% block body %}
-    <section class="toa-hero" data-aos="fade-up" data-aos-duration="2000" style="background-image: linear-gradient(135deg, rgba(12, 45, 74, 0.92), rgba(31, 107, 179, 0.92)), url({{ asset('img/waterfall.jpg') }}); background-size: cover; background-position: center;">
+    {% set heroSlides = [] %}
+    {% for pieza in transferShowcases %}
+        {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
+            {% set heroSlides = heroSlides|merge([{
+                'type': 'image',
+                'source': asset('img/transfer/showcase/' ~ pieza.imagen),
+                'title': pieza.titulo
+            }]) %}
+        {% elseif pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') %}
+            {% set videoUrl = pieza.videoBackgroundUrl %}
+            {% if videoUrl %}
+                {% set heroSlides = heroSlides|merge([{
+                    'type': 'video',
+                    'source': videoUrl,
+                    'title': pieza.titulo
+                }]) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    <section class="toa-hero" data-aos="fade-up" data-aos-duration="2000" data-hero>
+        <div class="toa-hero-background" data-hero-rotator data-interval="9000">
+            {% if heroSlides %}
+                {% for slide in heroSlides %}
+                    <div class="toa-hero-slide {{ loop.first ? 'is-active' }}" data-hero-slide aria-hidden="{{ loop.first ? 'false' : 'true' }}">
+                        {% if slide.type == 'image' %}
+                            <div class="toa-hero-slide-media" style="background-image: url('{{ slide.source }}');"></div>
+                        {% else %}
+                            <iframe src="{{ slide.source }}" title="{{ slide.title }}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="toa-hero-slide is-active" data-hero-slide aria-hidden="false">
+                    <div class="toa-hero-slide-media" style="background-image: url('{{ asset('img/waterfall.jpg') }}');"></div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="toa-hero-overlay"></div>
         <div class="toa-hero-content">
             <div class="d-flex flex-column gap-3">
                 <span class="toa-hero-badge"><span class="bi bi-airplane-engines"></span> Experiencias en Iguazú</span>
@@ -281,6 +319,44 @@
     {{ parent() }}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            (function initializeHeroRotator() {
+                const hero = document.querySelector('[data-hero]');
+                if (!hero) {
+                    return;
+                }
+
+                const rotator = hero.querySelector('[data-hero-rotator]');
+                if (!rotator) {
+                    return;
+                }
+
+                const slides = rotator.querySelectorAll('[data-hero-slide]');
+                if (!slides.length) {
+                    return;
+                }
+
+                slides.forEach(function (slide, index) {
+                    slide.setAttribute('aria-hidden', index === 0 ? 'false' : 'true');
+                });
+
+                if (slides.length === 1) {
+                    return;
+                }
+
+                const interval = parseInt(rotator.dataset.interval || '9000', 10);
+                const delay = Number.isNaN(interval) || interval <= 0 ? 9000 : interval;
+                let current = 0;
+
+                window.setInterval(function () {
+                    const next = (current + 1) % slides.length;
+                    slides[current].classList.remove('is-active');
+                    slides[current].setAttribute('aria-hidden', 'true');
+                    slides[next].classList.add('is-active');
+                    slides[next].setAttribute('aria-hidden', 'false');
+                    current = next;
+                }, delay);
+            })();
+
             document.querySelectorAll('[data-carousel]').forEach(function (carousel) {
                 const track = carousel.querySelector('[data-carousel-track]');
                 if (!track) {
