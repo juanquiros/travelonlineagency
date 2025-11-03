@@ -58,6 +58,24 @@
         </div>
     </section>
 
+    <section class="toa-hero-search" data-aos="fade-up" data-aos-duration="1500">
+        <div class="container">
+            <div class="toa-search-card toa-search-card--floating">
+                <form class="row g-3 align-items-center" action="{{ path('app_destinos') }}" method="get">
+                    <div class="col-lg-8">
+                        <label class="form-label text-uppercase small fw-semibold text-muted" for="busqueda-destinos">Buscar destinos</label>
+                        <input type="search" class="form-control form-control-lg" id="busqueda-destinos" name="q" placeholder="Ingresá una actividad, lugar o palabra clave">
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-end">
+                        <button class="btn btn-primary w-100 btn-lg" type="submit">
+                            <span class="bi bi-search me-2"></span>Ir a destinos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
     {% if destinoCategorias %}
         <section class="toa-section pt-0" data-aos="fade-up" data-aos-duration="1500">
             <div class="container">
@@ -101,20 +119,6 @@
                         <div class="alert alert-info mb-0">Muy pronto publicaremos nuestros primeros destinos destacados.</div>
                     </div>
                 {% endfor %}
-            </div>
-
-            <div class="toa-search-card" data-aos="fade-up" data-aos-delay="100">
-                <form class="row g-3 align-items-center" action="{{ path('app_destinos') }}" method="get">
-                    <div class="col-lg-8">
-                        <label class="form-label text-uppercase small fw-semibold text-muted" for="busqueda-destinos">Buscar destinos</label>
-                        <input type="search" class="form-control form-control-lg" id="busqueda-destinos" name="q" placeholder="Ingresá una actividad, lugar o palabra clave">
-                    </div>
-                    <div class="col-lg-4 d-flex align-items-end">
-                        <button class="btn btn-primary w-100 btn-lg" type="submit">
-                            <span class="bi bi-search me-2"></span>Ir a destinos
-                        </button>
-                    </div>
-                </form>
             </div>
 
             {% if transferShowcases %}
