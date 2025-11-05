@@ -288,22 +288,6 @@ class AdministradorController extends AbstractController
 
         ]);
     }
-    #[Route('/administrador/traslados', name: 'app_reservas')]
-    public function app_reservas(Request $request): Response
-    {
-        $idiomas = LanguageService::getLenguajes($this->em);
-        $idioma = LanguageService::getLenguaje($this->em,$request);
-        $this->adminMenu['traslados'] = true;
-        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-        return $this->render('administrador/traslados.html.twig', [
-            'controller_name' => 'AdministradorController',
-            'usuario'=>$this->getUser(),
-            'menu'=>$this->adminMenu,
-            'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma,
-            'plataforma'=>$plataforma
-        ]);
-    }
     #[Route('/administrador/bookings', name: 'app_administrador_bookings')]
     public function app_administrador_bookings(Request $request): Response
     {

@@ -6,6 +6,7 @@
     {% set heroSlides = [] %}
     {% set showcaseHighlights = [] %}
     {% set showcaseVideos = [] %}
+    {% set showcaseMediaPieces = [] %}
     {% for pieza in transferShowcases %}
         {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
             {% set heroSlides = heroSlides|merge([{ 'type': 'image', 'source': asset('img/transfer/showcase/' ~ pieza.imagen), 'title': pieza.titulo }]) %}
@@ -19,6 +20,13 @@
                 {% set showcaseVideos = showcaseVideos|merge([pieza]) %}
             {% endif %}
         {% endif %}
+    {% endfor %}
+
+    {% for pieza in showcaseHighlights %}
+        {% set showcaseMediaPieces = showcaseMediaPieces|merge([{'type': 'image', 'pieza': pieza}]) %}
+    {% endfor %}
+    {% for pieza in showcaseVideos %}
+        {% set showcaseMediaPieces = showcaseMediaPieces|merge([{'type': 'video', 'pieza': pieza}]) %}
     {% endfor %}
 
     <section class="toa-hero" data-aos="fade-up" data-aos-duration="2000" data-hero>
@@ -118,30 +126,6 @@
                     </div>
                 {% endfor %}
             </div>
-
-            {% if showcaseHighlights %}
-                <div class="toa-highlight-grid row g-4">
-                    {% for pieza in showcaseHighlights %}
-                        <div class="col-md-4 d-flex">
-                            <article class="card toa-highlight-card card-hover flex-fill h-100">
-                                <div class="toa-highlight-card__media">
-                                    <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" loading="lazy">
-                                </div>
-                                <div class="card-body d-flex flex-column gap-2">
-                                    <h3 class="h5 mb-1">{{ pieza.titulo }}</h3>
-                                    {% if pieza.descripcion %}
-                                        <p class="small text-muted flex-grow-1 mb-0">{{ pieza.descripcion }}</p>
-                                    {% endif %}
-                                    <div class="d-flex align-items-center gap-2 mt-auto small text-muted">
-                                        <span class="bi bi-camera-video"></span>
-                                        <span>Material destacado</span>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
         </div>
     </section>
 
@@ -181,29 +165,39 @@
         </div>
     </section>
 
-    {% if showcaseVideos %}
+    {% if showcaseMediaPieces %}
         <section id="multimedia" class="toa-section toa-media-section bg-dark text-white" data-aos="fade-up" data-aos-duration="1500">
             <div class="container">
                 <div class="toa-section-heading text-white">
                     <h2 class="toa-section-title text-white">Contenido multimedia</h2>
-                    <p class="toa-section-subtitle text-white-50">Disfrutá de los videos seleccionados por nuestro equipo para inspirar tu próxima experiencia.</p>
+                    <p class="toa-section-subtitle text-white-50">Disfrutá del contenido seleccionado por nuestro equipo para inspirar tu próxima experiencia.</p>
                 </div>
                 <div class="row g-4">
-                    {% for pieza in showcaseVideos %}
+                    {% for item in showcaseMediaPieces %}
+                        {% set pieza = item.pieza %}
                         <div class="col-md-6 col-lg-4 d-flex">
                             <article class="card bg-transparent border-0 shadow-sm flex-fill toa-media-card card-hover h-100">
                                 <div class="ratio ratio-16x9 toa-media-card__media">
-                                    <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
+                                    {% if item.type == 'video' %}
+                                        <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
+                                    {% else %}
+                                        <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" loading="lazy">
+                                    {% endif %}
                                 </div>
                                 <div class="card-body d-flex flex-column gap-2">
                                     <h3 class="h5 mb-1 text-white">{{ pieza.titulo }}</h3>
                                     {% if pieza.descripcion %}
                                         <p class="small text-white-50 flex-grow-1 mb-0">{{ pieza.descripcion }}</p>
                                     {% endif %}
-                                    {% if pieza.videoUrl %}
+                                    {% if item.type == 'video' and pieza.videoUrl %}
                                         <a class="btn btn-outline-light btn-sm mt-auto" href="{{ pieza.videoUrl }}" target="_blank" rel="noopener">
                                             <span class="bi bi-youtube me-1"></span> Ver en YouTube
                                         </a>
+                                    {% elseif item.type == 'image' %}
+                                        <div class="d-flex align-items-center gap-2 mt-auto small text-white-50">
+                                            <span class="bi bi-camera-fill"></span>
+                                            <span>Material fotográfico</span>
+                                        </div>
                                     {% endif %}
                                 </div>
                             </article>
@@ -276,6 +270,11 @@
                                         </ul>
                                     </div>
                                 {% endif %}
+                                <div class="d-grid mt-auto">
+                                    <a class="btn btn-outline-primary" href="{{ path('app_transfer_combo_show', { id: combo.id }) }}">
+                                        Ver detalles
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
