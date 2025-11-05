@@ -1705,6 +1705,29 @@ class AdministradorController extends AbstractController
         ]);
     }
 
+    #[Route('/administrador/traslados/campos/{id}/eliminar', name: 'app_admin_transfer_field_delete', methods: ['POST'])]
+    public function deleteTransferField(Request $request, TransferFormField $field): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('delete_transfer_field_' . $field->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido.');
+
+            return $this->redirectToRoute('app_admin_transfer_fields');
+        }
+
+        $valores = $this->em->getRepository(TransferRequestFieldValue::class)->findBy(['campo' => $field]);
+
+        foreach ($valores as $valor) {
+            $this->em->remove($valor);
+        }
+
+        $this->em->remove($field);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Campo eliminado.');
+
+        return $this->redirectToRoute('app_admin_transfer_fields');
+    }
+
     #[Route('/administrador/traslados/solicitudes', name: 'app_admin_transfer_requests')]
     public function transferRequests(Request $request): Response
     {

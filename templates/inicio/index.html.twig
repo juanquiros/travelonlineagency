@@ -4,21 +4,19 @@
 
 {% block body %}
     {% set heroSlides = [] %}
+    {% set showcaseHighlights = [] %}
+    {% set showcaseVideos = [] %}
     {% for pieza in transferShowcases %}
         {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
-            {% set heroSlides = heroSlides|merge([{
-                'type': 'image',
-                'source': asset('img/transfer/showcase/' ~ pieza.imagen),
-                'title': pieza.titulo
-            }]) %}
+            {% set heroSlides = heroSlides|merge([{ 'type': 'image', 'source': asset('img/transfer/showcase/' ~ pieza.imagen), 'title': pieza.titulo }]) %}
+            {% set showcaseHighlights = showcaseHighlights|merge([pieza]) %}
         {% elseif pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') %}
             {% set videoUrl = pieza.videoBackgroundUrl %}
             {% if videoUrl %}
-                {% set heroSlides = heroSlides|merge([{
-                    'type': 'video',
-                    'source': videoUrl,
-                    'title': pieza.titulo
-                }]) %}
+                {% set heroSlides = heroSlides|merge([{ 'type': 'video', 'source': videoUrl, 'title': pieza.titulo }]) %}
+            {% endif %}
+            {% if pieza.videoEmbed %}
+                {% set showcaseVideos = showcaseVideos|merge([pieza]) %}
             {% endif %}
         {% endif %}
     {% endfor %}
@@ -121,28 +119,25 @@
                 {% endfor %}
             </div>
 
-            {% if transferShowcases %}
-                <div class="toa-showcase-grid row g-4">
-                    {% for pieza in transferShowcases %}
+            {% if showcaseHighlights %}
+                <div class="toa-highlight-grid row g-4">
+                    {% for pieza in showcaseHighlights %}
                         <div class="col-md-4 d-flex">
-                            <div class="card h-100 shadow-sm flex-fill">
-                                {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
-                                    <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" class="card-img-top" style="object-fit: cover; max-height: 220px;">
-                                {% elseif pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') and pieza.videoEmbed %}
-                                    <div class="ratio ratio-16x9">
-                                        <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
-                                    </div>
-                                {% endif %}
-                                <div class="card-body d-flex flex-column">
-                                    <h3 class="h5 mb-2">{{ pieza.titulo }}</h3>
-                                    {% if pieza.descripcion %}
-                                        <p class="small text-muted flex-grow-1">{{ pieza.descripcion }}</p>
-                                    {% endif %}
-                                    {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') and pieza.videoUrl %}
-                                        <a class="btn btn-outline-primary btn-sm mt-2" href="{{ pieza.videoUrl }}" target="_blank" rel="noopener">Ver en YouTube</a>
-                                    {% endif %}
+                            <article class="card toa-highlight-card card-hover flex-fill h-100">
+                                <div class="toa-highlight-card__media">
+                                    <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" loading="lazy">
                                 </div>
-                            </div>
+                                <div class="card-body d-flex flex-column gap-2">
+                                    <h3 class="h5 mb-1">{{ pieza.titulo }}</h3>
+                                    {% if pieza.descripcion %}
+                                        <p class="small text-muted flex-grow-1 mb-0">{{ pieza.descripcion }}</p>
+                                    {% endif %}
+                                    <div class="d-flex align-items-center gap-2 mt-auto small text-muted">
+                                        <span class="bi bi-camera-video"></span>
+                                        <span>Material destacado</span>
+                                    </div>
+                                </div>
+                            </article>
                         </div>
                     {% endfor %}
                 </div>
@@ -185,6 +180,39 @@
             </div>
         </div>
     </section>
+
+    {% if showcaseVideos %}
+        <section id="multimedia" class="toa-section toa-media-section bg-dark text-white" data-aos="fade-up" data-aos-duration="1500">
+            <div class="container">
+                <div class="toa-section-heading text-white">
+                    <h2 class="toa-section-title text-white">Contenido multimedia</h2>
+                    <p class="toa-section-subtitle text-white-50">Disfrutá de los videos seleccionados por nuestro equipo para inspirar tu próxima experiencia.</p>
+                </div>
+                <div class="row g-4">
+                    {% for pieza in showcaseVideos %}
+                        <div class="col-md-6 col-lg-4 d-flex">
+                            <article class="card bg-transparent border-0 shadow-sm flex-fill toa-media-card card-hover h-100">
+                                <div class="ratio ratio-16x9 toa-media-card__media">
+                                    <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
+                                </div>
+                                <div class="card-body d-flex flex-column gap-2">
+                                    <h3 class="h5 mb-1 text-white">{{ pieza.titulo }}</h3>
+                                    {% if pieza.descripcion %}
+                                        <p class="small text-white-50 flex-grow-1 mb-0">{{ pieza.descripcion }}</p>
+                                    {% endif %}
+                                    {% if pieza.videoUrl %}
+                                        <a class="btn btn-outline-light btn-sm mt-auto" href="{{ pieza.videoUrl }}" target="_blank" rel="noopener">
+                                            <span class="bi bi-youtube me-1"></span> Ver en YouTube
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
 
     <section id="bookings" class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1500">
         <div class="container">
