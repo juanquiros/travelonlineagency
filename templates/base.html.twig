@@ -120,6 +120,12 @@
     <main>
         {% block body %}{% endblock %}
     </main>
+    {% if plataforma.linkWhatsapp %}
+        <a class="toa-whatsapp-float" href="{{ plataforma.linkWhatsapp }}" target="_blank" rel="noopener noreferrer" aria-label="Chatear por WhatsApp">
+            <span class="toa-whatsapp-icon bi bi-whatsapp"></span>
+            <span class="toa-whatsapp-bubble">Escríbenos</span>
+        </a>
+    {% endif %}
     <footer class="toa-footer">
         <div class="container">
             <div class="row gy-4">

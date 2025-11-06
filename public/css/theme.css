@@ -74,7 +74,7 @@ main {
 }
 
 .toa-navbar .dropdown-menu {
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     border: none;
     box-shadow: 0 16px 40px rgba(12, 45, 74, 0.12);
     z-index: 1060;
@@ -219,7 +219,7 @@ main {
     align-items: center;
     gap: 0.5rem;
     background: rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
+    border-radius: 0.5rem;
     padding: 0.35rem 1rem;
     font-size: 0.9rem;
     letter-spacing: 0.08em;
@@ -251,7 +251,7 @@ main {
     color: #1b1b1b;
     font-weight: 600;
     padding: 0.75rem 1.75rem;
-    border-radius: 999px;
+    border-radius: 0.6rem;
     box-shadow: 0 12px 24px rgba(242, 148, 42, 0.35);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -264,7 +264,7 @@ main {
 }
 
 .toa-btn-outline {
-    border-radius: 999px;
+    border-radius: 0.6rem;
     border: 1px solid rgba(255, 255, 255, 0.5);
     color: #fff;
     padding: 0.75rem 1.75rem;
@@ -300,7 +300,7 @@ main {
 
 .toa-card {
     border: none;
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
     box-shadow: 0 20px 40px rgba(12, 45, 74, 0.08);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     background: #fff;
@@ -322,7 +322,7 @@ main {
 }
 
 .toa-card .btn.btn-outline-primary {
-    border-radius: 999px;
+    border-radius: 0.55rem;
     border: 1px solid var(--toa-navy);
     font-weight: 600;
     padding: 0.55rem 1.5rem;
@@ -344,7 +344,7 @@ main {
     align-items: center;
     gap: 0.35rem;
     padding: 0.4rem 0.8rem;
-    border-radius: 999px;
+    border-radius: 0.55rem;
     background-color: rgba(31, 107, 179, 0.08);
     color: var(--toa-sky);
     font-weight: 600;
@@ -352,7 +352,7 @@ main {
 }
 
 .toa-map-card {
-    border-radius: 1.5rem;
+    border-radius: 0.85rem;
     border: none;
     background: #fff;
     box-shadow: 0 22px 45px rgba(12, 45, 74, 0.1);
@@ -363,7 +363,7 @@ main {
 }
 
 .toa-map-card .ratio {
-    border-radius: 1rem;
+    border-radius: 0.65rem;
     overflow: hidden;
 }
 
@@ -404,7 +404,7 @@ main {
 }
 
 .toa-section .nav-pills .nav-link {
-    border-radius: 999px;
+    border-radius: 0.55rem;
     padding: 0.5rem 1.2rem;
     color: var(--toa-navy);
     border: 1px solid rgba(12, 45, 74, 0.15);
@@ -423,7 +423,7 @@ main {
     align-items: center;
     gap: 0.35rem;
     padding: 0.4rem 0.75rem;
-    border-radius: 999px;
+    border-radius: 0.55rem;
     background: rgba(12, 45, 74, 0.06);
     color: var(--toa-muted);
     font-weight: 500;
@@ -434,7 +434,7 @@ main {
     background-color: rgba(255, 204, 112, 0.18);
     color: #c77700;
     font-weight: 600;
-    border-radius: 999px;
+    border-radius: 0.55rem;
     padding: 0.35rem 0.75rem;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -453,7 +453,7 @@ main {
 .toa-list-inline li {
     background: rgba(12, 45, 74, 0.05);
     padding: 0.35rem 0.75rem;
-    border-radius: 999px;
+    border-radius: 0.55rem;
     font-size: 0.85rem;
     color: var(--toa-navy);
 }
@@ -490,12 +490,12 @@ main {
     height: 3px;
     margin: 0.5rem auto 2rem;
     background: linear-gradient(90deg, var(--toa-sun), var(--toa-sky));
-    border-radius: 999px;
+    border-radius: 0.35rem;
 }
 
 .booking-filter-card {
     background: #fff;
-    border-radius: 1.5rem;
+    border-radius: 0.85rem;
     box-shadow: 0 18px 40px rgba(12, 45, 74, 0.1);
     padding: 1.25rem 1.75rem;
     max-width: 720px;
@@ -508,13 +508,13 @@ main {
 }
 
 .booking-filter-card input[type="date"] {
-    border-radius: 0.85rem;
+    border-radius: 0.45rem;
     border: 1px solid rgba(12, 45, 74, 0.2);
     padding: 0.6rem 0.85rem;
 }
 
 .booking-card {
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
     border: 1px solid rgba(12, 45, 74, 0.08);
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 18px 35px rgba(12, 45, 74, 0.06);
@@ -570,7 +570,7 @@ main {
 .destino-card-social .btn {
     font-size: 0.75rem;
     padding: 0.3rem 0.65rem;
-    border-radius: 999px;
+    border-radius: 0.5rem;
     border-color: rgba(12, 45, 74, 0.12);
     color: rgba(12, 45, 74, 0.75);
     background-color: rgba(12, 45, 74, 0.03);
@@ -610,7 +610,7 @@ main {
 
 .destino-card .btn.btn-outline-primary {
     border: none;
-    border-radius: 999px;
+    border-radius: 0.55rem;
     background: linear-gradient(120deg, var(--toa-sky), var(--toa-navy));
     color: #fff;
     font-weight: 600;
@@ -629,7 +629,7 @@ main {
 
 .toa-highlight-card {
     border: none;
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
     overflow: hidden;
     background: #fff;
 }
@@ -672,19 +672,19 @@ main {
 }
 
 .toa-media-card {
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
     backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .toa-media-card__media {
-    border-radius: 1rem;
+    border-radius: 0.65rem;
     overflow: hidden;
     background: rgba(9, 16, 26, 0.45);
 }
 
 .toa-media-card__media iframe {
-    border-radius: 1rem;
+    border-radius: 0.65rem;
     border: none;
 }
 
@@ -692,12 +692,12 @@ main {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 1rem;
+    border-radius: 0.65rem;
     display: block;
 }
 
 .toa-media-card .btn {
-    border-radius: 999px;
+    border-radius: 0.55rem;
     font-weight: 600;
     padding: 0.5rem 1.25rem;
 }
@@ -722,7 +722,7 @@ main {
     position: relative;
     width: 48px;
     height: 48px;
-    border-radius: 20px;
+    border-radius: 14px;
     background: linear-gradient(135deg, var(--marker-color, #1f6bb3), rgba(12, 45, 74, 0.95));
     display: flex;
     align-items: center;
@@ -737,7 +737,7 @@ main {
     content: '';
     position: absolute;
     inset: 6px;
-    border-radius: 16px;
+    border-radius: 10px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
     opacity: 0.85;
 }
@@ -778,7 +778,7 @@ main {
 }
 
 .destinos-map-frame {
-    border-radius: 1rem;
+    border-radius: 0.65rem;
     overflow: hidden;
     --bs-aspect-ratio: 56.25%;
 }
@@ -799,7 +799,7 @@ main {
 
 .destinos-map-filter-button {
     --destinos-filter-color: var(--destinos-category-color, #1f6bb3);
-    border-radius: 999px;
+    border-radius: 0.55rem;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -843,7 +843,7 @@ main {
 }
 
 .destino-popup-container .leaflet-popup-content-wrapper {
-    border-radius: 18px;
+    border-radius: 0.75rem;
     border: none;
     box-shadow: 0 20px 40px rgba(12, 45, 74, 0.2);
     padding: 0;
@@ -864,7 +864,7 @@ main {
 .destino-popup-logo {
     width: 64px;
     height: 64px;
-    border-radius: 18px;
+    border-radius: 0.75rem;
     background: #fff;
     border: 1px solid rgba(12, 45, 74, 0.08);
     display: flex;
@@ -884,7 +884,7 @@ main {
     width: 120px;
     height: 120px;
     object-fit: cover;
-    border-radius: 12px;
+    border-radius: 0.5rem;
 }
 
 .destino-popup-body {
@@ -964,7 +964,7 @@ main {
     bottom: 1rem;
     width: 64px;
     height: 64px;
-    border-radius: 18px;
+    border-radius: 0.75rem;
     background: rgba(255, 255, 255, 0.92);
     display: flex;
     align-items: center;
@@ -983,7 +983,7 @@ main {
 .destino-hero-logo {
     width: 96px;
     height: 96px;
-    border-radius: 28px;
+    border-radius: 1rem;
     background: rgba(255, 255, 255, 0.16);
     display: flex;
     align-items: center;
@@ -1035,7 +1035,7 @@ main {
 .share-actions {
     background: rgba(15, 76, 129, 0.05);
     border: 1px solid rgba(12, 45, 74, 0.08);
-    border-radius: 16px;
+    border-radius: 0.75rem;
     padding: 1.25rem 1.5rem;
 }
 
@@ -1045,7 +1045,7 @@ main {
 }
 
 .share-actions__buttons .btn {
-    border-radius: 999px;
+    border-radius: 0.55rem;
     font-weight: 600;
 }
 
@@ -1162,7 +1162,7 @@ main {
     flex: 0 0 240px;
     min-height: 180px;
     background: #fff;
-    border-radius: 1.5rem;
+    border-radius: 0.85rem;
     box-shadow: 0 18px 35px rgba(12, 45, 74, 0.08);
     display: flex;
     flex-direction: column;
@@ -1187,7 +1187,7 @@ main {
 .toa-category-icon {
     width: 72px;
     height: 72px;
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1203,7 +1203,7 @@ main {
 }
 
 .toa-category-nav {
-    border-radius: 999px;
+    border-radius: 0.65rem;
     width: 42px;
     height: 42px;
     display: inline-flex;
@@ -1221,7 +1221,7 @@ main {
 
 .toa-search-card {
     background: #fff;
-    border-radius: 1.5rem;
+    border-radius: 0.85rem;
     padding: 2rem;
     box-shadow: 0 20px 48px rgba(8, 29, 50, 0.12);
     border: 1px solid rgba(12, 45, 74, 0.08);
@@ -1247,6 +1247,87 @@ main {
 .toa-search-card .btn-lg {
     padding-top: 0.85rem;
     padding-bottom: 0.85rem;
+}
+
+.toa-whatsapp-float {
+    position: fixed;
+    right: clamp(1rem, 4vw, 1.75rem);
+    bottom: clamp(1rem, 4vw, 1.75rem);
+    z-index: 1200;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+    text-decoration: none;
+}
+
+.toa-whatsapp-float .toa-whatsapp-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #25d366;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 14px 28px rgba(37, 211, 102, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toa-whatsapp-float:hover .toa-whatsapp-icon,
+.toa-whatsapp-float:focus .toa-whatsapp-icon {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px rgba(37, 211, 102, 0.45);
+}
+
+.toa-whatsapp-bubble {
+    background: rgba(15, 17, 22, 0.88);
+    color: #fff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.55rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    animation: toa-whatsapp-bubble 4.5s ease-in-out infinite;
+    pointer-events: none;
+    box-shadow: 0 12px 24px rgba(15, 17, 22, 0.25);
+}
+
+@keyframes toa-whatsapp-bubble {
+    0%,
+    55% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    15%,
+    40% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .toa-whatsapp-float {
+        gap: 0.5rem;
+        right: 0.85rem;
+        bottom: 0.85rem;
+    }
+
+    .toa-whatsapp-float .toa-whatsapp-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+    }
+
+    .toa-whatsapp-bubble {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.65rem;
+    }
 }
 
 @media (max-width: 767.98px) {
