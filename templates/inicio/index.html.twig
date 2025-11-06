@@ -115,7 +115,7 @@
             <h2 class="toa-section-title">Destinos destacados</h2>
             <div class="section-divider"></div>
             <p class="toa-section-subtitle">Nuestra selección curada con los imprescindibles de Iguazú para empezar a planificar tu viaje.</p>
-            <div class="row g-4 mb-4">
+            <div class="row g-4 mb-4 justify-content-center">
                 {% for destino in destinosDestacados %}
                     <div class="col-md-6 col-lg-4 d-flex">
                         {% include 'components/destino_card.html.twig' with { destino: destino } %}
@@ -148,7 +148,7 @@
             <h2 class="toa-section-title">Explorá más destinos</h2>
             <div class="section-divider"></div>
             <p class="toa-section-subtitle">Seleccionamos algunos favoritos para inspirarte. Consultá el listado completo para planificar tu itinerario.</p>
-            <div class="row g-4">
+            <div class="row g-4 justify-content-center">
                 {% for destino in destinosTarjetas %}
                     <div class="col-md-6 col-lg-4 d-flex">
                         {% include 'components/destino_card.html.twig' with { destino: destino } %}
@@ -172,7 +172,7 @@
                     <h2 class="toa-section-title text-white">Contenido multimedia</h2>
                     <p class="toa-section-subtitle text-white-50">Disfrutá del contenido seleccionado por nuestro equipo para inspirar tu próxima experiencia.</p>
                 </div>
-                <div class="row g-4">
+                <div class="row g-4 justify-content-center">
                     {% for item in showcaseMediaPieces %}
                         {% set pieza = item.pieza %}
                         <div class="col-md-6 col-lg-4 d-flex">
@@ -297,7 +297,7 @@
                 <h2 class="toa-section-title">Lo que dicen nuestros viajeros</h2>
                 <div class="section-divider"></div>
                 <p class="toa-section-subtitle">Experiencias reales de turistas que ya disfrutaron nuestros traslados personalizados.</p>
-                <div class="row g-4">
+                <div class="row g-4 justify-content-center">
                     {% for testimonio in testimoniosTraslados %}
                         <div class="col-md-6 col-lg-4 d-flex">
                             <div class="card shadow-sm flex-fill h-100">
