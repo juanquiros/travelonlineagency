@@ -2,16 +2,15 @@
 
 namespace App\Form;
 
-use App\Entity\Moneda;
 use App\Entity\TransferDestination;
 use App\Entity\TransferDestinationCategory;
+use App\Form\Type\ServicePricesType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
-use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
@@ -100,29 +99,11 @@ class TransferDestinationType extends AbstractType
                     'placeholder' => 'https://www.ejemplo.com',
                 ],
             ])
-            ->add('moneda', EntityType::class, [
-                'label' => 'Moneda de la tarifa',
-                'class' => Moneda::class,
-                'choices' => $options['currency_choices'],
-                'choice_label' => static function (Moneda $moneda): string {
-                    $iso = $moneda->getCodigoIso() ?? $moneda->getSimbolo() ?? '';
-                    return trim(sprintf('%s (%s)', $moneda->getNombre(), $iso));
-                },
-                'placeholder' => 'Seleccioná una moneda',
-                'required' => false,
-                'group_by' => static function (Moneda $moneda): string {
-                    return match ($moneda->getMetodoPago()) {
-                        Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
-                        Moneda::METODO_PAYPAL => 'PayPal',
-                        default => 'Pago en efectivo',
-                    };
-                },
-            ])
-            ->add('tarifaBase', MoneyType::class, [
-                'label' => 'Tarifa base',
-                'currency' => $options['default_currency_code'] ?? 'ARS',
-                'divisor' => 1,
-                'scale' => 2,
+            ->add('prices', ServicePricesType::class, [
+                'label' => 'Tarifas por moneda',
+                'currencies' => $options['currency_choices'],
+                'values' => $options['price_values'],
+                'default_currency_code' => $options['default_currency_code'],
             ])
             ->add('imagenPortadaFile', FileType::class, [
                 'label' => 'Imagen principal',
@@ -184,10 +165,12 @@ class TransferDestinationType extends AbstractType
             'longitude' => null,
             'currency_choices' => [],
             'default_currency_code' => 'ARS',
+            'price_values' => [],
         ]);
         $resolver->setAllowedTypes('latitude', ['null', 'float', 'string']);
         $resolver->setAllowedTypes('longitude', ['null', 'float', 'string']);
         $resolver->setAllowedTypes('currency_choices', 'array');
         $resolver->setAllowedTypes('default_currency_code', ['null', 'string']);
+        $resolver->setAllowedTypes('price_values', 'array');
     }
 }

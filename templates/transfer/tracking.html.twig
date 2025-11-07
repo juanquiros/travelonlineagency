@@ -26,6 +26,17 @@
                         <li><strong>Inicio del servicio:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Fin del servicio:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Tipo de vehículo solicitado:</strong> {{ solicitud.tipoVehiculo ?: 'No especificado' }}</li>
+                        <li>
+                            <strong>Total principal:</strong> {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
+                            {% set totals = solicitud.totalesPorMoneda %}
+                            {% if totals is iterable and totals is not empty %}
+                                <div class="small text-muted mt-1">
+                                    {% for iso, amount in totals %}
+                                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </li>
                         {% if solicitud.codigoServicio %}
                             <li><strong>Orden de servicio:</strong> {{ solicitud.codigoServicio }}</li>
                         {% endif %}
@@ -94,7 +105,18 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h6">Estado del pago</h2>
-                    <p class="mb-1">Monto total: {{ solicitud.precioTotal|number_format(2, ',', '.') }} {{ solicitud.moneda }}</p>
+                    <p class="mb-1">Monto principal: {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</p>
+                    {% set totals = solicitud.totalesPorMoneda %}
+                    {% if totals is iterable and totals is not empty %}
+                        <div class="small text-muted mb-2">
+                            <strong>Totales por moneda:</strong>
+                            <ul class="list-unstyled mb-0">
+                                {% for iso, amount in totals %}
+                                    <li>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
                     <p class="small text-muted">Conservá este enlace para completar el pago o seguir tu traslado.</p>
                     {% if opcionesPago is empty %}
                         <p class="text-muted mb-0">No hay métodos de pago habilitados por el momento.</p>

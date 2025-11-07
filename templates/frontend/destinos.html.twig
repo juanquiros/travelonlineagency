@@ -62,7 +62,7 @@
                 <div class="row g-4 justify-content-center">
                     {% for combo in combos %}
                         <div class="col-md-6 col-lg-4 d-flex">
-                            {% include 'components/combo_card.html.twig' with { combo: combo } %}
+                            {% include 'components/combo_card.html.twig' with { combo: combo, plataforma: plataforma } %}
                         </div>
                     {% else %}
                         <div class="col-12">

@@ -31,13 +31,16 @@ class MonedaType extends AbstractType
                     'maxlength' => 8,
                 ],
             ])
-            ->add('metodoPago', ChoiceType::class, [
-                'label' => 'Medio de pago asociado',
+            ->add('metodosPago', ChoiceType::class, [
+                'label' => 'Medios de pago compatibles',
                 'choices' => [
                     'Pago en efectivo' => Moneda::METODO_CASH,
                     'Mercado Pago' => Moneda::METODO_MERCADOPAGO,
                     'PayPal' => Moneda::METODO_PAYPAL,
                 ],
+                'multiple' => true,
+                'expanded' => true,
+                'help' => 'Podés habilitar varios medios para la misma moneda. Si no seleccionás ninguno, quedará disponible solo para pagos en efectivo.',
             ])
             ->add('habilitada', CheckboxType::class, [
                 'label' => 'Habilitada',

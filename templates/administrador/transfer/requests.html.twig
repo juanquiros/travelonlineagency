@@ -43,7 +43,7 @@
                         <td>
                             {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}
                         </td>
-                        <td>${{ solicitud.precioTotal }}</td>
+                        <td>{{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</td>
                         <td>
                             {% if assignments|length > 0 %}
                                 {% for asignacion in assignments %}

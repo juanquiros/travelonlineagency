@@ -34,8 +34,8 @@ class Moneda
     #[ORM\Column(length: 3, name: 'codigo_iso')]
     private ?string $codigoIso = null;
 
-    #[ORM\Column(length: 32, name: 'metodo_pago')]
-    private string $metodoPago = self::METODO_CASH;
+    #[ORM\Column(type: 'json', name: 'metodos_pago')]
+    private array $metodosPago = [self::METODO_CASH];
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $habilitada = true;
@@ -99,21 +99,73 @@ class Moneda
         return $this;
     }
 
-    public function getMetodoPago(): string
+    public function getMetodoPago(): ?string
     {
-        return $this->metodoPago;
+        return $this->metodosPago[0] ?? null;
     }
 
     public function setMetodoPago(string $metodoPago): static
     {
-        $metodoPago = strtolower($metodoPago);
-        if (!in_array($metodoPago, self::METODOS_PAGO, true)) {
-            $metodoPago = self::METODO_CASH;
+        return $this->setMetodosPago([$metodoPago]);
+    }
+
+    public function getMetodosPago(): array
+    {
+        return $this->metodosPago;
+    }
+
+    public function setMetodosPago(array $metodosPago): static
+    {
+        $normalizados = [];
+        foreach ($metodosPago as $metodo) {
+            $metodo = strtolower((string) $metodo);
+            if (!in_array($metodo, self::METODOS_PAGO, true)) {
+                continue;
+            }
+            $normalizados[$metodo] = $metodo;
         }
 
-        $this->metodoPago = $metodoPago;
+        if (empty($normalizados)) {
+            $normalizados[self::METODO_CASH] = self::METODO_CASH;
+        }
+
+        $this->metodosPago = array_values($normalizados);
 
         return $this;
+    }
+
+    public function addMetodoPago(string $metodoPago): static
+    {
+        $metodoPago = strtolower($metodoPago);
+        if (!in_array($metodoPago, self::METODOS_PAGO, true)) {
+            return $this;
+        }
+
+        if (!in_array($metodoPago, $this->metodosPago, true)) {
+            $this->metodosPago[] = $metodoPago;
+        }
+
+        return $this;
+    }
+
+    public function removeMetodoPago(string $metodoPago): static
+    {
+        $metodoPago = strtolower($metodoPago);
+        $this->metodosPago = array_values(array_filter(
+            $this->metodosPago,
+            static fn (string $valor): bool => $valor !== $metodoPago
+        ));
+
+        if ($this->metodosPago === []) {
+            $this->metodosPago[] = self::METODO_CASH;
+        }
+
+        return $this;
+    }
+
+    public function supportsMetodoPago(string $metodoPago): bool
+    {
+        return in_array(strtolower($metodoPago), $this->metodosPago, true);
     }
 
     public function isHabilitada(): bool
@@ -195,7 +247,7 @@ class Moneda
             'nombre' => $this->nombre,
             'simbolo' => $this->simbolo,
             'codigoIso' => $this->codigoIso,
-            'metodoPago' => $this->metodoPago,
+            'metodosPago' => $this->metodosPago,
             'habilitada' => $this->habilitada,
         ];
     }

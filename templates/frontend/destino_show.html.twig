@@ -123,8 +123,13 @@
                                         <div class="border rounded p-3 d-flex flex-column gap-2">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <a class="fw-semibold text-decoration-none" href="{{ path('app_transfer_combo_show', { id: combo.id }) }}">{{ combo.nombre }}</a>
-                                                {% set currencySymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
-                                                <span class="badge text-bg-primary">{{ currencySymbol }} {{ combo.precio }}</span>
+                                                {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                                {% if comboPrice %}
+                                                    {% set currencySymbol = comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                                    <span class="badge text-bg-primary">{{ currencySymbol }} {{ comboPrice.amount|number_format(2, '.', '') }}</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary">Tarifa no disponible</span>
+                                                {% endif %}
                                             </div>
                                             {% if combo.descripcion %}
                                                 <p class="small text-muted mb-0">{{ combo.descripcion|striptags|u.truncate(120, '…') }}</p>

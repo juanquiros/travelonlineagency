@@ -70,8 +70,10 @@
                     <div class="mb-3">
                         <select class="form-select" name="combo_id">
                             {% for combo in combos %}
-                                {% set comboSymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
-                                <option value="{{ combo.id }}">{{ combo.nombre }} - {{ comboSymbol }} {{ combo.precio }}</option>
+                                {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef) %}
+                                {% set comboSymbol = comboPrice and comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                {% set comboAmount = comboPrice ? comboPrice.amount|number_format(2, '.', '') : '—' %}
+                                <option value="{{ combo.id }}">{{ combo.nombre }} - {{ comboSymbol }} {{ comboAmount }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -84,10 +86,12 @@
                             <label class="form-label">Destinos disponibles</label>
                             <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                                 {% for destino in destinos %}
-                                    {% set destinoSymbol = destino.moneda ? (destino.moneda.simbolo ?: destino.moneda.codigoIso) : '$' %}
+                                    {% set destinoPrice = destino.getDisplayPrice(plataforma.monedaDef) %}
+                                    {% set destinoSymbol = destinoPrice and destinoPrice.currency ? (destinoPrice.currency.simbolo ?: destinoPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                    {% set destinoAmount = destinoPrice ? destinoPrice.amount|number_format(2, '.', '') : '—' %}
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
-                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - {{ destinoSymbol }} {{ destino.tarifaBase }}</label>
+                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - {{ destinoSymbol }} {{ destinoAmount }}</label>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -136,8 +140,13 @@
                                     {% endif %}
                                     <div class="card-body">
                                         <h3 class="h6">{{ combo.nombre }}</h3>
-                                        {% set comboSymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
-                                        <div class="text-success fw-semibold mb-2">{{ comboSymbol }} {{ combo.precio }}</div>
+                                        {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef) %}
+                                        {% if comboPrice %}
+                                            {% set comboSymbol = comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                            <div class="text-success fw-semibold mb-2">{{ comboSymbol }} {{ comboPrice.amount|number_format(2, '.', '') }}</div>
+                                        {% else %}
+                                            <div class="text-muted small mb-2">Tarifa no disponible</div>
+                                        {% endif %}
                                         {% if combo.descripcion %}
                                             <p class="small text-muted mb-2">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
                                         {% endif %}
@@ -174,8 +183,13 @@
                                         <div class="col">
                                             <div class="card-body">
                                                 <h3 class="h6 mb-1">{{ destino.nombre }}</h3>
-                                                {% set destinoSymbol = destino.moneda ? (destino.moneda.simbolo ?: destino.moneda.codigoIso) : '$' %}
-                                                <div class="text-success fw-semibold mb-1">Tarifa base: {{ destinoSymbol }} {{ destino.tarifaBase }}</div>
+                                                {% set destinoPrice = destino.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                                {% if destinoPrice %}
+                                                    {% set destinoSymbol = destinoPrice.currency ? (destinoPrice.currency.simbolo ?: destinoPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                                    <div class="text-success fw-semibold mb-1">Tarifa base: {{ destinoSymbol }} {{ destinoPrice.amount|number_format(2, '.', '') }}</div>
+                                                {% else %}
+                                                    <div class="text-muted small mb-1">Tarifa no disponible</div>
+                                                {% endif %}
                                                 {% if destino.descripcionCorta %}
                                                     <p class="small text-muted mb-0">{{ destino.descripcionCorta }}</p>
                                                 {% elseif destino.descripcion %}

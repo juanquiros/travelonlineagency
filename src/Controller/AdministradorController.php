@@ -932,16 +932,14 @@ class AdministradorController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($this->isCurrencyMethodAvailable($moneda)) {
-                $this->em->persist($moneda);
-                $this->em->flush();
-                $this->addFlash('success', 'Moneda creada correctamente.');
+            $this->em->persist($moneda);
+            $this->em->flush();
+            $this->addFlash('success', 'Moneda creada correctamente.');
 
-                return $this->redirectToRoute('app_admin_currencies');
-            }
+            return $this->redirectToRoute('app_admin_currencies');
         }
 
-        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['nombre' => 'ASC']);
 
         return $this->render('administrador/currencies.html.twig', [
             'plataforma' => $plataforma,
@@ -968,15 +966,13 @@ class AdministradorController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($this->isCurrencyMethodAvailable($moneda)) {
-                $this->em->flush();
-                $this->addFlash('success', 'Moneda actualizada correctamente.');
+            $this->em->flush();
+            $this->addFlash('success', 'Moneda actualizada correctamente.');
 
-                return $this->redirectToRoute('app_admin_currencies');
-            }
+            return $this->redirectToRoute('app_admin_currencies');
         }
 
-        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['nombre' => 'ASC']);
 
         return $this->render('administrador/currencies.html.twig', [
             'plataforma' => $plataforma,
@@ -1012,24 +1008,6 @@ class AdministradorController extends AbstractController
         return $this->redirectToRoute('app_admin_currencies');
     }
 
-    private function isCurrencyMethodAvailable(Moneda $moneda): bool
-    {
-        if ($moneda->getMetodoPago() === Moneda::METODO_CASH) {
-            return true;
-        }
-
-        $existing = $this->em->getRepository(Moneda::class)->findOneBy([
-            'metodoPago' => $moneda->getMetodoPago(),
-        ]);
-
-        if ($existing instanceof Moneda && $existing->getId() !== $moneda->getId()) {
-            $this->addFlash('error', 'Ya existe una moneda asignada a este medio de pago. Deshabilitá o modificá la moneda existente antes de continuar.');
-
-            return false;
-        }
-
-        return true;
-    }
     #[Route('/administrador/configuraciones/traduccion/plataforma/{codLenguaje}/{keyValue}', name: 'app_admin_traduccion_plataforma')]
     public function app_admin_traduccion_plataforma(string $codLenguaje,string $keyValue,Request $request): Response
     {
@@ -1263,7 +1241,7 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_destinations'] = true;
 
         $destination = new TransferDestination();
-        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
         if (!$currencyChoices) {
             $this->addFlash('warning', 'Configurá al menos una moneda activa para poder cargar los precios de los destinos.');
         }
@@ -1272,13 +1250,16 @@ class AdministradorController extends AbstractController
             $firstCurrency = $currencyChoices[0];
             $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
         }
+        $priceValues = $this->collectDestinationPriceValues($destination);
         $form = $this->createForm(TransferDestinationType::class, $destination, [
             'currency_choices' => $currencyChoices,
             'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyDestinationPrices($destination, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferDestination($destination, $form, $slugger)) {
                 $this->em->persist($destination);
                 $this->em->flush();
@@ -1324,21 +1305,24 @@ class AdministradorController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['transfer_destinations'] = true;
 
-        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
         $defaultCurrency = $destino->getMoneda()?->getCodigoIso();
         if ($defaultCurrency === null && !empty($currencyChoices)) {
             $firstCurrency = $currencyChoices[0];
             $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
         }
+        $priceValues = $this->collectDestinationPriceValues($destino);
         $form = $this->createForm(TransferDestinationType::class, $destino, [
             'latitude' => $destino->getLatitude(),
             'longitude' => $destino->getLongitude(),
             'currency_choices' => $currencyChoices,
             'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyDestinationPrices($destino, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferDestination($destino, $form, $slugger)) {
                 $this->em->flush();
                 $this->addFlash('success', 'Destino actualizado.');
@@ -1559,19 +1543,22 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_combos'] = true;
 
         $combo = new TransferCombo();
-        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
         $defaultCurrency = 'ARS';
         if (!empty($currencyChoices)) {
             $firstCurrency = $currencyChoices[0];
             $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
         }
+        $priceValues = $this->collectComboPriceValues($combo);
         $form = $this->createForm(TransferComboType::class, $combo, [
             'currency_choices' => $currencyChoices,
             'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboPrices($combo, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
                 $this->em->persist($combo);
                 $this->em->flush();
@@ -1610,20 +1597,23 @@ class AdministradorController extends AbstractController
             $selected[] = $destino->getDestino();
         }
 
-        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
         $defaultCurrency = $combo->getMoneda()?->getCodigoIso();
         if ($defaultCurrency === null && !empty($currencyChoices)) {
             $firstCurrency = $currencyChoices[0];
             $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
         }
+        $priceValues = $this->collectComboPriceValues($combo);
         $form = $this->createForm(TransferComboType::class, $combo, [
             'selected_destinations' => $selected,
             'currency_choices' => $currencyChoices,
             'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboPrices($combo, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
                 $this->em->flush();
                 $this->syncComboDestinations($combo, $form->get('destinos')->getData());
@@ -2577,6 +2567,166 @@ class AdministradorController extends AbstractController
         }
 
         return true;
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function collectDestinationPriceValues(TransferDestination $destination): array
+    {
+        $values = [];
+        foreach ($destination->getPrecios() as $precio) {
+            $currency = $precio->getMoneda();
+            if ($currency instanceof Moneda) {
+                $values[$currency->getId()] = (float) $precio->getValor();
+            }
+        }
+
+        $primaryCurrency = $destination->getMoneda();
+        if ($primaryCurrency instanceof Moneda && !array_key_exists($primaryCurrency->getId(), $values)) {
+            $values[$primaryCurrency->getId()] = (float) $destination->getTarifaBase();
+        }
+
+        return $values;
+    }
+
+    private function applyDestinationPrices(TransferDestination $destination, ?FormInterface $pricesForm, array $currencies): void
+    {
+        foreach ($destination->getPrecios()->toArray() as $precio) {
+            $destination->removePrecio($precio);
+            if ($precio instanceof Precio) {
+                $this->em->remove($precio);
+            }
+        }
+
+        if (!$pricesForm instanceof FormInterface) {
+            $destination->setMoneda(null);
+            $destination->setTarifaBase('0.00');
+
+            return;
+        }
+
+        $primaryCurrency = null;
+        $primaryValue = null;
+        foreach ($currencies as $currency) {
+            if (!$currency instanceof Moneda) {
+                continue;
+            }
+
+            $fieldName = sprintf('currency_%d', $currency->getId());
+            if (!$pricesForm->has($fieldName)) {
+                continue;
+            }
+
+            $value = $pricesForm->get($fieldName)->getData();
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $amount = (float) $value;
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $precio = new Precio();
+            $precio->setValor($amount);
+            $precio->setMoneda($currency);
+            $destination->addPrecio($precio);
+            $this->em->persist($precio);
+
+            if ($primaryCurrency === null) {
+                $primaryCurrency = $currency;
+                $primaryValue = $amount;
+            }
+        }
+
+        if ($primaryCurrency instanceof Moneda && $primaryValue !== null) {
+            $destination->setMoneda($primaryCurrency);
+            $destination->setTarifaBase(number_format($primaryValue, 2, '.', ''));
+        } else {
+            $destination->setMoneda(null);
+            $destination->setTarifaBase('0.00');
+        }
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function collectComboPriceValues(TransferCombo $combo): array
+    {
+        $values = [];
+        foreach ($combo->getPrecios() as $precio) {
+            $currency = $precio->getMoneda();
+            if ($currency instanceof Moneda) {
+                $values[$currency->getId()] = (float) $precio->getValor();
+            }
+        }
+
+        $primaryCurrency = $combo->getMoneda();
+        if ($primaryCurrency instanceof Moneda && !array_key_exists($primaryCurrency->getId(), $values)) {
+            $values[$primaryCurrency->getId()] = (float) $combo->getPrecio();
+        }
+
+        return $values;
+    }
+
+    private function applyComboPrices(TransferCombo $combo, ?FormInterface $pricesForm, array $currencies): void
+    {
+        foreach ($combo->getPrecios()->toArray() as $precio) {
+            $combo->removePrecio($precio);
+            if ($precio instanceof Precio) {
+                $this->em->remove($precio);
+            }
+        }
+
+        if (!$pricesForm instanceof FormInterface) {
+            $combo->setMoneda(null);
+            $combo->setPrecio('0.00');
+
+            return;
+        }
+
+        $primaryCurrency = null;
+        $primaryValue = null;
+        foreach ($currencies as $currency) {
+            if (!$currency instanceof Moneda) {
+                continue;
+            }
+
+            $fieldName = sprintf('currency_%d', $currency->getId());
+            if (!$pricesForm->has($fieldName)) {
+                continue;
+            }
+
+            $value = $pricesForm->get($fieldName)->getData();
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $amount = (float) $value;
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $precio = new Precio();
+            $precio->setValor($amount);
+            $precio->setMoneda($currency);
+            $combo->addPrecio($precio);
+            $this->em->persist($precio);
+
+            if ($primaryCurrency === null) {
+                $primaryCurrency = $currency;
+                $primaryValue = $amount;
+            }
+        }
+
+        if ($primaryCurrency instanceof Moneda && $primaryValue !== null) {
+            $combo->setMoneda($primaryCurrency);
+            $combo->setPrecio(number_format($primaryValue, 2, '.', ''));
+        } else {
+            $combo->setMoneda(null);
+            $combo->setPrecio('0.00');
+        }
     }
 
     private function hydrateTransferDestination(TransferDestination $destination, FormInterface $form, SluggerInterface $slugger): bool

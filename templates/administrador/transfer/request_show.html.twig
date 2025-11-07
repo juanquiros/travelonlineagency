@@ -80,8 +80,19 @@
                             {{ solicitud.tipo == 'combo' ? 'Combo establecido' : 'Traslado personalizado' }}
                         </div>
                         <div class="col-md-4">
-                            <span class="text-muted small d-block">Importe</span>
+                            <span class="text-muted small d-block">Importe principal</span>
                             {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
+                            {% set totals = solicitud.totalesPorMoneda %}
+                            {% if totals is iterable and totals is not empty %}
+                                <div class="small text-muted mt-2">
+                                    <strong>Totales por moneda:</strong>
+                                    <ul class="list-unstyled mb-0">
+                                        {% for iso, amount in totals %}
+                                            <li>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <span class="text-muted small d-block">Seguimiento</span>

@@ -5,6 +5,9 @@ namespace App\Entity;
 use App\Repository\PrecioRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+use App\Entity\TransferDestination;
+use App\Entity\TransferCombo;
+
 #[ORM\Entity(repositoryClass: PrecioRepository::class)]
 class Precio
 {
@@ -22,6 +25,12 @@ class Precio
 
     #[ORM\ManyToOne(inversedBy: 'precios')]
     private ?Booking $booking = null;
+
+    #[ORM\ManyToOne(inversedBy: 'precios')]
+    private ?TransferDestination $transferDestination = null;
+
+    #[ORM\ManyToOne(inversedBy: 'precios')]
+    private ?TransferCombo $transferCombo = null;
 
     public function getId(): ?int
     {
@@ -60,6 +69,30 @@ class Precio
     public function setBooking(?Booking $booking): static
     {
         $this->booking = $booking;
+
+        return $this;
+    }
+
+    public function getTransferDestination(): ?TransferDestination
+    {
+        return $this->transferDestination;
+    }
+
+    public function setTransferDestination(?TransferDestination $transferDestination): static
+    {
+        $this->transferDestination = $transferDestination;
+
+        return $this;
+    }
+
+    public function getTransferCombo(): ?TransferCombo
+    {
+        return $this->transferCombo;
+    }
+
+    public function setTransferCombo(?TransferCombo $transferCombo): static
+    {
+        $this->transferCombo = $transferCombo;
 
         return $this;
     }

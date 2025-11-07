@@ -64,11 +64,19 @@ class PlataformaType extends AbstractType
                     return trim(sprintf('%s (%s)', $moneda->getNombre(), $iso));
                 },
                 'group_by' => function (Moneda $moneda): string {
-                    return match ($moneda->getMetodoPago()) {
-                        Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
-                        Moneda::METODO_PAYPAL => 'PayPal',
-                        default => 'Pago en efectivo',
-                    };
+                    $labels = [];
+                    foreach ($moneda->getMetodosPago() as $metodo) {
+                        $labels[] = match ($metodo) {
+                            Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
+                            Moneda::METODO_PAYPAL => 'PayPal',
+                            default => 'Pago en efectivo',
+                        };
+                    }
+                    if ($labels === []) {
+                        $labels[] = 'Pago en efectivo';
+                    }
+
+                    return implode(' + ', array_unique($labels));
                 },
             ])
             ->add('enableMercadoPagoPayments', CheckboxType::class, [

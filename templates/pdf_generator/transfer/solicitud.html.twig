@@ -53,7 +53,18 @@
         <tr><th>Número de vuelo</th><td>{{ solicitud.vueloPasajero ?: 'No informado' }}</td></tr>
         <tr><th>Inicio del servicio</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
         <tr><th>Fin del servicio</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
-        <tr><th>Total</th><td>${{ solicitud.precioTotal }}</td></tr>
+        <tr><th>Importe principal</th><td>{{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</td></tr>
+        {% set totals = solicitud.totalesPorMoneda %}
+        {% if totals is iterable and totals is not empty %}
+            <tr>
+                <th>Totales por moneda</th>
+                <td>
+                    {% for iso, amount in totals %}
+                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endif %}
         <tr><th>Orden de servicio</th><td>{{ solicitud.codigoServicio ?: 'No generado' }}</td></tr>
         <tr><th>Código de seguimiento</th><td>{{ solicitud.tokenSeguimiento }}</td></tr>
     </table>

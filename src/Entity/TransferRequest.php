@@ -36,6 +36,9 @@ class TransferRequest
     #[ORM\Column(length: 3)]
     private string $moneda = 'ARS';
 
+    #[ORM\Column(type: Types::JSON)]
+    private array $totalesPorMoneda = [];
+
     #[ORM\Column(length: 150)]
     private string $nombrePasajero = '';
 
@@ -184,6 +187,45 @@ class TransferRequest
         $this->moneda = strtoupper($moneda);
 
         return $this;
+    }
+
+    public function getTotalesPorMoneda(): array
+    {
+        return is_array($this->totalesPorMoneda) ? $this->totalesPorMoneda : [];
+    }
+
+    public function setTotalesPorMoneda(array $totales): self
+    {
+        $normalizados = [];
+        foreach ($totales as $iso => $valor) {
+            $isoNormalizado = strtoupper(substr((string) $iso, 0, 3));
+            if ($isoNormalizado === '') {
+                continue;
+            }
+
+            $normalizados[$isoNormalizado] = (float) $valor;
+        }
+
+        $this->totalesPorMoneda = $normalizados;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getTotalParaIso(string $iso): ?float
+    {
+        $iso = strtoupper(substr($iso, 0, 3));
+        $totales = $this->getTotalesPorMoneda();
+
+        if (array_key_exists($iso, $totales)) {
+            return (float) $totales[$iso];
+        }
+
+        if ($iso === strtoupper($this->moneda)) {
+            return (float) $this->precioTotal;
+        }
+
+        return null;
     }
 
     public function getNombrePasajero(): string

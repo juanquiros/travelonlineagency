@@ -299,35 +299,14 @@ final class TransferController extends AbstractController
             $defaultCurrencyIso = $defaultCurrency->getCodigoIso() ?? $defaultCurrency->getSimbolo() ?? $defaultCurrencyIso;
         }
 
-        $currencyIso = null;
+        $totalesPorMoneda = [];
         if ($combo instanceof TransferCombo) {
-            $comboCurrency = $combo->getMoneda();
-            if ($comboCurrency instanceof Moneda) {
-                $currencyIso = $comboCurrency->getCodigoIso() ?? $comboCurrency->getSimbolo();
+            $totalesPorMoneda = $combo->getPreciosDisponibles();
+            if (empty($totalesPorMoneda)) {
+                $errores[] = 'El combo seleccionado no tiene tarifas configuradas en ninguna moneda.';
             }
-        } elseif (count($destinosSeleccionados) > 0) {
-            $uniqueCurrencies = [];
-            foreach ($destinosSeleccionados as $destino) {
-                $destCurrency = $destino->getMoneda();
-                if (!$destCurrency instanceof Moneda) {
-                    $errores[] = sprintf('El destino "%s" no tiene una moneda configurada. Consultá al administrador.', $destino->getNombre());
-                    continue;
-                }
-
-                $iso = $destCurrency->getCodigoIso() ?? $destCurrency->getSimbolo();
-                if ($iso === null) {
-                    $errores[] = sprintf('La moneda configurada para "%s" no tiene un código ISO válido.', $destino->getNombre());
-                    continue;
-                }
-
-                $uniqueCurrencies[$iso] = $destCurrency;
-            }
-
-            if (count($uniqueCurrencies) > 1) {
-                $errores[] = 'Los destinos seleccionados utilizan monedas distintas. Elegí destinos con la misma moneda o solicitá asistencia para cotizarlo.';
-            } elseif (count($uniqueCurrencies) === 1) {
-                $currencyIso = array_key_first($uniqueCurrencies);
-            }
+        } elseif (!empty($destinosSeleccionados)) {
+            $totalesPorMoneda = $this->calcularTotalesDestinos($destinosSeleccionados, $errores);
         }
 
         $nombre = trim((string) $request->request->get('nombre'));
@@ -384,8 +363,15 @@ final class TransferController extends AbstractController
             return null;
         }
 
-        if ($currencyIso === null) {
-            $currencyIso = $defaultCurrencyIso;
+        if (empty($totalesPorMoneda)) {
+            $this->addFlash('error', 'No encontramos una tarifa disponible para tu selección. Consultá con el equipo de la plataforma.');
+
+            return null;
+        }
+
+        $currencyIso = strtoupper($defaultCurrencyIso);
+        if (!array_key_exists($currencyIso, $totalesPorMoneda)) {
+            $currencyIso = array_key_first($totalesPorMoneda);
         }
 
         $solicitud = new TransferRequest();
@@ -408,22 +394,22 @@ final class TransferController extends AbstractController
         if ($this->getUser() !== null) {
             $solicitud->setUsuario($this->getUser());
         }
+        $solicitud->setTotalesPorMoneda($totalesPorMoneda);
+        $montoSeleccionado = $totalesPorMoneda[$currencyIso] ?? reset($totalesPorMoneda);
+        $solicitud->setPrecioTotal(number_format((float) $montoSeleccionado, 2, '.', ''));
+        $solicitud->setMoneda($currencyIso);
 
         if ($combo instanceof TransferCombo) {
             $solicitud->setTipo('combo');
             $solicitud->setCombo($combo);
-            $solicitud->setPrecioTotal(number_format((float) $combo->getPrecio(), 2, '.', ''));
             foreach ($combo->getDestinos() as $indice => $detalle) {
                 $this->agregarDestinoSolicitud($solicitud, $detalle->getDestino(), $indice + 1);
             }
         } else {
             $solicitud->setTipo('custom');
-            $total = 0.0;
             foreach ($destinosSeleccionados as $index => $destino) {
-                $total += (float) $destino->getTarifaBase();
                 $this->agregarDestinoSolicitud($solicitud, $destino, $index + 1);
             }
-            $solicitud->setPrecioTotal(number_format($total, 2, '.', ''));
         }
 
         if (!empty($datosExtra)) {
@@ -447,6 +433,58 @@ final class TransferController extends AbstractController
         }
 
         return $solicitud;
+    }
+
+    /**
+     * @param TransferDestination[] $destinos
+     * @param string[] $errores
+     * @return array<string,float>
+     */
+    private function calcularTotalesDestinos(array $destinos, array &$errores): array
+    {
+        if (empty($destinos)) {
+            return [];
+        }
+
+        $maps = [];
+        foreach ($destinos as $index => $destino) {
+            if (!$destino instanceof TransferDestination) {
+                continue;
+            }
+            $disponibles = $destino->getPreciosDisponibles();
+            if ($disponibles === []) {
+                $errores[] = sprintf('El destino "%s" no tiene tarifas configuradas. Actualizá el catálogo antes de ofrecerlo.', $destino->getNombre());
+
+                return [];
+            }
+            $maps[$index] = $disponibles;
+        }
+
+        if ($maps === []) {
+            return [];
+        }
+
+        $commonIsos = array_keys(reset($maps));
+        foreach ($maps as $map) {
+            $commonIsos = array_values(array_intersect($commonIsos, array_keys($map)));
+        }
+
+        if ($commonIsos === []) {
+            $errores[] = 'Los destinos seleccionados no comparten una moneda disponible. Configurá tarifas en una moneda común para continuar.';
+
+            return [];
+        }
+
+        $totales = [];
+        foreach ($commonIsos as $iso) {
+            $total = 0.0;
+            foreach ($maps as $map) {
+                $total += (float) ($map[$iso] ?? 0.0);
+            }
+            $totales[$iso] = $total;
+        }
+
+        return $totales;
     }
 
     /**

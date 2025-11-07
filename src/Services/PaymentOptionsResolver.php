@@ -15,6 +15,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class PaymentOptionsResolver
 {
+    private ?array $enabledCurrencies = null;
+
     public function __construct(private readonly EntityManagerInterface $em)
     {
     }
@@ -34,8 +36,20 @@ class PaymentOptionsResolver
         $options = [];
 
         if ($plataforma->isEnableMercadoPagoPayments()) {
-            $mercadoPagoCurrency = $this->findCurrencyForMethod(Moneda::METODO_MERCADOPAGO);
-            $precio = $mercadoPagoCurrency ? $this->findBookingPrice($booking, $mercadoPagoCurrency->getId()) : null;
+            $mercadoPagoCurrencies = $this->findEnabledCurrenciesForMethod(Moneda::METODO_MERCADOPAGO);
+            $mercadoPagoCurrency = null;
+            $precio = null;
+            foreach ($mercadoPagoCurrencies as $candidate) {
+                $candidatePrice = $this->findBookingPrice($booking, $candidate->getId());
+                if ($candidatePrice instanceof Precio) {
+                    $mercadoPagoCurrency = $candidate;
+                    $precio = $candidatePrice;
+                    break;
+                }
+            }
+            if (!$mercadoPagoCurrency && !empty($mercadoPagoCurrencies)) {
+                $mercadoPagoCurrency = $mercadoPagoCurrencies[0];
+            }
             $credencial = $this->resolveMercadoPagoCredentials($booking->getBookingPartner(), $plataforma);
             $credencialesValidas = $this->hasValidMercadoPagoCredentials($credencial);
             $total = ($precio instanceof Precio) ? (float) $precio->getValor() * $cantidad : null;
@@ -69,8 +83,20 @@ class PaymentOptionsResolver
         }
 
         if ($plataforma->isEnablePayPalPayments()) {
-            $paypalCurrency = $this->findCurrencyForMethod(Moneda::METODO_PAYPAL);
-            $precioPaypal = $paypalCurrency ? $this->findBookingPrice($booking, $paypalCurrency->getId()) : null;
+            $paypalCurrencies = $this->findEnabledCurrenciesForMethod(Moneda::METODO_PAYPAL);
+            $paypalCurrency = null;
+            $precioPaypal = null;
+            foreach ($paypalCurrencies as $candidate) {
+                $candidatePrice = $this->findBookingPrice($booking, $candidate->getId());
+                if ($candidatePrice instanceof Precio) {
+                    $paypalCurrency = $candidate;
+                    $precioPaypal = $candidatePrice;
+                    break;
+                }
+            }
+            if (!$paypalCurrency && !empty($paypalCurrencies)) {
+                $paypalCurrency = $paypalCurrencies[0];
+            }
             $credenciales = $plataforma->getCredencialesPayPal();
             $credencialesValidas = $this->hasValidPayPalCredentials($credenciales);
             $totalPaypal = ($precioPaypal instanceof Precio) ? (float) $precioPaypal->getValor() * $cantidad : null;
@@ -105,7 +131,7 @@ class PaymentOptionsResolver
         if ($plataforma->isEnableCashPayments()) {
             $cashCurrencies = $this->findEnabledCurrenciesForMethod(Moneda::METODO_CASH);
             $preferred = $plataforma->getMonedaDef();
-            if ($preferred instanceof Moneda && $preferred->getMetodoPago() === Moneda::METODO_CASH) {
+            if ($preferred instanceof Moneda && $preferred->supportsMetodoPago(Moneda::METODO_CASH)) {
                 array_unshift($cashCurrencies, $preferred);
             }
             $cashCurrencies = $this->uniqueCurrencies($cashCurrencies);
@@ -171,32 +197,34 @@ class PaymentOptionsResolver
     public function getTransferOptions(TransferRequest $solicitud, Plataforma $plataforma): array
     {
         $options = [];
-        $total = (float) $solicitud->getPrecioTotal();
-        if ($total <= 0) {
-            return $options;
-        }
-
+        $totales = $solicitud->getTotalesPorMoneda();
         $requestCurrencyIso = strtoupper($solicitud->getMoneda());
+        if (!array_key_exists($requestCurrencyIso, $totales)) {
+            $totales[$requestCurrencyIso] = (float) $solicitud->getPrecioTotal();
+        }
         $requestCurrency = $this->findCurrencyByIso($requestCurrencyIso);
 
         if ($plataforma->isEnableMercadoPagoPayments()) {
             $credencial = $plataforma->getCredencialesMercadoPago();
-            $mercadoPagoCurrency = $this->findCurrencyForMethod(Moneda::METODO_MERCADOPAGO);
+            $mercadoPagoCurrency = $this->findCurrencyForMethod(Moneda::METODO_MERCADOPAGO, array_keys($totales));
             $credencialesValidas = $this->hasValidMercadoPagoCredentials($credencial);
             $mercadoPagoIso = $mercadoPagoCurrency ? $this->resolveCurrencyIso($mercadoPagoCurrency) : null;
+            $mercadoPagoTotal = $mercadoPagoIso ? ($totales[$mercadoPagoIso] ?? null) : null;
 
             if (
                 $mercadoPagoCurrency &&
                 $mercadoPagoIso === $requestCurrencyIso &&
                 $credencial &&
-                $credencialesValidas
+                $credencialesValidas &&
+                $mercadoPagoTotal !== null &&
+                $mercadoPagoTotal > 0
             ) {
                 $options[] = [
                     'type' => 'mercadopago',
                     'label' => sprintf('Mercado Pago (%s)', $requestCurrencyIso),
                     'currency' => $requestCurrencyIso,
                     'displayCurrency' => $mercadoPagoCurrency->getNombre() ?? $requestCurrencyIso,
-                    'total' => $total,
+                    'total' => $mercadoPagoTotal,
                     'route' => 'mercadopago_pay_transfer',
                     'params' => ['id' => $solicitud->getId()],
                     'available' => true,
@@ -211,22 +239,25 @@ class PaymentOptionsResolver
         }
 
         if ($plataforma->isEnablePayPalPayments()) {
-            $paypalCurrency = $this->findCurrencyForMethod(Moneda::METODO_PAYPAL);
+            $paypalCurrency = $this->findCurrencyForMethod(Moneda::METODO_PAYPAL, array_keys($totales));
             $credenciales = $plataforma->getCredencialesPayPal();
             $credencialesValidas = $this->hasValidPayPalCredentials($credenciales);
             $paypalIso = $paypalCurrency ? $this->resolveCurrencyIso($paypalCurrency) : null;
+            $paypalTotal = $paypalIso ? ($totales[$paypalIso] ?? null) : null;
 
             if (
                 $paypalCurrency &&
                 $paypalIso === $requestCurrencyIso &&
-                $credencialesValidas
+                $credencialesValidas &&
+                $paypalTotal !== null &&
+                $paypalTotal > 0
             ) {
                 $options[] = [
                     'type' => 'paypal',
                     'label' => sprintf('PayPal (%s)', $requestCurrencyIso),
                     'currency' => $requestCurrencyIso,
                     'displayCurrency' => $paypalCurrency->getNombre() ?? $requestCurrencyIso,
-                    'total' => $total,
+                    'total' => $paypalTotal,
                     'route' => 'paypal_pay_transfer',
                     'params' => ['id' => $solicitud->getId()],
                     'available' => true,
@@ -241,6 +272,7 @@ class PaymentOptionsResolver
         }
 
         if ($plataforma->isEnableCashPayments()) {
+            $total = $totales[$requestCurrencyIso] ?? (float) $solicitud->getPrecioTotal();
             $options[] = [
                 'type' => 'cash',
                 'label' => sprintf('Pago en efectivo (%s)', $requestCurrencyIso),
@@ -305,12 +337,20 @@ class PaymentOptionsResolver
         return (bool) ($credenciales->getClientId() && $credenciales->getClientSecret());
     }
 
-    private function findCurrencyForMethod(string $method): ?Moneda
+    private function findCurrencyForMethod(string $method, array $preferredIsos = []): ?Moneda
     {
-        return $this->em->getRepository(Moneda::class)->findOneBy([
-            'metodoPago' => $method,
-            'habilitada' => true,
-        ]);
+        $normalized = array_map(static fn (string $iso): string => strtoupper(substr($iso, 0, 3)), $preferredIsos);
+        foreach ($this->getEnabledCurrencies() as $currency) {
+            if (!$currency instanceof Moneda || !$currency->supportsMetodoPago($method)) {
+                continue;
+            }
+            $iso = $this->resolveCurrencyIso($currency);
+            if ($normalized === [] || in_array($iso, $normalized, true)) {
+                return $currency;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -318,10 +358,14 @@ class PaymentOptionsResolver
      */
     private function findEnabledCurrenciesForMethod(string $method): array
     {
-        return $this->em->getRepository(Moneda::class)->findBy([
-            'metodoPago' => $method,
-            'habilitada' => true,
-        ], ['nombre' => 'ASC']);
+        $currencies = [];
+        foreach ($this->getEnabledCurrencies() as $currency) {
+            if ($currency instanceof Moneda && $currency->supportsMetodoPago($method)) {
+                $currencies[] = $currency;
+            }
+        }
+
+        return $currencies;
     }
 
     private function resolveCurrencyIso(?Moneda $moneda): string
@@ -356,6 +400,17 @@ class PaymentOptionsResolver
     {
         $iso = strtoupper(substr($iso, 0, 3));
 
+        foreach ($this->getEnabledCurrencies() as $currency) {
+            if (!$currency instanceof Moneda) {
+                continue;
+            }
+            $codigo = $currency->getCodigoIso();
+            $simbolo = $currency->getSimbolo();
+            if (($codigo && strtoupper(substr($codigo, 0, 3)) === $iso) || ($simbolo && strtoupper(substr($simbolo, 0, 3)) === $iso)) {
+                return $currency;
+            }
+        }
+
         $repository = $this->em->getRepository(Moneda::class);
         $currency = $repository->findOneBy(['codigoIso' => $iso]);
 
@@ -364,6 +419,18 @@ class PaymentOptionsResolver
         }
 
         return $currency;
+    }
+
+    /**
+     * @return Moneda[]
+     */
+    private function getEnabledCurrencies(): array
+    {
+        if ($this->enabledCurrencies === null) {
+            $this->enabledCurrencies = $this->em->getRepository(Moneda::class)->findEnabled();
+        }
+
+        return $this->enabledCurrencies;
     }
 
     private function buildUnavailableOption(string $type, ?Moneda $currency, string $reason): array

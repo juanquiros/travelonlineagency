@@ -85,7 +85,9 @@ final class MercadoPagoController extends AbstractController
             return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
         }
 
-        $total = (float) $solicitud->getPrecioTotal();
+        $currencyIso = strtoupper($solicitud->getMoneda());
+        $totales = $solicitud->getTotalesPorMoneda();
+        $total = $totales[$currencyIso] ?? (float) $solicitud->getPrecioTotal();
         if ($total <= 0) {
             $this->addFlash('error', 'El traslado no tiene un monto configurado.');
 
@@ -99,7 +101,7 @@ final class MercadoPagoController extends AbstractController
                     'id' => sprintf('transfer-%d', $solicitud->getId()),
                     'title' => 'Traslado Iguazú',
                     'quantity' => 1,
-                    'currency_id' => 'ARG',
+                    'currency_id' => $currencyIso,
                     'unit_price' => $total,
                 ],
             ],
