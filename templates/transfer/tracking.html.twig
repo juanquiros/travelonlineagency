@@ -17,9 +17,29 @@
                         {% if solicitud.telefonoPasajero %}
                             <li><strong>Teléfono:</strong> {{ solicitud.telefonoPasajero }}</li>
                         {% endif %}
-                        <li><strong>Arribo:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
-                        <li><strong>Salida:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        {% if solicitud.cantidadPasajeros %}
+                            <li><strong>Cantidad de pasajeros:</strong> {{ solicitud.cantidadPasajeros }}</li>
+                        {% endif %}
+                        {% if solicitud.vueloPasajero %}
+                            <li><strong>Número de vuelo:</strong> {{ solicitud.vueloPasajero }}</li>
+                        {% endif %}
+                        <li><strong>Inicio del servicio:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</li>
+                        <li><strong>Fin del servicio:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Tipo de vehículo solicitado:</strong> {{ solicitud.tipoVehiculo ?: 'No especificado' }}</li>
+                        <li>
+                            <strong>Total principal:</strong> {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
+                            {% set totals = solicitud.totalesPorMoneda %}
+                            {% if totals is iterable and totals is not empty %}
+                                <div class="small text-muted mt-1">
+                                    {% for iso, amount in totals %}
+                                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </li>
+                        {% if solicitud.codigoServicio %}
+                            <li><strong>Orden de servicio:</strong> {{ solicitud.codigoServicio }}</li>
+                        {% endif %}
                         <li><strong>Estado:</strong> {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}</li>
                     </ul>
 
@@ -53,7 +73,14 @@
                             <p class="mb-1"><strong>{{ asignacion.chofer.nombreCompleto }}</strong></p>
                             <p class="mb-1">Contacto: {{ asignacion.chofer.telefono }}</p>
                             <p class="mb-1">Tipo de vehículo: {{ asignacion.chofer.tipoVehiculo }}</p>
-                            <p class="mb-0">Modelo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                            <p class="mb-1">Modelo: {{ asignacion.chofer.modeloVehiculo }} ({{ asignacion.chofer.patente }})</p>
+                            {% set featureNames = [] %}
+                            {% for feature in asignacion.chofer.vehicleFeatures %}
+                                {% set featureNames = featureNames|merge([feature.nombre]) %}
+                            {% endfor %}
+                            {% if featureNames %}
+                                <p class="mb-0">Características: {{ featureNames|join(', ') }}</p>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="alert alert-warning mt-4 mb-0">
@@ -78,16 +105,34 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h6">Estado del pago</h2>
-                    <p class="mb-1">Monto total: ${{ solicitud.precioTotal }}</p>
+                    <p class="mb-1">Monto principal: {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</p>
+                    {% set totals = solicitud.totalesPorMoneda %}
+                    {% if totals is iterable and totals is not empty %}
+                        <div class="small text-muted mb-2">
+                            <strong>Totales por moneda:</strong>
+                            <ul class="list-unstyled mb-0">
+                                {% for iso, amount in totals %}
+                                    <li>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
                     <p class="small text-muted">Conservá este enlace para completar el pago o seguir tu traslado.</p>
                     {% if opcionesPago is empty %}
                         <p class="text-muted mb-0">No hay métodos de pago habilitados por el momento.</p>
                     {% else %}
                         {% for opcion in opcionesPago %}
-                            {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
-                            <a class="{{ btnClass }}" href="{{ opcion.url }}">
-                                {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
-                            </a>
+                            {% if opcion.available is defined and opcion.available == false %}
+                                <div class="alert alert-info small" role="alert">
+                                    <div class="fw-semibold">{{ opcion.label }}</div>
+                                    <div class="mb-0">{{ opcion.reason }}</div>
+                                </div>
+                            {% else %}
+                                {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
+                                <a class="{{ btnClass }}" href="{{ opcion.url }}">
+                                    {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
+                                </a>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                 </div>

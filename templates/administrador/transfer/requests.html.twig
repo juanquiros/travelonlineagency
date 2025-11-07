@@ -13,7 +13,7 @@
                         <th>#</th>
                         <th>Pasajero</th>
                         <th>Tipo</th>
-                        <th>Arribo</th>
+                        <th>Inicio del servicio</th>
                         <th>Estado</th>
                         <th>Total</th>
                         <th>Choferes</th>
@@ -36,11 +36,14 @@
                             {% else %}
                                 <span class="text-muted">Sin dato</span>
                             {% endif %}
+                            {% if solicitud.cantidadPasajeros %}
+                                <div class="small text-muted">{{ solicitud.cantidadPasajeros }} pax</div>
+                            {% endif %}
                         </td>
                         <td>
                             {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}
                         </td>
-                        <td>${{ solicitud.precioTotal }}</td>
+                        <td>{{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</td>
                         <td>
                             {% if assignments|length > 0 %}
                                 {% for asignacion in assignments %}

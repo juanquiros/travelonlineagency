@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\Entity\DriverProfile;
 use App\Entity\Plataforma;
+use App\Entity\Moneda;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
@@ -12,6 +12,7 @@ use App\Entity\TransferRequest;
 use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\CashPayment;
+use App\Entity\VehicleType;
 use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
@@ -46,7 +47,7 @@ final class TransferController extends AbstractController
         $vehicleTypes = $this->resolveVehicleTypes();
 
         if ($request->isMethod('POST')) {
-            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $vehicleTypes);
+            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $plataforma);
             if ($solicitud instanceof TransferRequest) {
                 $this->em->persist($solicitud);
                 $this->em->flush();
@@ -151,14 +152,28 @@ final class TransferController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
-        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
-        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
-            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
-        ]), $opciones);
+        $opciones = array_map(function (array $opcion) {
+            if (($opcion['available'] ?? true) && isset($opcion['route'])) {
+                $opcion['url'] = $this->generateUrl($opcion['route'], $opcion['params'] ?? []);
+            }
+
+            return $opcion;
+        }, $this->paymentOptions->getTransferOptions($solicitud, $plataforma));
         $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
             ['transferRequest' => $solicitud],
             ['createdAt' => 'DESC']
         );
+
+        $asignacionActiva = null;
+        foreach ($solicitud->getAsignaciones() as $asignacion) {
+            if (!in_array($asignacion->getEstado(), [
+                TransferAssignment::ESTADO_CANCELADO,
+                TransferAssignment::ESTADO_COMPLETADO,
+            ], true)) {
+                $asignacionActiva = $asignacion;
+                break;
+            }
+        }
 
         return $this->render('transfer/summary.html.twig', [
             'plataforma' => $plataforma,
@@ -168,6 +183,7 @@ final class TransferController extends AbstractController
             'solicitud' => $solicitud,
             'opcionesPago' => $opciones,
             'pagoEfectivo' => $cashPayment,
+            'asignacion' => $asignacionActiva,
         ]);
     }
 
@@ -196,10 +212,13 @@ final class TransferController extends AbstractController
             }
         }
 
-        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
-        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
-            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
-        ]), $opciones);
+        $opciones = array_map(function (array $opcion) {
+            if (($opcion['available'] ?? true) && isset($opcion['route'])) {
+                $opcion['url'] = $this->generateUrl($opcion['route'], $opcion['params'] ?? []);
+            }
+
+            return $opcion;
+        }, $this->paymentOptions->getTransferOptions($solicitud, $plataforma));
         $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
             ['transferRequest' => $solicitud],
             ['createdAt' => 'DESC']
@@ -240,7 +259,7 @@ final class TransferController extends AbstractController
         ]);
     }
 
-    private function crearSolicitud(Request $request, array $campos, bool $customEnabled, array $vehicleTypes): ?TransferRequest
+    private function crearSolicitud(Request $request, array $campos, bool $customEnabled, Plataforma $plataforma): ?TransferRequest
     {
         $tipo = $request->request->get('tipo', 'combo');
         $combo = null;
@@ -274,17 +293,50 @@ final class TransferController extends AbstractController
             }
         }
 
+        $defaultCurrencyIso = 'ARS';
+        $defaultCurrency = $plataforma->getMonedaDef();
+        if ($defaultCurrency instanceof Moneda) {
+            $defaultCurrencyIso = $defaultCurrency->getCodigoIso() ?? $defaultCurrency->getSimbolo() ?? $defaultCurrencyIso;
+        }
+
+        $totalesPorMoneda = [];
+        if ($combo instanceof TransferCombo) {
+            $totalesPorMoneda = $combo->getPreciosDisponibles();
+            if (empty($totalesPorMoneda)) {
+                $errores[] = 'El combo seleccionado no tiene tarifas configuradas en ninguna moneda.';
+            }
+        } elseif (!empty($destinosSeleccionados)) {
+            $totalesPorMoneda = $this->calcularTotalesDestinos($destinosSeleccionados, $errores);
+        }
+
         $nombre = trim((string) $request->request->get('nombre'));
         $email = trim((string) $request->request->get('email'));
         $telefono = trim((string) $request->request->get('telefono'));
-        $vehicleType = trim((string) $request->request->get('tipo_vehiculo'));
+        $cantidadPasajerosRaw = $request->request->get('cantidad_pax');
+        $cantidadPasajeros = null;
+        if ($cantidadPasajerosRaw !== null && $cantidadPasajerosRaw !== '') {
+            $cantidadPasajeros = (int) $cantidadPasajerosRaw;
+        }
+        $numeroVuelo = trim((string) $request->request->get('numero_vuelo'));
+        $vehicleTypeId = (int) $request->request->get('tipo_vehiculo');
+        $vehicleType = null;
         if ($nombre === '' || $email === '') {
             $errores[] = 'Completá tu nombre y correo electrónico para avanzar.';
         }
 
-        if ($vehicleType === '') {
-            $errores[] = 'Seleccioná el tipo de vehículo que preferís para tu traslado.';
-        } elseif (!in_array($vehicleType, $vehicleTypes, true)) {
+        if ($telefono === '') {
+            $errores[] = 'Ingresá un teléfono de contacto para el pasajero.';
+        }
+
+        if ($cantidadPasajeros === null || $cantidadPasajeros <= 0) {
+            $errores[] = 'Indicá la cantidad de pasajeros que viajarán en el traslado.';
+        }
+
+        if ($vehicleTypeId > 0) {
+            $vehicleType = $this->em->getRepository(VehicleType::class)->find($vehicleTypeId);
+        }
+
+        if (!$vehicleType instanceof VehicleType || !$vehicleType->isActivo()) {
             $errores[] = 'Seleccioná un tipo de vehículo válido.';
         }
 
@@ -311,35 +363,53 @@ final class TransferController extends AbstractController
             return null;
         }
 
+        if (empty($totalesPorMoneda)) {
+            $this->addFlash('error', 'No encontramos una tarifa disponible para tu selección. Consultá con el equipo de la plataforma.');
+
+            return null;
+        }
+
+        $currencyIso = strtoupper($defaultCurrencyIso);
+        if (!array_key_exists($currencyIso, $totalesPorMoneda)) {
+            $currencyIso = array_key_first($totalesPorMoneda);
+        }
+
         $solicitud = new TransferRequest();
         $solicitud->setNombrePasajero($nombre);
         $solicitud->setEmailPasajero($email);
         $solicitud->setTelefonoPasajero($telefono !== '' ? $telefono : null);
-        $solicitud->setTipoVehiculo($vehicleType !== '' ? $vehicleType : null);
+        $solicitud->setCantidadPasajeros($cantidadPasajeros);
+        $solicitud->setVueloPasajero($numeroVuelo !== '' ? $numeroVuelo : null);
+        if ($vehicleType instanceof VehicleType) {
+            $solicitud->setVehicleType($vehicleType);
+        }
         $solicitud->setArribo($arribo);
         $solicitud->setSalida($salida);
         $solicitud->setTokenSeguimiento(bin2hex(random_bytes(12)));
+        if (!$solicitud->getCodigoServicio()) {
+            $solicitud->setCodigoServicio($this->generarCodigoServicio());
+        }
         $solicitud->setNotasCliente($request->request->get('notas'));
-        $solicitud->setMoneda('ARS');
+        $solicitud->setMoneda($currencyIso);
         if ($this->getUser() !== null) {
             $solicitud->setUsuario($this->getUser());
         }
+        $solicitud->setTotalesPorMoneda($totalesPorMoneda);
+        $montoSeleccionado = $totalesPorMoneda[$currencyIso] ?? reset($totalesPorMoneda);
+        $solicitud->setPrecioTotal(number_format((float) $montoSeleccionado, 2, '.', ''));
+        $solicitud->setMoneda($currencyIso);
 
         if ($combo instanceof TransferCombo) {
             $solicitud->setTipo('combo');
             $solicitud->setCombo($combo);
-            $solicitud->setPrecioTotal(number_format((float) $combo->getPrecio(), 2, '.', ''));
             foreach ($combo->getDestinos() as $indice => $detalle) {
                 $this->agregarDestinoSolicitud($solicitud, $detalle->getDestino(), $indice + 1);
             }
         } else {
             $solicitud->setTipo('custom');
-            $total = 0.0;
             foreach ($destinosSeleccionados as $index => $destino) {
-                $total += (float) $destino->getTarifaBase();
                 $this->agregarDestinoSolicitud($solicitud, $destino, $index + 1);
             }
-            $solicitud->setPrecioTotal(number_format($total, 2, '.', ''));
         }
 
         if (!empty($datosExtra)) {
@@ -366,18 +436,74 @@ final class TransferController extends AbstractController
     }
 
     /**
-     * @return string[]
+     * @param TransferDestination[] $destinos
+     * @param string[] $errores
+     * @return array<string,float>
+     */
+    private function calcularTotalesDestinos(array $destinos, array &$errores): array
+    {
+        if (empty($destinos)) {
+            return [];
+        }
+
+        $maps = [];
+        foreach ($destinos as $index => $destino) {
+            if (!$destino instanceof TransferDestination) {
+                continue;
+            }
+            $disponibles = $destino->getPreciosDisponibles();
+            if ($disponibles === []) {
+                $errores[] = sprintf('El destino "%s" no tiene tarifas configuradas. Actualizá el catálogo antes de ofrecerlo.', $destino->getNombre());
+
+                return [];
+            }
+            $maps[$index] = $disponibles;
+        }
+
+        if ($maps === []) {
+            return [];
+        }
+
+        $commonIsos = array_keys(reset($maps));
+        foreach ($maps as $map) {
+            $commonIsos = array_values(array_intersect($commonIsos, array_keys($map)));
+        }
+
+        if ($commonIsos === []) {
+            $errores[] = 'Los destinos seleccionados no comparten una moneda disponible. Configurá tarifas en una moneda común para continuar.';
+
+            return [];
+        }
+
+        $totales = [];
+        foreach ($commonIsos as $iso) {
+            $total = 0.0;
+            foreach ($maps as $map) {
+                $total += (float) ($map[$iso] ?? 0.0);
+            }
+            $totales[$iso] = $total;
+        }
+
+        return $totales;
+    }
+
+    /**
+     * @return VehicleType[]
      */
     private function resolveVehicleTypes(): array
     {
-        $repository = $this->em->getRepository(DriverProfile::class);
-        $driverValues = method_exists($repository, 'findDistinctVehicleTypes')
-            ? $repository->findDistinctVehicleTypes()
-            : [];
-        $configured = (array) $this->getParameter('transfer_vehicle_types');
-        $merged = array_unique(array_filter(array_merge($configured, $driverValues)));
+        return $this->em->getRepository(VehicleType::class)->findActiveOrdered();
+    }
 
-        return array_values($merged);
+    private function generarCodigoServicio(): string
+    {
+        $repository = $this->em->getRepository(TransferRequest::class);
+
+        do {
+            $codigo = sprintf('TRF-%s', strtoupper(bin2hex(random_bytes(3))));
+        } while ($repository->findOneBy(['codigoServicio' => $codigo]) instanceof TransferRequest);
+
+        return $codigo;
     }
 
     private function agregarDestinoSolicitud(TransferRequest $solicitud, ?TransferDestination $destino, int $posicion): void

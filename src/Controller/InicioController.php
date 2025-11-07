@@ -14,6 +14,7 @@ use App\Entity\TransferRequest;
 use App\Entity\TransferShowcase;
 use App\Entity\TraduccionPlataforma;
 use App\Form\SolicitudReservaType;
+use App\Repository\TransferDestinationCategoryRepository;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -29,11 +30,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class InicioController extends AbstractController
 {
-    private $em;
-
-    public function __construct(EntityManagerInterface $em)
-    {
-        $this->em = $em;
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly TransferDestinationCategoryRepository $destinationCategoryRepository,
+    ) {
     }
 
     #[Route('/', name: 'app_inicio')]
@@ -50,6 +50,7 @@ class InicioController extends AbstractController
         $destinosMapa = $destinosRepository->findActivosConCategoria();
         $destinosDestacados = $destinosRepository->findDestacados(3);
         $destinosTarjetas = array_slice($destinosMapa, 0, 6);
+        $destinoCategorias = $this->destinationCategoryRepository->findWithActiveDestinations();
 
         $transferShowcases = $this->em->getRepository(TransferShowcase::class)->findDestacados(3);
         $testimoniosTraslados = $this->em->getRepository(TransferRequest::class)->findLatestTestimonials(6);
@@ -86,6 +87,7 @@ class InicioController extends AbstractController
             'destinosMapa' => $destinosMapa,
             'destinosDestacados' => $destinosDestacados,
             'destinosTarjetas' => $destinosTarjetas,
+            'destinoCategorias' => $destinoCategorias,
             'testimoniosTraslados' => $testimoniosTraslados,
             'customTransfersEnabled' => (bool) $plataforma->isTrasladosODLibres(),
         ]);

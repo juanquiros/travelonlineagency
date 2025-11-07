@@ -3,6 +3,10 @@
 {% block title %}Chofer: {{ driver.nombreCompleto }}{% endblock %}
 
 {% block body %}
+{% set selectedFeatureIds = [] %}
+{% for feature in driver.vehicleFeatures %}
+    {% set selectedFeatureIds = selectedFeatureIds|merge([feature.id]) %}
+{% endfor %}
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card shadow-sm mb-4">
@@ -22,6 +26,18 @@
                     <dd class="col-7">{{ driver.usuario.email }}</dd>
                     <dt class="col-5">Tipo de vehículo</dt>
                     <dd class="col-7">{{ driver.tipoVehiculo }}</dd>
+                    <dt class="col-5">Características</dt>
+                    <dd class="col-7">
+                        {% if driver.vehicleFeatures|length > 0 %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for feature in driver.vehicleFeatures %}
+                                    <span class="badge bg-light text-dark border">{{ feature.nombre }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">Sin registrar</span>
+                        {% endif %}
+                    </dd>
                     <dt class="col-5">Modelo</dt>
                     <dd class="col-7">{{ driver.modeloVehiculo }} ({{ driver.patente }})</dd>
                     <dt class="col-5">Estado</dt>
@@ -42,6 +58,52 @@
                 {% if driver.fotoVehiculo %}
                     <img src="{{ asset('img/drivers/' ~ driver.fotoVehiculo) }}" alt="Vehículo" class="img-fluid rounded mt-3">
                 {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h6 mb-3">Vehículo y características</h2>
+                <form method="post" action="{{ path('app_admin_driver_vehicle', {id: driver.id}) }}" class="row g-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_driver_vehicle_' ~ driver.id) }}">
+                    <div class="col-12">
+                        <label class="form-label small">Tipo de vehículo asignado</label>
+                        <select name="vehicle_type" class="form-select form-select-sm">
+                            <option value="">Sin asignar</option>
+                            {% for tipo in vehicleTypes %}
+                                <option value="{{ tipo.id }}"{% if driver.vehicleType and driver.vehicleType.id == tipo.id %} selected{% endif %}>
+                                    {{ tipo.nombre }}{% if not tipo.activo %} (inactivo){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small">Características disponibles</label>
+                        <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            {% for feature in vehicleFeatures %}
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="checkbox" name="features[]" value="{{ feature.id }}" id="admin_feature_{{ feature.id }}"{% if feature.id in selectedFeatureIds %} checked{% endif %}>
+                                    <label class="form-check-label small" for="admin_feature_{{ feature.id }}">
+                                        {{ feature.nombre }}{% if not feature.activo %} (inactiva){% endif %}
+                                    </label>
+                                </div>
+                            {% else %}
+                                <p class="small text-muted mb-0">Agregá características desde el catálogo.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small">Agregar nuevas características</label>
+                        <input type="text" name="new_features" class="form-control form-control-sm" placeholder="Ej: WiFi a bordo, Agua mineral">
+                        <small class="text-muted">Separá cada característica con una coma. Se crearán automáticamente.</small>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary btn-sm" type="submit">Actualizar vehículo</button>
+                    </div>
+                    <div class="col-12 text-end">
+                        <a class="btn btn-link btn-sm" href="{{ path('app_admin_vehicle_catalog') }}">Gestionar catálogo de vehículos</a>
+                    </div>
+                </form>
             </div>
         </div>
 

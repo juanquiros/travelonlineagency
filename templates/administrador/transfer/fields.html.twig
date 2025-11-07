@@ -45,7 +45,13 @@
                             <td>{{ campo.tipo }}</td>
                             <td>{{ campo.orden }}</td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_field_edit', {id: campo.id}) }}">Editar</a>
+                                <div class="d-inline-flex align-items-center gap-2">
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ path('app_admin_transfer_field_edit', {id: campo.id}) }}">Editar</a>
+                                    <form method="post" action="{{ path('app_admin_transfer_field_delete', {id: campo.id}) }}" class="d-inline" onsubmit="return confirm('¿Eliminar el campo {{ campo.etiqueta|e("js") }}? Esta acción no se puede deshacer.');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_transfer_field_' ~ campo.id) }}">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% else %}

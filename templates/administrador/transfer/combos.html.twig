@@ -8,10 +8,21 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ editing ? 'Editar combo' : 'Nuevo combo' }}</h2>
+                {% if monedas is defined and monedas is empty %}
+                    <div class="alert alert-warning small" role="alert">
+                        Configurá al menos una moneda activa antes de publicar nuevos combos de traslado.
+                    </div>
+                {% endif %}
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.descripcion) }}
-                {{ form_row(form.precio) }}
+                <div class="mb-3">
+                    <h3 class="h6 text-uppercase text-muted mb-2">Tarifas por moneda</h3>
+                    <div class="border rounded p-3 bg-light-subtle">
+                        {{ form_row(form.prices) }}
+                        <p class="form-text mb-0">Ingresá los montos según la divisa de cada medio de pago.</p>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Imagen de portada</label>
                     {{ form_widget(form.imagenPortadaFile, {'attr': {'class': 'form-control'}}) }}
@@ -43,7 +54,7 @@
                         <tr>
                             <th>Portada</th>
                             <th>Nombre</th>
-                            <th>Precio</th>
+                            <th>Tarifas configuradas</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
@@ -59,7 +70,33 @@
                                 {% endif %}
                             </td>
                             <td>{{ combo.nombre }}</td>
-                            <td>${{ combo.precio }}</td>
+                            <td>
+                                {% set tarifas = combo.preciosDisponibles %}
+                                {% if tarifas is not empty %}
+                                    <ul class="list-unstyled mb-0 small">
+                                        {% for iso, monto in tarifas %}
+                                            {% set simbolo = null %}
+                                            {% for precio in combo.precios %}
+                                                {% if simbolo is null %}
+                                                    {% set precioIso = precio.moneda ? (precio.moneda.codigoIso ?: precio.moneda.simbolo) : null %}
+                                                    {% if precioIso and precioIso|upper == iso %}
+                                                        {% set simbolo = precio.moneda.simbolo ?: precio.moneda.codigoIso %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if simbolo is null and combo.moneda and (combo.moneda.codigoIso ?: combo.moneda.simbolo)|upper == iso %}
+                                                {% set simbolo = combo.moneda.simbolo ?: combo.moneda.codigoIso %}
+                                            {% endif %}
+                                            <li>
+                                                <span class="fw-semibold">{{ simbolo ?: iso }}</span>
+                                                {{ monto|number_format(2, '.', '') }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted small">Sin tarifas</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if combo.activo %}
                                     <span class="badge bg-success">Activo</span>

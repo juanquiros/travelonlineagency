@@ -25,25 +25,36 @@
                         <input type="email" class="form-control" name="email" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" name="telefono">
+                        <label class="form-label">Teléfono del pasajero</label>
+                        <input type="tel" class="form-control" name="telefono" value="{{ app.request.get('telefono') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad de pasajeros</label>
+                        <input type="number" class="form-control" name="cantidad_pax" min="1" step="1" value="{{ app.request.get('cantidad_pax') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Número de vuelo</label>
+                        <input type="text" class="form-control" name="numero_vuelo" maxlength="50" value="{{ app.request.get('numero_vuelo') }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Tipo de vehículo</label>
                         <select class="form-select" name="tipo_vehiculo" required>
                             <option value="">Seleccioná el tipo de vehículo</option>
                             {% for tipo in vehicleTypes %}
-                                <option value="{{ tipo }}"{% if app.request.get('tipo_vehiculo') == tipo %} selected{% endif %}>{{ tipo }}</option>
+                                <option value="{{ tipo.id }}"{% if app.request.get('tipo_vehiculo') == tipo.id %} selected{% endif %}>{{ tipo.nombre }}</option>
                             {% endfor %}
                         </select>
+                        {% if vehicleTypes is empty %}
+                            <small class="text-danger">Consultá con el administrador para habilitar tipos de vehículos.</small>
+                        {% endif %}
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Arribo a Iguazú</label>
+                            <label class="form-label">Inicio del servicio</label>
                             <input type="datetime-local" class="form-control" name="arribo">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Salida</label>
+                            <label class="form-label">Fin del servicio</label>
                             <input type="datetime-local" class="form-control" name="salida">
                         </div>
                     </div>
@@ -59,7 +70,10 @@
                     <div class="mb-3">
                         <select class="form-select" name="combo_id">
                             {% for combo in combos %}
-                                <option value="{{ combo.id }}">{{ combo.nombre }} - ${{ combo.precio }}</option>
+                                {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef) %}
+                                {% set comboSymbol = comboPrice and comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                {% set comboAmount = comboPrice ? comboPrice.amount|number_format(2, '.', '') : '—' %}
+                                <option value="{{ combo.id }}">{{ combo.nombre }} - {{ comboSymbol }} {{ comboAmount }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -72,9 +86,12 @@
                             <label class="form-label">Destinos disponibles</label>
                             <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                                 {% for destino in destinos %}
+                                    {% set destinoPrice = destino.getDisplayPrice(plataforma.monedaDef) %}
+                                    {% set destinoSymbol = destinoPrice and destinoPrice.currency ? (destinoPrice.currency.simbolo ?: destinoPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                    {% set destinoAmount = destinoPrice ? destinoPrice.amount|number_format(2, '.', '') : '—' %}
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
-                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - ${{ destino.tarifaBase }}</label>
+                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - {{ destinoSymbol }} {{ destinoAmount }}</label>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -123,7 +140,13 @@
                                     {% endif %}
                                     <div class="card-body">
                                         <h3 class="h6">{{ combo.nombre }}</h3>
-                                        <div class="text-success fw-semibold mb-2">${{ combo.precio }}</div>
+                                        {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef) %}
+                                        {% if comboPrice %}
+                                            {% set comboSymbol = comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                            <div class="text-success fw-semibold mb-2">{{ comboSymbol }} {{ comboPrice.amount|number_format(2, '.', '') }}</div>
+                                        {% else %}
+                                            <div class="text-muted small mb-2">Tarifa no disponible</div>
+                                        {% endif %}
                                         {% if combo.descripcion %}
                                             <p class="small text-muted mb-2">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
                                         {% endif %}
@@ -160,7 +183,13 @@
                                         <div class="col">
                                             <div class="card-body">
                                                 <h3 class="h6 mb-1">{{ destino.nombre }}</h3>
-                                                <div class="text-success fw-semibold mb-1">Tarifa base: ${{ destino.tarifaBase }}</div>
+                                                {% set destinoPrice = destino.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                                {% if destinoPrice %}
+                                                    {% set destinoSymbol = destinoPrice.currency ? (destinoPrice.currency.simbolo ?: destinoPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                                    <div class="text-success fw-semibold mb-1">Tarifa base: {{ destinoSymbol }} {{ destinoPrice.amount|number_format(2, '.', '') }}</div>
+                                                {% else %}
+                                                    <div class="text-muted small mb-1">Tarifa no disponible</div>
+                                                {% endif %}
                                                 {% if destino.descripcionCorta %}
                                                     <p class="small text-muted mb-0">{{ destino.descripcionCorta }}</p>
                                                 {% elseif destino.descripcion %}

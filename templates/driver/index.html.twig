@@ -26,6 +26,13 @@
         <div class="alert alert-warning">{{ flashWarning }}</div>
     {% endfor %}
 
+    {% set selectedFeatureIds = [] %}
+    {% if perfil %}
+        {% for feature in perfil.vehicleFeatures %}
+            {% set selectedFeatureIds = selectedFeatureIds|merge([feature.id]) %}
+        {% endfor %}
+    {% endif %}
+
     {% if not perfil %}
         <div class="alert alert-warning">
             Todavía no completaste tu registro de chofer. Solicitá el enlace privado al administrador para cargar tus datos.
@@ -49,8 +56,11 @@
                                             <div>
                                                 <h3 class="h6 mb-1">{{ solicitud.nombrePasajero }}</h3>
                                                 <div class="small text-muted">Código: {{ solicitud.tokenSeguimiento }}</div>
-                                                <div class="small">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
-                                                <div class="small">Salida: {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Inicio del servicio: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                <div class="small">Fin del servicio: {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                                {% if solicitud.cantidadPasajeros %}
+                                                    <div class="small">Pasajeros: {{ solicitud.cantidadPasajeros }}</div>
+                                                {% endif %}
                                                 <div class="small">Total: ${{ solicitud.precioTotal }}</div>
                                                 <div class="mt-2">
                                                     <a class="btn btn-link p-0" href="{{ path('app_transfer_tracking', {token: solicitud.tokenSeguimiento}) }}" target="_blank">Ver seguimiento público</a>
@@ -135,6 +145,57 @@
                 </div>
             </div>
             <div class="col-lg-4">
+                {% if perfil %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h2 class="h5 mb-3">Mi vehículo</h2>
+                            {% if perfil.vehicleFeatures|length > 0 %}
+                                <div class="mb-3">
+                                    <span class="small text-muted d-block mb-1">Características actuales</span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for feature in perfil.vehicleFeatures %}
+                                            <span class="badge bg-light text-dark border">{{ feature.nombre }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <form method="post" action="{{ path('app_driver_vehicle_update') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('driver_vehicle_' ~ perfil.id) }}">
+                                <div class="mb-3">
+                                    <label class="form-label small">Tipo de vehículo</label>
+                                    <select name="vehicle_type" class="form-select form-select-sm">
+                                        <option value="">Seleccioná el tipo de vehículo</option>
+                                        {% for tipo in vehicleTypes %}
+                                            <option value="{{ tipo.id }}"{% if perfil.vehicleType and perfil.vehicleType.id == tipo.id %} selected{% endif %}>{{ tipo.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if vehicleTypes is empty %}
+                                        <small class="text-danger">Solicitá al administrador que configure los tipos de vehículo disponibles.</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small">Características disponibles</label>
+                                    <div class="border rounded p-2" style="max-height: 160px; overflow-y: auto;">
+                                        {% for feature in vehicleFeatures %}
+                                            <div class="form-check mb-1">
+                                                <input class="form-check-input" type="checkbox" name="features[]" value="{{ feature.id }}" id="driver_feature_{{ feature.id }}"{% if feature.id in selectedFeatureIds %} checked{% endif %}>
+                                                <label class="form-check-label small" for="driver_feature_{{ feature.id }}">{{ feature.nombre }}</label>
+                                            </div>
+                                        {% else %}
+                                            <p class="small text-muted mb-0">No hay características predefinidas por ahora.</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small">Agregar características nuevas</label>
+                                    <input type="text" name="new_features" class="form-control form-control-sm" placeholder="Ej: WiFi a bordo, Agua mineral">
+                                    <small class="text-muted">Separá cada característica con una coma.</small>
+                                </div>
+                                <button class="btn btn-primary btn-sm w-100" type="submit">Guardar vehículo</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h2 class="h5 mb-3">Traslados disponibles</h2>
@@ -143,8 +204,11 @@
                                 {% for solicitud in disponibles %}
                                     <div class="list-group-item">
                                         <div class="fw-semibold">{{ solicitud.nombrePasajero }}</div>
-                                        <div class="small text-muted">Arribo: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
+                                        <div class="small text-muted">Inicio del servicio: {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
                                         <div class="small">Paradas: {{ solicitud.destinos|length }}</div>
+                                        {% if solicitud.cantidadPasajeros %}
+                                            <div class="small">Pasajeros: {{ solicitud.cantidadPasajeros }}</div>
+                                        {% endif %}
                                         <div class="small mb-2">Total: ${{ solicitud.precioTotal }}</div>
                                         <form method="post" action="{{ path('app_driver_capture', {id: solicitud.id}) }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('capture_transfer_' ~ solicitud.id) }}">

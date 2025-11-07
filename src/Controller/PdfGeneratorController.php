@@ -6,6 +6,7 @@ use App\Entity\Booking;
 use App\Entity\EstadoReserva;
 use App\Entity\Plataforma;
 use App\Entity\SolicitudReserva;
+use App\Entity\TransferAssignment;
 use App\Entity\TransferRequest;
 use App\Entity\Usuario;
 use App\Services\LanguageService;
@@ -60,11 +61,23 @@ final class PdfGeneratorController extends AbstractController
         );
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
+        $asignacionActiva = null;
+        foreach ($solicitud->getAsignaciones() as $asignacion) {
+            if (!in_array($asignacion->getEstado(), [
+                TransferAssignment::ESTADO_CANCELADO,
+                TransferAssignment::ESTADO_COMPLETADO,
+            ], true)) {
+                $asignacionActiva = $asignacion;
+                break;
+            }
+        }
+
         $html = $this->renderView('pdf_generator/transfer/solicitud.html.twig', [
             'solicitud' => $solicitud,
             'trackingUrl' => $trackingUrl,
             'plataforma' => $plataforma,
             'generadoEn' => new \DateTimeImmutable(),
+            'asignacion' => $asignacionActiva,
         ]);
 
         $pdf->setOption('enable-local-file-access', true);

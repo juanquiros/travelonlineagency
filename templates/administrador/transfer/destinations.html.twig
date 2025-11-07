@@ -8,6 +8,11 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ editing ? 'Editar destino' : 'Nuevo destino' }}</h2>
+                {% if monedas is defined and monedas is empty %}
+                    <div class="alert alert-warning small" role="alert">
+                        Configurá al menos una moneda activa en la sección <strong>Monedas y pagos</strong> antes de crear nuevos destinos.
+                    </div>
+                {% endif %}
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.categoria) }}
@@ -34,7 +39,13 @@
                         </div>
                     </div>
                 </div>
-                {{ form_row(form.tarifaBase) }}
+                <div class="mb-3">
+                    <h3 class="h6 text-uppercase text-muted mb-2">Tarifas por moneda</h3>
+                    <div class="border rounded p-3 bg-light-subtle">
+                        {{ form_row(form.prices) }}
+                        <p class="form-text mb-0">Dejá vacío el importe de una moneda si no querés ofertar el servicio en esa divisa.</p>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Imagen principal</label>
                     {{ form_widget(form.imagenPortadaFile, {'attr': {'class': 'form-control'}}) }}
@@ -124,7 +135,7 @@
                             <th>Nombre</th>
                             <th>Categoría</th>
                             <th>Descripción</th>
-                            <th>Tarifa base</th>
+                            <th>Tarifas configuradas</th>
                             <th>Ubicación</th>
                             <th>Estado</th>
                             <th>Destacado</th>
@@ -172,7 +183,32 @@
                                     <span class="text-muted small">Sin descripción</span>
                                 {% endif %}
                             </td>
-                            <td>${{ destino.tarifaBase }}</td>
+                            <td class="align-middle">
+                                {% set tarifas = destino.preciosDisponibles %}
+                                {% if tarifas is not empty %}
+                                    <ul class="list-unstyled mb-0 small">
+                                        {% for iso, monto in tarifas %}
+                                            {% set simbolo = null %}
+                                            {% for precio in destino.precios %}
+                                                {% set precioIso = precio.moneda ? (precio.moneda.codigoIso ?: precio.moneda.simbolo) : null %}
+                                                {% if precioIso and precioIso|upper == iso %}
+                                                    {% set simbolo = precio.moneda.simbolo ?: precio.moneda.codigoIso %}
+                                                    {% break %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if simbolo is null and destino.moneda and (destino.moneda.codigoIso ?: destino.moneda.simbolo)|upper == iso %}
+                                                {% set simbolo = destino.moneda.simbolo ?: destino.moneda.codigoIso %}
+                                            {% endif %}
+                                            <li>
+                                                <span class="fw-semibold">{{ simbolo ?: iso }}</span>
+                                                {{ monto|number_format(2, '.', '') }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted small">Sin tarifas</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if destino.latitude is not null and destino.longitude is not null %}
                                     <span class="small">{{ destino.latitude|number_format(4, '.', '') }}, {{ destino.longitude|number_format(4, '.', '') }}</span>

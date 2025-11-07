@@ -6,6 +6,7 @@ use App\Entity\BookingPartner;
 use App\Entity\DriverProfile;
 use App\Entity\Plataforma;
 use App\Entity\Usuario;
+use App\Entity\VehicleType;
 use App\Form\RegistrationFormType;
 use App\Services\LanguageService;
 use App\Services\PartnerInvitationService;
@@ -75,7 +76,7 @@ class RegistrationController extends AbstractController
         bool $driverMode
     ): Response {
         $user = new Usuario();
-        $vehicleTypes = (array) $this->getParameter('transfer_vehicle_types');
+        $vehicleTypes = $this->em->getRepository(VehicleType::class)->findActiveOrdered();
         $form = $this->createForm(RegistrationFormType::class, $user, [
             'show_partner_checkbox' => $showPartnerCheckbox,
             'driver_mode' => $driverMode,
@@ -117,7 +118,11 @@ class RegistrationController extends AbstractController
                 $driverProfile->setTelefono((string) $form->get('driverTelefono')->getData());
                 $driverProfile->setPatente((string) $form->get('driverPatente')->getData());
                 $driverProfile->setModeloVehiculo((string) $form->get('driverModeloVehiculo')->getData());
-                $driverProfile->setTipoVehiculo((string) $form->get('driverTipoVehiculo')->getData());
+                /** @var VehicleType|null $selectedType */
+                $selectedType = $form->get('driverTipoVehiculo')->getData();
+                if ($selectedType instanceof VehicleType) {
+                    $driverProfile->setVehicleType($selectedType);
+                }
                 $driverProfile->setNotas($form->get('driverNotas')->getData());
 
                 /** @var UploadedFile|null $foto */

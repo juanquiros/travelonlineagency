@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\DriverProfileRepository;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DriverProfileRepository::class)]
@@ -37,6 +39,10 @@ class DriverProfile
     #[ORM\Column(length: 100)]
     private string $tipoVehiculo = '';
 
+    #[ORM\ManyToOne(inversedBy: 'drivers')]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?VehicleType $vehicleType = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fotoVehiculo = null;
 
@@ -64,10 +70,15 @@ class DriverProfile
     #[ORM\Column]
     private \DateTimeImmutable $actualizadoEn;
 
+    #[ORM\ManyToMany(targetEntity: VehicleFeature::class, inversedBy: 'drivers')]
+    #[ORM\JoinTable(name: 'driver_profile_vehicle_feature')]
+    private Collection $vehicleFeatures;
+
     public function __construct()
     {
         $this->creadoEn = new \DateTimeImmutable();
         $this->actualizadoEn = new \DateTimeImmutable();
+        $this->vehicleFeatures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -154,12 +165,35 @@ class DriverProfile
 
     public function getTipoVehiculo(): string
     {
+        if ($this->vehicleType instanceof VehicleType) {
+            return (string) $this->vehicleType->getNombre();
+        }
+
         return $this->tipoVehiculo;
     }
 
     public function setTipoVehiculo(string $tipoVehiculo): self
     {
         $this->tipoVehiculo = $tipoVehiculo;
+        if ($tipoVehiculo === '') {
+            $this->vehicleType = null;
+        }
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getVehicleType(): ?VehicleType
+    {
+        return $this->vehicleType;
+    }
+
+    public function setVehicleType(?VehicleType $vehicleType): self
+    {
+        $this->vehicleType = $vehicleType;
+        if ($vehicleType instanceof VehicleType) {
+            $this->tipoVehiculo = (string) $vehicleType->getNombre();
+        }
         $this->touch();
 
         return $this;
@@ -174,6 +208,33 @@ class DriverProfile
     {
         $this->fotoVehiculo = $fotoVehiculo;
         $this->touch();
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VehicleFeature>
+     */
+    public function getVehicleFeatures(): Collection
+    {
+        return $this->vehicleFeatures;
+    }
+
+    public function addVehicleFeature(VehicleFeature $feature): self
+    {
+        if (!$this->vehicleFeatures->contains($feature)) {
+            $this->vehicleFeatures->add($feature);
+            $this->touch();
+        }
+
+        return $this;
+    }
+
+    public function removeVehicleFeature(VehicleFeature $feature): self
+    {
+        if ($this->vehicleFeatures->removeElement($feature)) {
+            $this->touch();
+        }
 
         return $this;
     }

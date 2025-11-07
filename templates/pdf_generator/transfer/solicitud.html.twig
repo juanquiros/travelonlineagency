@@ -4,17 +4,44 @@
     <meta charset="UTF-8">
     <title>Detalle de traslado</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; }
+        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; margin-bottom: 140px; }
         h1 { font-size: 22px; margin-bottom: 5px; }
         h2 { font-size: 16px; margin-top: 24px; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         th, td { padding: 8px; border: 1px solid #ddd; }
         .qr { text-align: center; margin-top: 20px; }
         .muted { color: #666; font-size: 12px; }
+        footer {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-    <h1>Detalle de traslado</h1>
+    <table style="width: 100%; margin-bottom: 16px;">
+        <tr>
+            <td style="width: 70%; vertical-align: middle;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    {% if plataforma and plataforma.logo %}
+                        <img src="{{ absolute_url(asset('img/' ~ plataforma.logo)) }}" alt="{{ plataforma.nombre }}" style="max-height: 60px;">
+                    {% endif %}
+                    {% if plataforma %}
+                        <strong style="font-size: 20px;">{{ plataforma.nombre }}</strong>
+                    {% endif %}
+                </div>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+                <span class="muted">Detalle de traslado</span>
+            </td>
+        </tr>
+    </table>
+    <hr>
     <p class="muted">Generado el {{ generadoEn|date('d/m/Y H:i') }}</p>
 
     <h2>Pasajero</h2>
@@ -22,11 +49,49 @@
         <tr><th>Nombre</th><td>{{ solicitud.nombrePasajero }}</td></tr>
         <tr><th>Correo</th><td>{{ solicitud.emailPasajero }}</td></tr>
         <tr><th>Teléfono</th><td>{{ solicitud.telefonoPasajero ?: 'No informado' }}</td></tr>
-        <tr><th>Arribo</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
-        <tr><th>Salida</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
-        <tr><th>Total</th><td>${{ solicitud.precioTotal }}</td></tr>
+        <tr><th>Cantidad de pasajeros</th><td>{{ solicitud.cantidadPasajeros ?: 'No informado' }}</td></tr>
+        <tr><th>Número de vuelo</th><td>{{ solicitud.vueloPasajero ?: 'No informado' }}</td></tr>
+        <tr><th>Inicio del servicio</th><td>{{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Fin del servicio</th><td>{{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'No informado' }}</td></tr>
+        <tr><th>Importe principal</th><td>{{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}</td></tr>
+        {% set totals = solicitud.totalesPorMoneda %}
+        {% if totals is iterable and totals is not empty %}
+            <tr>
+                <th>Totales por moneda</th>
+                <td>
+                    {% for iso, amount in totals %}
+                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endif %}
+        <tr><th>Orden de servicio</th><td>{{ solicitud.codigoServicio ?: 'No generado' }}</td></tr>
         <tr><th>Código de seguimiento</th><td>{{ solicitud.tokenSeguimiento }}</td></tr>
     </table>
+
+    {% if asignacion %}
+        <h2>Conductor asignado</h2>
+        <table>
+            <tr><th>Nombre</th><td>{{ asignacion.chofer.nombreCompleto }}</td></tr>
+            <tr><th>Teléfono</th><td>{{ asignacion.chofer.telefono }}</td></tr>
+            <tr><th>Vehículo</th><td>{{ asignacion.chofer.modeloVehiculo }} - {{ asignacion.chofer.tipoVehiculo }}</td></tr>
+            <tr><th>Patente</th><td>{{ asignacion.chofer.patente }}</td></tr>
+            <tr>
+                <th>Características</th>
+                <td>
+                    {% if asignacion.chofer.vehicleFeatures|length > 0 %}
+                        {% set featureNames = [] %}
+                        {% for feature in asignacion.chofer.vehicleFeatures %}
+                            {% set featureNames = featureNames|merge([feature.nombre]) %}
+                        {% endfor %}
+                        {{ featureNames|join(', ') }}
+                    {% else %}
+                        Sin detalles
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
 
     <h2>Paradas</h2>
     <table>
@@ -67,8 +132,10 @@
         <p class="muted">Escaneá el código para seguir el viaje: {{ trackingUrl }}</p>
     </div>
 
-    {% if plataforma %}
-        <p class="muted">Emitido por {{ plataforma.nombre }}</p>
-    {% endif %}
+    <footer>
+        <p><strong>Emitido por Travel Online Agency</strong>{% if plataforma %} - {{ plataforma.nombre }}{% endif %}</p>
+        <p>SI EL PASAJERO PRESENTA "NO SHOW" AL ORIGEN DEL SERVICIO TRF, SE CONSIDERA EL SERVICIO COMO PERDIDO SIN DERECHO A REEMBOLSO.</p>
+        <p>ESTA CONDICIÓN APLICA SEGÚN LAS POLÍTICAS DE CANCELACIÓN Y PENALIZACIÓN PARA EL PASAJERO Y EL CHOFER.</p>
+    </footer>
 </body>
 </html>

@@ -1,0 +1,147 @@
+{% extends 'administrador/base.html.twig' %}
+
+{% block title %}Catálogo de vehículos{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Nuevo tipo de vehículo</h2>
+                <form method="post" action="{{ path('app_admin_vehicle_type_create') }}" class="row g-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('create_vehicle_type') }}">
+                    <div class="col-12">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Opcional"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Orden</label>
+                        <input type="number" name="order" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" name="active" id="new_type_active" checked>
+                            <label class="form-check-label" for="new_type_active">Activo</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary" type="submit">Crear tipo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Tipos configurados</h2>
+                {% if vehicleTypes %}
+                    <div class="list-group list-group-flush">
+                        {% for tipo in vehicleTypes %}
+                            <div class="list-group-item">
+                                <form method="post" action="{{ path('app_admin_vehicle_type_update', {id: tipo.id}) }}" class="row g-2 align-items-end">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('update_vehicle_type_' ~ tipo.id) }}">
+                                    <div class="col-12">
+                                        <label class="form-label small">Nombre</label>
+                                        <input type="text" name="name" class="form-control form-control-sm" value="{{ tipo.nombre }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small">Descripción</label>
+                                        <textarea name="description" class="form-control form-control-sm" rows="2">{{ tipo.descripcion }}</textarea>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Orden</label>
+                                        <input type="number" name="order" class="form-control form-control-sm" value="{{ tipo.orden }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" name="active" id="type_active_{{ tipo.id }}"{% if tipo.activo %} checked{% endif %}>
+                                            <label class="form-check-label" for="type_active_{{ tipo.id }}">Activo</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button class="btn btn-outline-primary btn-sm" type="submit">Guardar</button>
+                                    </div>
+                                    {% if tipo.drivers|length > 0 %}
+                                        <div class="col-12">
+                                            <small class="text-muted">Asignado a {{ tipo.drivers|length }} chofer(es) y {{ tipo.transferRequests|length }} solicitud(es).</small>
+                                        </div>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Aún no se configuraron tipos de vehículos.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Nueva característica</h2>
+                <form method="post" action="{{ path('app_admin_vehicle_feature_create') }}" class="row g-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('create_vehicle_feature') }}">
+                    <div class="col-12">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Opcional"></textarea>
+                    </div>
+                    <div class="col-12 d-flex align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="active" id="new_feature_active" checked>
+                            <label class="form-check-label" for="new_feature_active">Activa</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary" type="submit">Crear característica</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Características configuradas</h2>
+                {% if vehicleFeatures %}
+                    <div class="list-group list-group-flush">
+                        {% for feature in vehicleFeatures %}
+                            <div class="list-group-item">
+                                <form method="post" action="{{ path('app_admin_vehicle_feature_update', {id: feature.id}) }}" class="row g-2 align-items-end">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('update_vehicle_feature_' ~ feature.id) }}">
+                                    <div class="col-12">
+                                        <label class="form-label small">Nombre</label>
+                                        <input type="text" name="name" class="form-control form-control-sm" value="{{ feature.nombre }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small">Descripción</label>
+                                        <textarea name="description" class="form-control form-control-sm" rows="2">{{ feature.descripcion }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" name="active" id="feature_active_{{ feature.id }}"{% if feature.activo %} checked{% endif %}>
+                                            <label class="form-check-label" for="feature_active_{{ feature.id }}">Activa</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <button class="btn btn-outline-primary btn-sm" type="submit">Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Aún no se registraron características.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

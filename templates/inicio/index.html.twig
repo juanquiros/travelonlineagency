@@ -3,7 +3,51 @@
 {% block title %}Home - Travel Online Agency{% endblock %}
 
 {% block body %}
-    <section class="toa-hero" data-aos="fade-up" data-aos-duration="2000" style="background-image: linear-gradient(135deg, rgba(12, 45, 74, 0.92), rgba(31, 107, 179, 0.92)), url({{ asset('img/waterfall.jpg') }}); background-size: cover; background-position: center;">
+    {% set heroSlides = [] %}
+    {% set showcaseHighlights = [] %}
+    {% set showcaseVideos = [] %}
+    {% set showcaseMediaPieces = [] %}
+    {% for pieza in transferShowcases %}
+        {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
+            {% set heroSlides = heroSlides|merge([{ 'type': 'image', 'source': asset('img/transfer/showcase/' ~ pieza.imagen), 'title': pieza.titulo }]) %}
+            {% set showcaseHighlights = showcaseHighlights|merge([pieza]) %}
+        {% elseif pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') %}
+            {% set videoUrl = pieza.videoBackgroundUrl %}
+            {% if videoUrl %}
+                {% set heroSlides = heroSlides|merge([{ 'type': 'video', 'source': videoUrl, 'title': pieza.titulo }]) %}
+            {% endif %}
+            {% if pieza.videoEmbed %}
+                {% set showcaseVideos = showcaseVideos|merge([pieza]) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% for pieza in showcaseHighlights %}
+        {% set showcaseMediaPieces = showcaseMediaPieces|merge([{'type': 'image', 'pieza': pieza}]) %}
+    {% endfor %}
+    {% for pieza in showcaseVideos %}
+        {% set showcaseMediaPieces = showcaseMediaPieces|merge([{'type': 'video', 'pieza': pieza}]) %}
+    {% endfor %}
+
+    <section class="toa-hero" data-aos="fade-up" data-aos-duration="2000" data-hero>
+        <div class="toa-hero-background" data-hero-rotator data-interval="9000">
+            {% if heroSlides %}
+                {% for slide in heroSlides %}
+                    <div class="toa-hero-slide {{ loop.first ? 'is-active' }}" data-hero-slide aria-hidden="{{ loop.first ? 'false' : 'true' }}">
+                        {% if slide.type == 'image' %}
+                            <div class="toa-hero-slide-media" style="background-image: url('{{ slide.source }}');"></div>
+                        {% else %}
+                            <iframe src="{{ slide.source }}" title="{{ slide.title }}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="toa-hero-slide is-active" data-hero-slide aria-hidden="false">
+                    <div class="toa-hero-slide-media" style="background-image: url('{{ asset('img/waterfall.jpg') }}');"></div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="toa-hero-overlay"></div>
         <div class="toa-hero-content">
             <div class="d-flex flex-column gap-3">
                 <span class="toa-hero-badge"><span class="bi bi-airplane-engines"></span> Experiencias en Iguazú</span>
@@ -20,12 +64,58 @@
         </div>
     </section>
 
+    <section class="toa-hero-search" data-aos="fade-up" data-aos-duration="1500">
+        <div class="container">
+            <div class="toa-search-card toa-search-card--floating">
+                <form class="row g-3 align-items-center" action="{{ path('app_destinos') }}" method="get">
+                    <div class="col-lg-8">
+                        <label class="form-label text-uppercase small fw-semibold text-muted" for="busqueda-destinos">Buscar destinos</label>
+                        <input type="search" class="form-control form-control-lg" id="busqueda-destinos" name="q" placeholder="Ingresá una actividad, lugar o palabra clave">
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-end">
+                        <button class="btn btn-primary w-100 btn-lg" type="submit">
+                            <span class="bi bi-search me-2"></span>Ir a destinos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    {% if destinoCategorias %}
+        <section class="toa-section pt-0" data-aos="fade-up" data-aos-duration="1500">
+            <div class="container">
+                <div class="toa-section-heading">
+                    <h2 class="toa-section-title mb-1">Categorías de destinos</h2>
+                    <p class="toa-section-subtitle mb-0">Descubrí experiencias agrupadas por temática y encontrá lo que más te inspira.</p>
+                </div>
+                <div class="toa-category-carousel" data-carousel>
+                    <button class="toa-category-nav btn btn-outline-primary btn-sm" type="button" data-carousel-prev aria-label="Categoría anterior">
+                        <span class="bi bi-chevron-left"></span>
+                    </button>
+                    <div class="toa-category-track" data-carousel-track>
+                        {% for categoria in destinoCategorias %}
+                            {% set iconClass = categoria.iconCssClass ?? 'bi-compass' %}
+                            <a class="toa-category-card" href="{{ path('app_destinos', { categoria: categoria.id }) }}" title="Ver destinos de {{ categoria.nombre }}">
+                                <span class="toa-category-icon"><span class="bi {{ iconClass }}"></span></span>
+                                <span class="toa-category-name">{{ categoria.nombre }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <button class="toa-category-nav btn btn-outline-primary btn-sm" type="button" data-carousel-next aria-label="Categoría siguiente">
+                        <span class="bi bi-chevron-right"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
     <section id="destacados" class="toa-section" data-aos="fade-up" data-aos-duration="1500">
         <div class="container">
             <h2 class="toa-section-title">Destinos destacados</h2>
             <div class="section-divider"></div>
             <p class="toa-section-subtitle">Nuestra selección curada con los imprescindibles de Iguazú para empezar a planificar tu viaje.</p>
-            <div class="row g-4 mb-4">
+            <div class="row g-4 mb-4 justify-content-center">
                 {% for destino in destinosDestacados %}
                     <div class="col-md-6 col-lg-4 d-flex">
                         {% include 'components/destino_card.html.twig' with { destino: destino } %}
@@ -36,33 +126,6 @@
                     </div>
                 {% endfor %}
             </div>
-
-            {% if transferShowcases %}
-                <div class="toa-showcase-grid row g-4">
-                    {% for pieza in transferShowcases %}
-                        <div class="col-md-4 d-flex">
-                            <div class="card h-100 shadow-sm flex-fill">
-                                {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_IMAGE') and pieza.imagen %}
-                                    <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" class="card-img-top" style="object-fit: cover; max-height: 220px;">
-                                {% elseif pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') and pieza.videoEmbed %}
-                                    <div class="ratio ratio-16x9">
-                                        <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
-                                    </div>
-                                {% endif %}
-                                <div class="card-body d-flex flex-column">
-                                    <h3 class="h5 mb-2">{{ pieza.titulo }}</h3>
-                                    {% if pieza.descripcion %}
-                                        <p class="small text-muted flex-grow-1">{{ pieza.descripcion }}</p>
-                                    {% endif %}
-                                    {% if pieza.tipo == constant('App\\Entity\\TransferShowcase::TYPE_VIDEO') and pieza.videoUrl %}
-                                        <a class="btn btn-outline-primary btn-sm mt-2" href="{{ pieza.videoUrl }}" target="_blank" rel="noopener">Ver en YouTube</a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
         </div>
     </section>
 
@@ -85,7 +148,7 @@
             <h2 class="toa-section-title">Explorá más destinos</h2>
             <div class="section-divider"></div>
             <p class="toa-section-subtitle">Seleccionamos algunos favoritos para inspirarte. Consultá el listado completo para planificar tu itinerario.</p>
-            <div class="row g-4">
+            <div class="row g-4 justify-content-center">
                 {% for destino in destinosTarjetas %}
                     <div class="col-md-6 col-lg-4 d-flex">
                         {% include 'components/destino_card.html.twig' with { destino: destino } %}
@@ -101,6 +164,49 @@
             </div>
         </div>
     </section>
+
+    {% if showcaseMediaPieces %}
+        <section id="multimedia" class="toa-section toa-media-section bg-dark text-white" data-aos="fade-up" data-aos-duration="1500">
+            <div class="container">
+                <div class="toa-section-heading text-white">
+                    <h2 class="toa-section-title text-white">Contenido multimedia</h2>
+                    <p class="toa-section-subtitle text-white-50">Disfrutá del contenido seleccionado por nuestro equipo para inspirar tu próxima experiencia.</p>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    {% for item in showcaseMediaPieces %}
+                        {% set pieza = item.pieza %}
+                        <div class="col-md-6 col-lg-4 d-flex">
+                            <article class="card bg-transparent border-0 shadow-sm flex-fill toa-media-card card-hover h-100">
+                                <div class="ratio ratio-16x9 toa-media-card__media">
+                                    {% if item.type == 'video' %}
+                                        <iframe src="{{ pieza.videoEmbed }}" title="{{ pieza.titulo }}" allowfullscreen loading="lazy"></iframe>
+                                    {% else %}
+                                        <img src="{{ asset('img/transfer/showcase/' ~ pieza.imagen) }}" alt="{{ pieza.titulo }}" loading="lazy">
+                                    {% endif %}
+                                </div>
+                                <div class="card-body d-flex flex-column gap-2">
+                                    <h3 class="h5 mb-1 text-white">{{ pieza.titulo }}</h3>
+                                    {% if pieza.descripcion %}
+                                        <p class="small text-white-50 flex-grow-1 mb-0">{{ pieza.descripcion }}</p>
+                                    {% endif %}
+                                    {% if item.type == 'video' and pieza.videoUrl %}
+                                        <a class="btn btn-outline-light btn-sm mt-auto" href="{{ pieza.videoUrl }}" target="_blank" rel="noopener">
+                                            <span class="bi bi-youtube me-1"></span> Ver en YouTube
+                                        </a>
+                                    {% elseif item.type == 'image' %}
+                                        <div class="d-flex align-items-center gap-2 mt-auto small text-white-50">
+                                            <span class="bi bi-camera-fill"></span>
+                                            <span>Material fotográfico</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
 
     <section id="bookings" class="toa-section bg-light" data-aos="fade-up" data-aos-duration="1500">
         <div class="container">
@@ -149,7 +255,13 @@
                             <div class="card-body d-flex flex-column gap-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <h3 class="h5 mb-0">{{ combo.nombre }}</h3>
-                                    <span class="toa-pill"><span class="bi bi-cash-coin"></span>${{ combo.precio }}</span>
+                                    {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                    {% if comboPrice %}
+                                        {% set comboSymbol = comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                        <span class="toa-pill"><span class="bi bi-cash-coin"></span>{{ comboSymbol }} {{ comboPrice.amount|number_format(2, '.', '') }}</span>
+                                    {% else %}
+                                        <span class="toa-pill text-muted"><span class="bi bi-exclamation-circle"></span>Tarifa no disponible</span>
+                                    {% endif %}
                                 </div>
                                 {% if combo.descripcion %}
                                     <p class="small text-muted mb-0">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
@@ -164,6 +276,11 @@
                                         </ul>
                                     </div>
                                 {% endif %}
+                                <div class="d-grid mt-auto">
+                                    <a class="btn btn-outline-primary" href="{{ path('app_transfer_combo_show', { id: combo.id }) }}">
+                                        Ver detalles
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -186,7 +303,7 @@
                 <h2 class="toa-section-title">Lo que dicen nuestros viajeros</h2>
                 <div class="section-divider"></div>
                 <p class="toa-section-subtitle">Experiencias reales de turistas que ya disfrutaron nuestros traslados personalizados.</p>
-                <div class="row g-4">
+                <div class="row g-4 justify-content-center">
                     {% for testimonio in testimoniosTraslados %}
                         <div class="col-md-6 col-lg-4 d-flex">
                             <div class="card shadow-sm flex-fill h-100">
@@ -233,4 +350,140 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            (function initializeHeroRotator() {
+                const hero = document.querySelector('[data-hero]');
+                if (!hero) {
+                    return;
+                }
+
+                const rotator = hero.querySelector('[data-hero-rotator]');
+                if (!rotator) {
+                    return;
+                }
+
+                const slides = rotator.querySelectorAll('[data-hero-slide]');
+                if (!slides.length) {
+                    return;
+                }
+
+                slides.forEach(function (slide, index) {
+                    slide.setAttribute('aria-hidden', index === 0 ? 'false' : 'true');
+                });
+
+                if (slides.length === 1) {
+                    return;
+                }
+
+                const interval = parseInt(rotator.dataset.interval || '9000', 10);
+                const delay = Number.isNaN(interval) || interval <= 0 ? 9000 : interval;
+                let current = 0;
+
+                window.setInterval(function () {
+                    const next = (current + 1) % slides.length;
+                    slides[current].classList.remove('is-active');
+                    slides[current].setAttribute('aria-hidden', 'true');
+                    slides[next].classList.add('is-active');
+                    slides[next].setAttribute('aria-hidden', 'false');
+                    current = next;
+                }, delay);
+            })();
+
+            document.querySelectorAll('[data-carousel]').forEach(function (carousel) {
+                const track = carousel.querySelector('[data-carousel-track]');
+                if (!track) {
+                    return;
+                }
+
+                const prevButton = carousel.querySelector('[data-carousel-prev]');
+                const nextButton = carousel.querySelector('[data-carousel-next]');
+                const firstCard = track.querySelector('.toa-category-card');
+                const styles = window.getComputedStyle(track);
+                const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+                const configuredStep = carousel.dataset.carouselStep ? parseInt(carousel.dataset.carouselStep, 10) : null;
+                const inferredStep = firstCard ? firstCard.getBoundingClientRect().width + gap : 260;
+                const scrollStep = configuredStep && !Number.isNaN(configuredStep) ? configuredStep : Math.max(inferredStep, 240);
+                const maxScrollable = function () {
+                    return Math.max(track.scrollWidth - track.clientWidth, 0);
+                };
+                const hasOverflow = function () {
+                    return maxScrollable() > 8;
+                };
+
+                if (!hasOverflow()) {
+                    track.classList.add('is-centered');
+                    if (prevButton) {
+                        prevButton.setAttribute('disabled', 'disabled');
+                        prevButton.classList.add('disabled');
+                    }
+                    if (nextButton) {
+                        nextButton.setAttribute('disabled', 'disabled');
+                        nextButton.classList.add('disabled');
+                    }
+                }
+
+                const performScroll = function (direction) {
+                    if (!hasOverflow()) {
+                        return;
+                    }
+
+                    const maxLeft = maxScrollable();
+                    if (maxLeft <= 0) {
+                        return;
+                    }
+
+                    const nextLeft = track.scrollLeft + scrollStep * direction;
+                    if (direction > 0 && nextLeft >= maxLeft - 1) {
+                        track.scrollTo({ left: 0, behavior: 'smooth' });
+                    } else if (direction < 0 && nextLeft <= 1) {
+                        track.scrollTo({ left: maxLeft, behavior: 'smooth' });
+                    } else {
+                        track.scrollTo({ left: Math.min(Math.max(nextLeft, 0), maxLeft), behavior: 'smooth' });
+                    }
+                };
+
+                let autoScroll = null;
+                const startAutoScroll = function () {
+                    if (!hasOverflow()) {
+                        return;
+                    }
+
+                    window.clearInterval(autoScroll);
+                    autoScroll = window.setInterval(function () {
+                        performScroll(1);
+                    }, 4500);
+                };
+
+                const stopAutoScroll = function () {
+                    window.clearInterval(autoScroll);
+                };
+
+                if (prevButton) {
+                    prevButton.addEventListener('click', function () {
+                        performScroll(-1);
+                        startAutoScroll();
+                    });
+                }
+
+                if (nextButton) {
+                    nextButton.addEventListener('click', function () {
+                        performScroll(1);
+                        startAutoScroll();
+                    });
+                }
+
+                carousel.addEventListener('mouseenter', stopAutoScroll);
+                carousel.addEventListener('mouseleave', startAutoScroll);
+                carousel.addEventListener('touchstart', stopAutoScroll, { passive: true });
+                carousel.addEventListener('touchend', startAutoScroll, { passive: true });
+
+                startAutoScroll();
+            });
+        });
+    </script>
 {% endblock %}

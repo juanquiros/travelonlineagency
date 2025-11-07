@@ -32,7 +32,13 @@
                                 downloadLabel: 'Descargar imagen con QR'
                             } %}
                             <div class="d-flex flex-wrap align-items-center gap-3">
-                                <span class="badge text-bg-primary fs-6">${{ combo.precio }}</span>
+                                {% set comboPrice = combo.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                {% if comboPrice %}
+                                    {% set currencySymbol = comboPrice.currency ? (comboPrice.currency.simbolo ?: comboPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                    <span class="badge text-bg-primary fs-6">{{ currencySymbol }} {{ comboPrice.amount|number_format(2, '.', '') }}</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary fs-6">Tarifa no disponible</span>
+                                {% endif %}
                                 <span class="text-muted">Traslado curado por nuestro equipo local.</span>
                             </div>
                             {% if combo.descripcion %}
@@ -100,7 +106,13 @@
                                         <div class="border rounded p-3 d-flex flex-column gap-2">
                                             <a class="fw-semibold text-decoration-none" href="{{ path('app_transfer_combo_show', { id: otro.id }) }}">{{ otro.nombre }}</a>
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge text-bg-primary">${{ otro.precio }}</span>
+                                                {% set otherPrice = otro.getDisplayPrice(plataforma.monedaDef ?? null) %}
+                                                {% if otherPrice %}
+                                                    {% set otherSymbol = otherPrice.currency ? (otherPrice.currency.simbolo ?: otherPrice.currency.codigoIso) : (plataforma.monedaDef ? (plataforma.monedaDef.simbolo ?: plataforma.monedaDef.codigoIso) : '$') %}
+                                                    <span class="badge text-bg-primary">{{ otherSymbol }} {{ otherPrice.amount|number_format(2, '.', '') }}</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary">Tarifa no disponible</span>
+                                                {% endif %}
                                                 {% if otro.destinos|length > 0 %}
                                                     <span class="small text-muted">{{ otro.destinos|length }} paradas</span>
                                                 {% endif %}

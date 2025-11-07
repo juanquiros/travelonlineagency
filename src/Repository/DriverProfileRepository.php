@@ -35,11 +35,11 @@ class DriverProfileRepository extends ServiceEntityRepository
     public function findDistinctVehicleTypes(): array
     {
         $results = $this->createQueryBuilder('d')
-            ->select('DISTINCT d.tipoVehiculo AS tipo')
-            ->andWhere('d.tipoVehiculo IS NOT NULL')
-            ->andWhere('d.tipoVehiculo <> :vacio')
+            ->leftJoin('d.vehicleType', 'vt')
+            ->select('DISTINCT COALESCE(vt.nombre, d.tipoVehiculo) AS tipo')
+            ->andWhere('(d.tipoVehiculo IS NOT NULL AND d.tipoVehiculo <> :vacio) OR vt.id IS NOT NULL')
             ->setParameter('vacio', '')
-            ->orderBy('d.tipoVehiculo', 'ASC')
+            ->orderBy('tipo', 'ASC')
             ->getQuery()
             ->getArrayResult();
 

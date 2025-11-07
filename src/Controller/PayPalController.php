@@ -191,7 +191,9 @@ class PayPalController extends AbstractController
             $pago->setTransferRequest($solicitud);
         }
 
-        $total = (float) $solicitud->getPrecioTotal();
+        $currencyIso = strtoupper($solicitud->getMoneda());
+        $totales = $solicitud->getTotalesPorMoneda();
+        $total = $totales[$currencyIso] ?? (float) $solicitud->getPrecioTotal();
         if ($total <= 0) {
             $this->addFlash('error', 'El traslado no tiene un monto configurado.');
 
@@ -235,11 +237,11 @@ class PayPalController extends AbstractController
             ],
             'purchase_units' => [[
                 'amount' => [
-                    'currency_code' => 'USD',
+                    'currency_code' => $currencyIso,
                     'value' => number_format($total, 2, '.', ''),
                     'breakdown' => [
                         'item_total' => [
-                            'currency_code' => 'USD',
+                            'currency_code' => $currencyIso,
                             'value' => number_format($total, 2, '.', ''),
                         ],
                     ],
@@ -248,7 +250,7 @@ class PayPalController extends AbstractController
                     'name' => 'Traslado Iguazú',
                     'description' => 'Servicio de traslado personalizado',
                     'unit_amount' => [
-                        'currency_code' => 'USD',
+                        'currency_code' => $currencyIso,
                         'value' => number_format($total, 2, '.', ''),
                     ],
                     'quantity' => '1',

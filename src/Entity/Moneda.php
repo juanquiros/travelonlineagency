@@ -10,6 +10,16 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: MonedaRepository::class)]
 class Moneda
 {
+    public const METODO_CASH = 'cash';
+    public const METODO_MERCADOPAGO = 'mercadopago';
+    public const METODO_PAYPAL = 'paypal';
+
+    public const METODOS_PAGO = [
+        self::METODO_CASH,
+        self::METODO_MERCADOPAGO,
+        self::METODO_PAYPAL,
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -21,8 +31,14 @@ class Moneda
     #[ORM\Column(length: 10)]
     private ?string $simbolo = null;
 
-    #[ORM\Column]
-    private ?float $habilitada = null;
+    #[ORM\Column(length: 3, name: 'codigo_iso')]
+    private ?string $codigoIso = null;
+
+    #[ORM\Column(type: 'json', name: 'metodos_pago')]
+    private array $metodosPago = [self::METODO_CASH];
+
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $habilitada = true;
 
     /**
      * @var Collection<int, Lenguaje>
@@ -36,25 +52,11 @@ class Moneda
     #[ORM\OneToMany(targetEntity: Precio::class, mappedBy: 'moneda', orphanRemoval: true)]
     private Collection $precios;
 
-    /**
-     * @param string|null $nombre
-     * @param string|null $simbolo
-     * @param float|null $habilitada
-     */
-    public function __construct(?string $nombre, ?string $simbolo, ?float $habilitada)
+    public function __construct()
     {
-        $this->nombre = $nombre;
-        $this->simbolo = $simbolo;
-        $this->habilitada = $habilitada;
         $this->lenguajes = new ArrayCollection();
         $this->precios = new ArrayCollection();
     }
-
-    /**
-     * @param float|null $habilitada
-     */
-
-
 
     public function getId(): ?int
     {
@@ -85,12 +87,93 @@ class Moneda
         return $this;
     }
 
-    public function getHabilitada(): ?float
+    public function getCodigoIso(): ?string
+    {
+        return $this->codigoIso;
+    }
+
+    public function setCodigoIso(string $codigoIso): static
+    {
+        $this->codigoIso = strtoupper(substr($codigoIso, 0, 3));
+
+        return $this;
+    }
+
+    public function getMetodoPago(): ?string
+    {
+        return $this->metodosPago[0] ?? null;
+    }
+
+    public function setMetodoPago(string $metodoPago): static
+    {
+        return $this->setMetodosPago([$metodoPago]);
+    }
+
+    public function getMetodosPago(): array
+    {
+        return $this->metodosPago;
+    }
+
+    public function setMetodosPago(array $metodosPago): static
+    {
+        $normalizados = [];
+        foreach ($metodosPago as $metodo) {
+            $metodo = strtolower((string) $metodo);
+            if (!in_array($metodo, self::METODOS_PAGO, true)) {
+                continue;
+            }
+            $normalizados[$metodo] = $metodo;
+        }
+
+        if (empty($normalizados)) {
+            $normalizados[self::METODO_CASH] = self::METODO_CASH;
+        }
+
+        $this->metodosPago = array_values($normalizados);
+
+        return $this;
+    }
+
+    public function addMetodoPago(string $metodoPago): static
+    {
+        $metodoPago = strtolower($metodoPago);
+        if (!in_array($metodoPago, self::METODOS_PAGO, true)) {
+            return $this;
+        }
+
+        if (!in_array($metodoPago, $this->metodosPago, true)) {
+            $this->metodosPago[] = $metodoPago;
+        }
+
+        return $this;
+    }
+
+    public function removeMetodoPago(string $metodoPago): static
+    {
+        $metodoPago = strtolower($metodoPago);
+        $this->metodosPago = array_values(array_filter(
+            $this->metodosPago,
+            static fn (string $valor): bool => $valor !== $metodoPago
+        ));
+
+        if ($this->metodosPago === []) {
+            $this->metodosPago[] = self::METODO_CASH;
+        }
+
+        return $this;
+    }
+
+    public function supportsMetodoPago(string $metodoPago): bool
+    {
+        return in_array(strtolower($metodoPago), $this->metodosPago, true);
+    }
+
+    public function isHabilitada(): bool
     {
         return $this->habilitada;
     }
 
-    public function setHabilitada(float $habilitada): static
+    public function setHabilitada(bool $habilitada): static
     {
         $this->habilitada = $habilitada;
 
@@ -157,7 +240,15 @@ class Moneda
         return $this;
     }
 
-    public function getMonedaInArray():array{
-        return ['id'=>$this->id, 'nombre'=>$this->nombre,'simbolo'=>$this->simbolo,'habilitada'=>$this->habilitada];
+    public function getMonedaInArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'nombre' => $this->nombre,
+            'simbolo' => $this->simbolo,
+            'codigoIso' => $this->codigoIso,
+            'metodosPago' => $this->metodosPago,
+            'habilitada' => $this->habilitada,
+        ];
     }
 }

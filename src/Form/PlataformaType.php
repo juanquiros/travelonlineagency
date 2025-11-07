@@ -59,7 +59,25 @@ class PlataformaType extends AbstractType
             ])
             ->add('moneda_def', EntityType::class, [
                 'class' => Moneda::class,
-                'choice_label' => 'nombre',
+                'choice_label' => function (Moneda $moneda): string {
+                    $iso = $moneda->getCodigoIso() ?? $moneda->getSimbolo() ?? '';
+                    return trim(sprintf('%s (%s)', $moneda->getNombre(), $iso));
+                },
+                'group_by' => function (Moneda $moneda): string {
+                    $labels = [];
+                    foreach ($moneda->getMetodosPago() as $metodo) {
+                        $labels[] = match ($metodo) {
+                            Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
+                            Moneda::METODO_PAYPAL => 'PayPal',
+                            default => 'Pago en efectivo',
+                        };
+                    }
+                    if ($labels === []) {
+                        $labels[] = 'Pago en efectivo';
+                    }
+
+                    return implode(' + ', array_unique($labels));
+                },
             ])
             ->add('enableMercadoPagoPayments', CheckboxType::class, [
                 'label' => 'Permitir pagos con Mercado Pago',

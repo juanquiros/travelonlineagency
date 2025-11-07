@@ -32,14 +32,19 @@ use App\Entity\TransferRequestFieldValue;
 use App\Entity\TraduccionBooking;
 use App\Entity\TraduccionPlataforma;
 use App\Entity\TraduccionPreguntaFrecuente;
+use App\Entity\VehicleFeature;
+use App\Entity\VehicleType;
 use App\Repository\DriverBalanceEntryRepository;
 use App\Repository\DriverWithdrawalRequestRepository;
 use App\Repository\TransferShowcaseRepository;
+use App\Repository\VehicleFeatureRepository;
+use App\Repository\VehicleTypeRepository;
 use App\Form\BootstrapIconType;
 use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
 use App\Form\PlataformaType;
+use App\Form\MonedaType;
 use App\Form\PreguntaFrecuenteType;
 use App\Form\RespuestaMensajeType;
 use App\Form\TransferAssignDriverType;
@@ -57,6 +62,7 @@ use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
 use App\Services\PartnerInvitationService;
 use App\Services\DriverInvitationService;
+use App\Services\VehicleFeatureManager;
 use App\Services\notificacion;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
@@ -102,6 +108,7 @@ class AdministradorController extends AbstractController
         'transfer_combos'=>false,
         'transfer_campos'=>false,
         'transfer_showcase'=>false,
+        'currencies'=>false,
         'drivers'=>false,
     ];
 
@@ -281,22 +288,6 @@ class AdministradorController extends AbstractController
             'idiomaPlataforma'=>$idioma,
             'plataforma'=>$plataforma
 
-        ]);
-    }
-    #[Route('/administrador/traslados', name: 'app_reservas')]
-    public function app_reservas(Request $request): Response
-    {
-        $idiomas = LanguageService::getLenguajes($this->em);
-        $idioma = LanguageService::getLenguaje($this->em,$request);
-        $this->adminMenu['traslados'] = true;
-        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
-        return $this->render('administrador/traslados.html.twig', [
-            'controller_name' => 'AdministradorController',
-            'usuario'=>$this->getUser(),
-            'menu'=>$this->adminMenu,
-            'idiomas'=>$idiomas,
-            'idiomaPlataforma'=>$idioma,
-            'plataforma'=>$plataforma
         ]);
     }
     #[Route('/administrador/bookings', name: 'app_administrador_bookings')]
@@ -926,6 +917,97 @@ class AdministradorController extends AbstractController
             'formularioPlataforma'=>$formularioPlataforma
         ]);
     }
+
+    #[Route('/administrador/configuraciones/monedas', name: 'app_admin_currencies')]
+    public function manageCurrencies(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['configuraciones'] = true;
+        $this->adminMenu['currencies'] = true;
+
+        $moneda = new Moneda();
+        $form = $this->createForm(MonedaType::class, $moneda);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->persist($moneda);
+            $this->em->flush();
+            $this->addFlash('success', 'Moneda creada correctamente.');
+
+            return $this->redirectToRoute('app_admin_currencies');
+        }
+
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/currencies.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'monedas' => $monedas,
+            'form' => $form->createView(),
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/configuraciones/monedas/{id<\\d+>}', name: 'app_admin_currency_edit')]
+    public function editCurrency(Request $request, Moneda $moneda): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['configuraciones'] = true;
+        $this->adminMenu['currencies'] = true;
+
+        $form = $this->createForm(MonedaType::class, $moneda);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->em->flush();
+            $this->addFlash('success', 'Moneda actualizada correctamente.');
+
+            return $this->redirectToRoute('app_admin_currencies');
+        }
+
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['nombre' => 'ASC']);
+
+        return $this->render('administrador/currencies.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'monedas' => $monedas,
+            'form' => $form->createView(),
+            'editing' => true,
+            'editingCurrency' => $moneda,
+        ]);
+    }
+
+    #[Route('/administrador/configuraciones/monedas/{id<\\d+>}/toggle', name: 'app_admin_currency_toggle', methods: ['POST'])]
+    public function toggleCurrency(Request $request, Moneda $moneda): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('toggle_currency_' . $moneda->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido. Intentalo nuevamente.');
+
+            return $this->redirectToRoute('app_admin_currencies');
+        }
+
+        $moneda->setHabilitada(!$moneda->isHabilitada());
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf(
+            'La moneda %s fue %s.',
+            $moneda->getNombre(),
+            $moneda->isHabilitada() ? 'habilitada' : 'deshabilitada'
+        ));
+
+        return $this->redirectToRoute('app_admin_currencies');
+    }
+
     #[Route('/administrador/configuraciones/traduccion/plataforma/{codLenguaje}/{keyValue}', name: 'app_admin_traduccion_plataforma')]
     public function app_admin_traduccion_plataforma(string $codLenguaje,string $keyValue,Request $request): Response
     {
@@ -1159,10 +1241,25 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_destinations'] = true;
 
         $destination = new TransferDestination();
-        $form = $this->createForm(TransferDestinationType::class, $destination);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
+        if (!$currencyChoices) {
+            $this->addFlash('warning', 'Configurá al menos una moneda activa para poder cargar los precios de los destinos.');
+        }
+        $defaultCurrency = 'ARS';
+        if (!empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
+        }
+        $priceValues = $this->collectDestinationPriceValues($destination);
+        $form = $this->createForm(TransferDestinationType::class, $destination, [
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyDestinationPrices($destination, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferDestination($destination, $form, $slugger)) {
                 $this->em->persist($destination);
                 $this->em->flush();
@@ -1196,6 +1293,7 @@ class AdministradorController extends AbstractController
                 'categoria' => $categoriaId,
                 'q' => $busqueda,
             ],
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1207,13 +1305,24 @@ class AdministradorController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['transfer_destinations'] = true;
 
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
+        $defaultCurrency = $destino->getMoneda()?->getCodigoIso();
+        if ($defaultCurrency === null && !empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
+        }
+        $priceValues = $this->collectDestinationPriceValues($destino);
         $form = $this->createForm(TransferDestinationType::class, $destino, [
             'latitude' => $destino->getLatitude(),
             'longitude' => $destino->getLongitude(),
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyDestinationPrices($destino, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferDestination($destino, $form, $slugger)) {
                 $this->em->flush();
                 $this->addFlash('success', 'Destino actualizado.');
@@ -1247,6 +1356,7 @@ class AdministradorController extends AbstractController
                 'categoria' => $categoriaId,
                 'q' => $busqueda,
             ],
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1433,10 +1543,22 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_combos'] = true;
 
         $combo = new TransferCombo();
-        $form = $this->createForm(TransferComboType::class, $combo);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
+        $defaultCurrency = 'ARS';
+        if (!empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
+        }
+        $priceValues = $this->collectComboPriceValues($combo);
+        $form = $this->createForm(TransferComboType::class, $combo, [
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboPrices($combo, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
                 $this->em->persist($combo);
                 $this->em->flush();
@@ -1458,6 +1580,7 @@ class AdministradorController extends AbstractController
             'form' => $form->createView(),
             'combos' => $combos,
             'editing' => false,
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1474,12 +1597,23 @@ class AdministradorController extends AbstractController
             $selected[] = $destino->getDestino();
         }
 
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['nombre' => 'ASC']);
+        $defaultCurrency = $combo->getMoneda()?->getCodigoIso();
+        if ($defaultCurrency === null && !empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
+        }
+        $priceValues = $this->collectComboPriceValues($combo);
         $form = $this->createForm(TransferComboType::class, $combo, [
             'selected_destinations' => $selected,
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+            'price_values' => $priceValues,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboPrices($combo, $form->get('prices'), $currencyChoices);
             if ($this->hydrateTransferCombo($combo, $form, $slugger)) {
                 $this->em->flush();
                 $this->syncComboDestinations($combo, $form->get('destinos')->getData());
@@ -1501,6 +1635,7 @@ class AdministradorController extends AbstractController
             'combos' => $combos,
             'editing' => true,
             'editingCombo' => $combo,
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1698,6 +1833,29 @@ class AdministradorController extends AbstractController
             'editing' => true,
             'editingField' => $field,
         ]);
+    }
+
+    #[Route('/administrador/traslados/campos/{id}/eliminar', name: 'app_admin_transfer_field_delete', methods: ['POST'])]
+    public function deleteTransferField(Request $request, TransferFormField $field): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('delete_transfer_field_' . $field->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido.');
+
+            return $this->redirectToRoute('app_admin_transfer_fields');
+        }
+
+        $valores = $this->em->getRepository(TransferRequestFieldValue::class)->findBy(['campo' => $field]);
+
+        foreach ($valores as $valor) {
+            $this->em->remove($valor);
+        }
+
+        $this->em->remove($field);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Campo eliminado.');
+
+        return $this->redirectToRoute('app_admin_transfer_fields');
     }
 
     #[Route('/administrador/traslados/solicitudes', name: 'app_admin_transfer_requests')]
@@ -1913,7 +2071,9 @@ class AdministradorController extends AbstractController
         DriverProfile $driver,
         DriverBalanceService $balanceService,
         DriverBalanceEntryRepository $entryRepository,
-        DriverWithdrawalRequestRepository $withdrawals
+        DriverWithdrawalRequestRepository $withdrawals,
+        VehicleTypeRepository $vehicleTypeRepository,
+        VehicleFeatureRepository $vehicleFeatureRepository,
     ): Response {
         $idiomas = LanguageService::getLenguajes($this->em);
         $idioma = LanguageService::getLenguaje($this->em,$request);
@@ -1934,6 +2094,8 @@ class AdministradorController extends AbstractController
             'stats' => $stats,
             'entries' => $entries,
             'solicitudes' => $solicitudes,
+            'vehicleTypes' => $vehicleTypeRepository->findBy([], ['orden' => 'ASC', 'nombre' => 'ASC']),
+            'vehicleFeatures' => $vehicleFeatureRepository->findBy([], ['nombre' => 'ASC']),
         ]);
     }
 
@@ -2021,6 +2183,221 @@ class AdministradorController extends AbstractController
         $this->addFlash('success', 'Comisión del chofer actualizada.');
 
         return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/choferes/{id}/vehiculo', name: 'app_admin_driver_vehicle', methods: ['POST'])]
+    public function updateDriverVehicle(
+        Request $request,
+        DriverProfile $driver,
+        VehicleFeatureManager $vehicleFeatureManager
+    ): RedirectResponse {
+        if (!$this->isCsrfTokenValid('admin_driver_vehicle_' . $driver->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $vehicleTypeId = (int) $request->request->get('vehicle_type', 0);
+        $vehicleType = null;
+        if ($vehicleTypeId > 0) {
+            $vehicleType = $this->em->getRepository(VehicleType::class)->find($vehicleTypeId);
+        }
+
+        if ($vehicleType instanceof VehicleType) {
+            $driver->setVehicleType($vehicleType);
+        } elseif ($vehicleTypeId === 0) {
+            $driver->setTipoVehiculo('');
+            $driver->setVehicleType(null);
+        } else {
+            $this->addFlash('error', 'Seleccioná un tipo de vehículo válido para el chofer.');
+
+            return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+        }
+
+        $selectedFeatures = $request->request->all('features');
+        $newFeatures = $request->request->get('new_features');
+
+        $vehicleFeatureManager->syncDriverFeatures(
+            $driver,
+            is_array($selectedFeatures) ? $selectedFeatures : [],
+            is_string($newFeatures) ? $newFeatures : null
+        );
+
+        $this->em->persist($driver);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Vehículo del chofer actualizado.');
+
+        return $this->redirectToRoute('app_admin_driver_balance', ['id' => $driver->getId()]);
+    }
+
+    #[Route('/administrador/transfer/vehiculos', name: 'app_admin_vehicle_catalog', methods: ['GET'])]
+    public function vehicleCatalog(
+        Request $request,
+        VehicleTypeRepository $vehicleTypeRepository,
+        VehicleFeatureRepository $vehicleFeatureRepository
+    ): Response {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['drivers'] = true;
+
+        return $this->render('administrador/transfer/vehicle_catalog.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'vehicleTypes' => $vehicleTypeRepository->findBy([], ['orden' => 'ASC', 'nombre' => 'ASC']),
+            'vehicleFeatures' => $vehicleFeatureRepository->findBy([], ['nombre' => 'ASC']),
+        ]);
+    }
+
+    #[Route('/administrador/transfer/vehiculos/tipo', name: 'app_admin_vehicle_type_create', methods: ['POST'])]
+    public function createVehicleType(Request $request, VehicleTypeRepository $vehicleTypeRepository): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('create_vehicle_type', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $orden = (int) $request->request->get('order', 0);
+        $activo = (bool) $request->request->get('active', true);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para el tipo de vehículo.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $existing = $vehicleTypeRepository->createQueryBuilder('vt')
+            ->andWhere('LOWER(vt.nombre) = LOWER(:nombre)')
+            ->setParameter('nombre', $nombre)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($existing instanceof VehicleType) {
+            $this->addFlash('error', 'Ya existe un tipo de vehículo con ese nombre.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $tipo = (new VehicleType())
+            ->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setOrden($orden)
+            ->setActivo($activo);
+
+        $this->em->persist($tipo);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Tipo de vehículo creado.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/tipo/{id}', name: 'app_admin_vehicle_type_update', methods: ['POST'])]
+    public function updateVehicleType(Request $request, VehicleType $vehicleType): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('update_vehicle_type_' . $vehicleType->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $orden = (int) $request->request->get('order', $vehicleType->getOrden());
+        $activo = (bool) $request->request->get('active', false);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para el tipo de vehículo.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $vehicleType->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setOrden($orden)
+            ->setActivo($activo);
+
+        $this->refreshVehicleTypeAssociations($vehicleType);
+
+        $this->em->persist($vehicleType);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Tipo de vehículo actualizado.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/caracteristica', name: 'app_admin_vehicle_feature_create', methods: ['POST'])]
+    public function createVehicleFeature(Request $request, VehicleFeatureRepository $vehicleFeatureRepository): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('create_vehicle_feature', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $activo = (bool) $request->request->get('active', true);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para la característica.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $existing = $vehicleFeatureRepository->findOneByCaseInsensitiveName($nombre);
+        if ($existing instanceof VehicleFeature) {
+            $existing->setDescripcion($descripcion !== '' ? $descripcion : null)
+                ->setActivo($activo);
+            $this->em->persist($existing);
+            $this->em->flush();
+
+            $this->addFlash('info', 'La característica ya existía y fue actualizada.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $feature = (new VehicleFeature())
+            ->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setActivo($activo);
+
+        $this->em->persist($feature);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Característica creada.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
+    }
+
+    #[Route('/administrador/transfer/vehiculos/caracteristica/{id}', name: 'app_admin_vehicle_feature_update', methods: ['POST'])]
+    public function updateVehicleFeature(Request $request, VehicleFeature $vehicleFeature): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('update_vehicle_feature_' . $vehicleFeature->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
+        $nombre = trim((string) $request->request->get('name'));
+        $descripcion = trim((string) $request->request->get('description'));
+        $activo = (bool) $request->request->get('active', false);
+
+        if ($nombre === '') {
+            $this->addFlash('error', 'Ingresá un nombre para la característica.');
+
+            return $this->redirectToRoute('app_admin_vehicle_catalog');
+        }
+
+        $vehicleFeature->setNombre($nombre)
+            ->setDescripcion($descripcion !== '' ? $descripcion : null)
+            ->setActivo($activo);
+
+        $this->em->persist($vehicleFeature);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Característica actualizada.');
+
+        return $this->redirectToRoute('app_admin_vehicle_catalog');
     }
 
     #[Route('/administrador/choferes/{id}/balance/movimiento', name: 'app_admin_driver_balance_entry', methods: ['POST'])]
@@ -2190,6 +2567,166 @@ class AdministradorController extends AbstractController
         }
 
         return true;
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function collectDestinationPriceValues(TransferDestination $destination): array
+    {
+        $values = [];
+        foreach ($destination->getPrecios() as $precio) {
+            $currency = $precio->getMoneda();
+            if ($currency instanceof Moneda) {
+                $values[$currency->getId()] = (float) $precio->getValor();
+            }
+        }
+
+        $primaryCurrency = $destination->getMoneda();
+        if ($primaryCurrency instanceof Moneda && !array_key_exists($primaryCurrency->getId(), $values)) {
+            $values[$primaryCurrency->getId()] = (float) $destination->getTarifaBase();
+        }
+
+        return $values;
+    }
+
+    private function applyDestinationPrices(TransferDestination $destination, ?FormInterface $pricesForm, array $currencies): void
+    {
+        foreach ($destination->getPrecios()->toArray() as $precio) {
+            $destination->removePrecio($precio);
+            if ($precio instanceof Precio) {
+                $this->em->remove($precio);
+            }
+        }
+
+        if (!$pricesForm instanceof FormInterface) {
+            $destination->setMoneda(null);
+            $destination->setTarifaBase('0.00');
+
+            return;
+        }
+
+        $primaryCurrency = null;
+        $primaryValue = null;
+        foreach ($currencies as $currency) {
+            if (!$currency instanceof Moneda) {
+                continue;
+            }
+
+            $fieldName = sprintf('currency_%d', $currency->getId());
+            if (!$pricesForm->has($fieldName)) {
+                continue;
+            }
+
+            $value = $pricesForm->get($fieldName)->getData();
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $amount = (float) $value;
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $precio = new Precio();
+            $precio->setValor($amount);
+            $precio->setMoneda($currency);
+            $destination->addPrecio($precio);
+            $this->em->persist($precio);
+
+            if ($primaryCurrency === null) {
+                $primaryCurrency = $currency;
+                $primaryValue = $amount;
+            }
+        }
+
+        if ($primaryCurrency instanceof Moneda && $primaryValue !== null) {
+            $destination->setMoneda($primaryCurrency);
+            $destination->setTarifaBase(number_format($primaryValue, 2, '.', ''));
+        } else {
+            $destination->setMoneda(null);
+            $destination->setTarifaBase('0.00');
+        }
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function collectComboPriceValues(TransferCombo $combo): array
+    {
+        $values = [];
+        foreach ($combo->getPrecios() as $precio) {
+            $currency = $precio->getMoneda();
+            if ($currency instanceof Moneda) {
+                $values[$currency->getId()] = (float) $precio->getValor();
+            }
+        }
+
+        $primaryCurrency = $combo->getMoneda();
+        if ($primaryCurrency instanceof Moneda && !array_key_exists($primaryCurrency->getId(), $values)) {
+            $values[$primaryCurrency->getId()] = (float) $combo->getPrecio();
+        }
+
+        return $values;
+    }
+
+    private function applyComboPrices(TransferCombo $combo, ?FormInterface $pricesForm, array $currencies): void
+    {
+        foreach ($combo->getPrecios()->toArray() as $precio) {
+            $combo->removePrecio($precio);
+            if ($precio instanceof Precio) {
+                $this->em->remove($precio);
+            }
+        }
+
+        if (!$pricesForm instanceof FormInterface) {
+            $combo->setMoneda(null);
+            $combo->setPrecio('0.00');
+
+            return;
+        }
+
+        $primaryCurrency = null;
+        $primaryValue = null;
+        foreach ($currencies as $currency) {
+            if (!$currency instanceof Moneda) {
+                continue;
+            }
+
+            $fieldName = sprintf('currency_%d', $currency->getId());
+            if (!$pricesForm->has($fieldName)) {
+                continue;
+            }
+
+            $value = $pricesForm->get($fieldName)->getData();
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $amount = (float) $value;
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $precio = new Precio();
+            $precio->setValor($amount);
+            $precio->setMoneda($currency);
+            $combo->addPrecio($precio);
+            $this->em->persist($precio);
+
+            if ($primaryCurrency === null) {
+                $primaryCurrency = $currency;
+                $primaryValue = $amount;
+            }
+        }
+
+        if ($primaryCurrency instanceof Moneda && $primaryValue !== null) {
+            $combo->setMoneda($primaryCurrency);
+            $combo->setPrecio(number_format($primaryValue, 2, '.', ''));
+        } else {
+            $combo->setMoneda(null);
+            $combo->setPrecio('0.00');
+        }
     }
 
     private function hydrateTransferDestination(TransferDestination $destination, FormInterface $form, SluggerInterface $slugger): bool
@@ -2441,5 +2978,18 @@ class AdministradorController extends AbstractController
         $field->setOpciones($decoded);
 
         return true;
+    }
+
+    private function refreshVehicleTypeAssociations(VehicleType $vehicleType): void
+    {
+        foreach ($vehicleType->getDrivers() as $driver) {
+            $driver->setVehicleType($vehicleType);
+            $this->em->persist($driver);
+        }
+
+        foreach ($vehicleType->getTransferRequests() as $solicitud) {
+            $solicitud->setVehicleType($vehicleType);
+            $this->em->persist($solicitud);
+        }
     }
 }

@@ -16,28 +16,16 @@ class MonedaRepository extends ServiceEntityRepository
         parent::__construct($registry, Moneda::class);
     }
 
-    //    /**
-    //     * @return Moneda[] Returns an array of Moneda objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('m')
-    //            ->andWhere('m.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('m.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Moneda
-    //    {
-    //        return $this->createQueryBuilder('m')
-    //            ->andWhere('m.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * @return Moneda[]
+     */
+    public function findEnabled(): array
+    {
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.habilitada = :enabled')
+            ->setParameter('enabled', true)
+            ->orderBy('m.nombre', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

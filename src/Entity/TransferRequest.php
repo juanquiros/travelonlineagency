@@ -36,6 +36,9 @@ class TransferRequest
     #[ORM\Column(length: 3)]
     private string $moneda = 'ARS';
 
+    #[ORM\Column(type: Types::JSON)]
+    private array $totalesPorMoneda = [];
+
     #[ORM\Column(length: 150)]
     private string $nombrePasajero = '';
 
@@ -45,8 +48,18 @@ class TransferRequest
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telefonoPasajero = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $cantidadPasajeros = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $vueloPasajero = null;
+
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $tipoVehiculo = null;
+
+    #[ORM\ManyToOne(inversedBy: 'transferRequests')]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?VehicleType $vehicleType = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $arribo = null;
@@ -62,6 +75,9 @@ class TransferRequest
 
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $tokenSeguimiento = null;
+
+    #[ORM\Column(length: 40, unique: true, nullable: true)]
+    private ?string $codigoServicio = null;
 
     #[ORM\ManyToOne]
     private ?Usuario $usuario = null;
@@ -173,6 +189,45 @@ class TransferRequest
         return $this;
     }
 
+    public function getTotalesPorMoneda(): array
+    {
+        return is_array($this->totalesPorMoneda) ? $this->totalesPorMoneda : [];
+    }
+
+    public function setTotalesPorMoneda(array $totales): self
+    {
+        $normalizados = [];
+        foreach ($totales as $iso => $valor) {
+            $isoNormalizado = strtoupper(substr((string) $iso, 0, 3));
+            if ($isoNormalizado === '') {
+                continue;
+            }
+
+            $normalizados[$isoNormalizado] = (float) $valor;
+        }
+
+        $this->totalesPorMoneda = $normalizados;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getTotalParaIso(string $iso): ?float
+    {
+        $iso = strtoupper(substr($iso, 0, 3));
+        $totales = $this->getTotalesPorMoneda();
+
+        if (array_key_exists($iso, $totales)) {
+            return (float) $totales[$iso];
+        }
+
+        if ($iso === strtoupper($this->moneda)) {
+            return (float) $this->precioTotal;
+        }
+
+        return null;
+    }
+
     public function getNombrePasajero(): string
     {
         return $this->nombrePasajero;
@@ -209,14 +264,63 @@ class TransferRequest
         return $this;
     }
 
+    public function getCantidadPasajeros(): ?int
+    {
+        return $this->cantidadPasajeros;
+    }
+
+    public function setCantidadPasajeros(?int $cantidadPasajeros): self
+    {
+        $this->cantidadPasajeros = $cantidadPasajeros;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getVueloPasajero(): ?string
+    {
+        return $this->vueloPasajero;
+    }
+
+    public function setVueloPasajero(?string $vueloPasajero): self
+    {
+        $this->vueloPasajero = $vueloPasajero;
+        $this->touch();
+
+        return $this;
+    }
+
     public function getTipoVehiculo(): ?string
     {
+        if ($this->vehicleType instanceof VehicleType) {
+            return $this->vehicleType->getNombre();
+        }
+
         return $this->tipoVehiculo;
     }
 
     public function setTipoVehiculo(?string $tipoVehiculo): self
     {
-        $this->tipoVehiculo = $tipoVehiculo;
+        $this->tipoVehiculo = $tipoVehiculo !== null ? trim($tipoVehiculo) : null;
+        if ($tipoVehiculo === null) {
+            $this->vehicleType = null;
+        }
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getVehicleType(): ?VehicleType
+    {
+        return $this->vehicleType;
+    }
+
+    public function setVehicleType(?VehicleType $vehicleType): self
+    {
+        $this->vehicleType = $vehicleType;
+        if ($vehicleType instanceof VehicleType) {
+            $this->tipoVehiculo = $vehicleType->getNombre();
+        }
         $this->touch();
 
         return $this;
@@ -282,6 +386,19 @@ class TransferRequest
     public function setTokenSeguimiento(?string $tokenSeguimiento): self
     {
         $this->tokenSeguimiento = $tokenSeguimiento;
+
+        return $this;
+    }
+
+    public function getCodigoServicio(): ?string
+    {
+        return $this->codigoServicio;
+    }
+
+    public function setCodigoServicio(?string $codigoServicio): self
+    {
+        $this->codigoServicio = $codigoServicio;
+        $this->touch();
 
         return $this;
     }

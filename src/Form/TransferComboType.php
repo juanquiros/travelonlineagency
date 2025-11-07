@@ -4,11 +4,11 @@ namespace App\Form;
 
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
+use App\Form\Type\ServicePricesType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
-use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -24,7 +24,7 @@ class TransferComboType extends AbstractType
             ])
             ->add('descripcion', TextareaType::class, [
                 'label' => 'Descripción',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'rows' => 6,
                     'data-controller' => 'tinymce',
@@ -32,11 +32,11 @@ class TransferComboType extends AbstractType
                     'data-tinymce-toolbar-value' => 'undo redo | styles | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image table | removeformat code fullscreen',
                 ],
             ])
-            ->add('precio', MoneyType::class, [
-                'label' => 'Precio total',
-                'currency' => 'ARS',
-                'divisor' => 1,
-                'scale' => 2,
+            ->add('prices', ServicePricesType::class, [
+                'label' => 'Tarifas por moneda',
+                'currencies' => $options['currency_choices'],
+                'values' => $options['price_values'],
+                'default_currency_code' => $options['default_currency_code'],
             ])
             ->add('imagenPortadaFile', FileType::class, [
                 'label' => 'Imagen de portada',
@@ -67,7 +67,13 @@ class TransferComboType extends AbstractType
         $resolver->setDefaults([
             'data_class' => TransferCombo::class,
             'selected_destinations' => [],
+            'currency_choices' => [],
+            'default_currency_code' => 'ARS',
+            'price_values' => [],
         ]);
         $resolver->setAllowedTypes('selected_destinations', 'array');
+        $resolver->setAllowedTypes('currency_choices', 'array');
+        $resolver->setAllowedTypes('default_currency_code', ['null', 'string']);
+        $resolver->setAllowedTypes('price_values', 'array');
     }
 }

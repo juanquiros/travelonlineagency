@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Plataforma;
 use App\Entity\TransferDestination;
 use App\Repository\TransferComboRepository;
+use App\Repository\TransferDestinationCategoryRepository;
 use App\Repository\TransferDestinationRepository;
 use App\Services\LanguageService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,6 +19,7 @@ class DestinoController extends AbstractController
 {
     public function __construct(
         private readonly TransferDestinationRepository $destinoRepository,
+        private readonly TransferDestinationCategoryRepository $categoryRepository,
         private readonly TransferComboRepository $comboRepository,
         private readonly EntityManagerInterface $em,
     ) {
@@ -31,12 +33,33 @@ class DestinoController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $usuario = $this->getUser();
 
-        $destinos = $this->destinoRepository->findActivosConCategoria();
+        $searchTerm = trim((string) $request->query->get('q', ''));
+        $categoriaId = $request->query->has('categoria') ? (int) $request->query->get('categoria') : null;
+        if (null !== $categoriaId && $categoriaId <= 0) {
+            $categoriaId = null;
+        }
+
+        $destinos = $this->destinoRepository->search($searchTerm !== '' ? $searchTerm : null, $categoriaId);
         $combos = $this->comboRepository->findActivosConDestinos();
+        $categorias = $this->categoryRepository->findWithActiveDestinations();
+
+        $categoriaNombreSeleccionada = null;
+        if (null !== $categoriaId) {
+            foreach ($categorias as $categoria) {
+                if ($categoria->getId() === $categoriaId) {
+                    $categoriaNombreSeleccionada = $categoria->getNombre();
+                    break;
+                }
+            }
+        }
 
         return $this->render('frontend/destinos.html.twig', [
             'destinos' => $destinos,
             'combos' => $combos,
+            'categorias' => $categorias,
+            'term' => $searchTerm,
+            'categoriaSeleccionada' => $categoriaId,
+            'categoriaSeleccionadaNombre' => $categoriaNombreSeleccionada,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,

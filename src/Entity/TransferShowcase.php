@@ -141,6 +141,33 @@ class TransferShowcase
         return $this;
     }
 
+    public function getVideoId(): ?string
+    {
+        if ($this->videoEmbed && preg_match('/embed\/([\w\-]{11})/i', $this->videoEmbed, $matches)) {
+            return $matches[1];
+        }
+
+        if ($this->videoUrl && preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w\-]{11})/i', $this->videoUrl, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    public function getVideoBackgroundUrl(): ?string
+    {
+        $videoId = $this->getVideoId();
+
+        if ($videoId === null) {
+            return null;
+        }
+
+        return sprintf(
+            'https://www.youtube.com/embed/%1$s?autoplay=1&mute=1&controls=0&loop=1&playlist=%1$s&modestbranding=1&playsinline=1&rel=0&showinfo=0',
+            $videoId
+        );
+    }
+
     public function isDestacado(): bool
     {
         return $this->destacado;
