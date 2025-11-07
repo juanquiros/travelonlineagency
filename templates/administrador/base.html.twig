@@ -171,6 +171,12 @@
                     </a>
                 </li>
                 <li>
+                    <a class="{{ menu['currencies'] ? 'is-active' }}" href="{{ path('app_admin_currencies') }}">
+                        <ion-icon name="cash-outline"></ion-icon>
+                        <span>Monedas y pagos</span>
+                    </a>
+                </li>
+                <li>
                     <a class="{{ menu['balance'] ? 'is-active' }}" href="{{ path('app_admin_balance') }}">
                         <ion-icon name="wallet-outline"></ion-icon>
                         <span>Balance</span>

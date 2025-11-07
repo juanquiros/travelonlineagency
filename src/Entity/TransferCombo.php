@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Moneda;
 use App\Repository\TransferComboRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -25,6 +26,10 @@ class TransferCombo
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $precio = '0.00';
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Moneda $moneda = null;
 
     #[ORM\Column]
     private bool $activo = true;
@@ -81,6 +86,18 @@ class TransferCombo
     public function setPrecio(string $precio): self
     {
         $this->precio = $precio;
+
+        return $this;
+    }
+
+    public function getMoneda(): ?Moneda
+    {
+        return $this->moneda;
+    }
+
+    public function setMoneda(?Moneda $moneda): self
+    {
+        $this->moneda = $moneda;
 
         return $this;
     }

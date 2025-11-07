@@ -70,7 +70,8 @@
                     <div class="mb-3">
                         <select class="form-select" name="combo_id">
                             {% for combo in combos %}
-                                <option value="{{ combo.id }}">{{ combo.nombre }} - ${{ combo.precio }}</option>
+                                {% set comboSymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
+                                <option value="{{ combo.id }}">{{ combo.nombre }} - {{ comboSymbol }} {{ combo.precio }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -83,9 +84,10 @@
                             <label class="form-label">Destinos disponibles</label>
                             <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                                 {% for destino in destinos %}
+                                    {% set destinoSymbol = destino.moneda ? (destino.moneda.simbolo ?: destino.moneda.codigoIso) : '$' %}
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}">
-                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - ${{ destino.tarifaBase }}</label>
+                                        <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }} - {{ destinoSymbol }} {{ destino.tarifaBase }}</label>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -134,7 +136,8 @@
                                     {% endif %}
                                     <div class="card-body">
                                         <h3 class="h6">{{ combo.nombre }}</h3>
-                                        <div class="text-success fw-semibold mb-2">${{ combo.precio }}</div>
+                                        {% set comboSymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
+                                        <div class="text-success fw-semibold mb-2">{{ comboSymbol }} {{ combo.precio }}</div>
                                         {% if combo.descripcion %}
                                             <p class="small text-muted mb-2">{{ combo.descripcion|striptags|u.truncate(160, '…') }}</p>
                                         {% endif %}
@@ -171,7 +174,8 @@
                                         <div class="col">
                                             <div class="card-body">
                                                 <h3 class="h6 mb-1">{{ destino.nombre }}</h3>
-                                                <div class="text-success fw-semibold mb-1">Tarifa base: ${{ destino.tarifaBase }}</div>
+                                                {% set destinoSymbol = destino.moneda ? (destino.moneda.simbolo ?: destino.moneda.codigoIso) : '$' %}
+                                                <div class="text-success fw-semibold mb-1">Tarifa base: {{ destinoSymbol }} {{ destino.tarifaBase }}</div>
                                                 {% if destino.descripcionCorta %}
                                                     <p class="small text-muted mb-0">{{ destino.descripcionCorta }}</p>
                                                 {% elseif destino.descripcion %}

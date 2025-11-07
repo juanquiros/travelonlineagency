@@ -94,16 +94,23 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h6">Estado del pago</h2>
-                    <p class="mb-1">Monto total: ${{ solicitud.precioTotal }}</p>
+                    <p class="mb-1">Monto total: {{ solicitud.precioTotal|number_format(2, ',', '.') }} {{ solicitud.moneda }}</p>
                     <p class="small text-muted">Conservá este enlace para completar el pago o seguir tu traslado.</p>
                     {% if opcionesPago is empty %}
                         <p class="text-muted mb-0">No hay métodos de pago habilitados por el momento.</p>
                     {% else %}
                         {% for opcion in opcionesPago %}
-                            {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
-                            <a class="{{ btnClass }}" href="{{ opcion.url }}">
-                                {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
-                            </a>
+                            {% if opcion.available is defined and opcion.available == false %}
+                                <div class="alert alert-info small" role="alert">
+                                    <div class="fw-semibold">{{ opcion.label }}</div>
+                                    <div class="mb-0">{{ opcion.reason }}</div>
+                                </div>
+                            {% else %}
+                                {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
+                                <a class="{{ btnClass }}" href="{{ opcion.url }}">
+                                    {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
+                                </a>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                 </div>

@@ -153,7 +153,7 @@ class CashPaymentController extends AbstractController
     private function findOption(string $type, array $options): ?array
     {
         foreach ($options as $option) {
-            if (($option['type'] ?? null) === $type) {
+            if (($option['type'] ?? null) === $type && ($option['available'] ?? true)) {
                 return $option;
             }
         }

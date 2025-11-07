@@ -2,6 +2,7 @@
 
 namespace App\Form;
 
+use App\Entity\Moneda;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -24,7 +25,7 @@ class TransferComboType extends AbstractType
             ])
             ->add('descripcion', TextareaType::class, [
                 'label' => 'Descripción',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'rows' => 6,
                     'data-controller' => 'tinymce',
@@ -32,9 +33,27 @@ class TransferComboType extends AbstractType
                     'data-tinymce-toolbar-value' => 'undo redo | styles | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image table | removeformat code fullscreen',
                 ],
             ])
+            ->add('moneda', EntityType::class, [
+                'label' => 'Moneda del combo',
+                'class' => Moneda::class,
+                'choices' => $options['currency_choices'],
+                'choice_label' => static function (Moneda $moneda): string {
+                    $iso = $moneda->getCodigoIso() ?? $moneda->getSimbolo() ?? '';
+                    return trim(sprintf('%s (%s)', $moneda->getNombre(), $iso));
+                },
+                'placeholder' => 'Seleccioná una moneda',
+                'required' => false,
+                'group_by' => static function (Moneda $moneda): string {
+                    return match ($moneda->getMetodoPago()) {
+                        Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
+                        Moneda::METODO_PAYPAL => 'PayPal',
+                        default => 'Pago en efectivo',
+                    };
+                },
+            ])
             ->add('precio', MoneyType::class, [
                 'label' => 'Precio total',
-                'currency' => 'ARS',
+                'currency' => $options['default_currency_code'] ?? 'ARS',
                 'divisor' => 1,
                 'scale' => 2,
             ])
@@ -67,7 +86,11 @@ class TransferComboType extends AbstractType
         $resolver->setDefaults([
             'data_class' => TransferCombo::class,
             'selected_destinations' => [],
+            'currency_choices' => [],
+            'default_currency_code' => 'ARS',
         ]);
         $resolver->setAllowedTypes('selected_destinations', 'array');
+        $resolver->setAllowedTypes('currency_choices', 'array');
+        $resolver->setAllowedTypes('default_currency_code', ['null', 'string']);
     }
 }

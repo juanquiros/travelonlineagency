@@ -8,6 +8,11 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ editing ? 'Editar destino' : 'Nuevo destino' }}</h2>
+                {% if monedas is defined and monedas is empty %}
+                    <div class="alert alert-warning small" role="alert">
+                        Configurá al menos una moneda activa en la sección <strong>Monedas y pagos</strong> antes de crear nuevos destinos.
+                    </div>
+                {% endif %}
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.categoria) }}
@@ -34,6 +39,7 @@
                         </div>
                     </div>
                 </div>
+                {{ form_row(form.moneda) }}
                 {{ form_row(form.tarifaBase) }}
                 <div class="mb-3">
                     <label class="form-label">Imagen principal</label>
@@ -172,7 +178,15 @@
                                     <span class="text-muted small">Sin descripción</span>
                                 {% endif %}
                             </td>
-                            <td>${{ destino.tarifaBase }}</td>
+                            <td>
+                                {% if destino.moneda %}
+                                    <span class="fw-semibold">{{ destino.moneda.simbolo ?: destino.moneda.codigoIso }}</span>
+                                    {{ destino.tarifaBase }}
+                                    <div class="small text-muted">{{ destino.moneda.codigoIso }}</div>
+                                {% else %}
+                                    ${{ destino.tarifaBase }}
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if destino.latitude is not null and destino.longitude is not null %}
                                     <span class="small">{{ destino.latitude|number_format(4, '.', '') }}, {{ destino.longitude|number_format(4, '.', '') }}</span>

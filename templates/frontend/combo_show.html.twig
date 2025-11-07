@@ -32,7 +32,8 @@
                                 downloadLabel: 'Descargar imagen con QR'
                             } %}
                             <div class="d-flex flex-wrap align-items-center gap-3">
-                                <span class="badge text-bg-primary fs-6">${{ combo.precio }}</span>
+                                {% set currencySymbol = combo.moneda ? (combo.moneda.simbolo ?: combo.moneda.codigoIso) : '$' %}
+                                <span class="badge text-bg-primary fs-6">{{ currencySymbol }} {{ combo.precio }}</span>
                                 <span class="text-muted">Traslado curado por nuestro equipo local.</span>
                             </div>
                             {% if combo.descripcion %}

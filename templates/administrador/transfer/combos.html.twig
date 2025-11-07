@@ -8,9 +8,15 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ editing ? 'Editar combo' : 'Nuevo combo' }}</h2>
+                {% if monedas is defined and monedas is empty %}
+                    <div class="alert alert-warning small" role="alert">
+                        Configurá al menos una moneda activa antes de publicar nuevos combos de traslado.
+                    </div>
+                {% endif %}
                 {{ form_start(form) }}
                 {{ form_row(form.nombre) }}
                 {{ form_row(form.descripcion) }}
+                {{ form_row(form.moneda) }}
                 {{ form_row(form.precio) }}
                 <div class="mb-3">
                     <label class="form-label">Imagen de portada</label>
@@ -59,7 +65,15 @@
                                 {% endif %}
                             </td>
                             <td>{{ combo.nombre }}</td>
-                            <td>${{ combo.precio }}</td>
+                            <td>
+                                {% if combo.moneda %}
+                                    <span class="fw-semibold">{{ combo.moneda.simbolo ?: combo.moneda.codigoIso }}</span>
+                                    {{ combo.precio }}
+                                    <div class="small text-muted">{{ combo.moneda.codigoIso }}</div>
+                                {% else %}
+                                    ${{ combo.precio }}
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if combo.activo %}
                                     <span class="badge bg-success">Activo</span>

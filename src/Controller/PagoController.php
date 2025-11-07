@@ -28,15 +28,20 @@ class PagoController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $cantidad = $solicitudReserva->getPassengerCount();
         $opciones = $plataforma instanceof Plataforma ? $this->paymentOptions->getBookingOptions($solicitudReserva, $plataforma) : [];
+        $opciones = array_map(function (array $opcion) {
+            if (($opcion['available'] ?? true) && isset($opcion['route'])) {
+                $opcion['url'] = $this->generateUrl($opcion['route'], $opcion['params'] ?? []);
+            }
+
+            return $opcion;
+        }, $opciones);
         return $this->render('pago/index.html.twig', [
             'controller_name' => 'PagoController',
             'idiomas'=>$idiomas,
             'idiomaPlataforma'=>$idioma,
             'plataforma'=>$plataforma,
             'solicitud'=>$solicitudReserva,
-            'opcionesPago' => array_map(fn(array $opcion) => array_merge($opcion, [
-                'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
-            ]), $opciones),
+            'opcionesPago' => $opciones,
             'cantidad' => $cantidad,
             'usuario' => $this->getUser(),
         ]);

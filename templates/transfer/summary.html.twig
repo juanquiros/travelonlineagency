@@ -38,7 +38,7 @@
                     <div class="mt-3">
                         <div><strong>Inicio del servicio:</strong> {{ solicitud.arribo ? solicitud.arribo|date('d/m/Y H:i') : 'Sin dato' }}</div>
                         <div><strong>Fin del servicio:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</div>
-                        <div><strong>Total:</strong> ${{ solicitud.precioTotal }}</div>
+                        <div><strong>Total:</strong> {{ solicitud.precioTotal|number_format(2, ',', '.') }} {{ solicitud.moneda }}</div>
                     </div>
                     <div class="mt-3">
                         <strong>Estado:</strong> {% include 'administrador/transfer/status_badge.html.twig' with {estado: solicitud.estado} %}
@@ -71,10 +71,17 @@
                     {% else %}
                         <p class="text-muted">Seleccioná tu método de pago preferido.</p>
                         {% for opcion in opcionesPago %}
-                            {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
-                            <a class="{{ btnClass }}" href="{{ opcion.url }}">
-                                {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
-                            </a>
+                            {% if opcion.available is defined and opcion.available == false %}
+                                <div class="alert alert-info small" role="alert">
+                                    <div class="fw-semibold">{{ opcion.label }}</div>
+                                    <div>{{ opcion.reason }}</div>
+                                </div>
+                            {% else %}
+                                {% set btnClass = opcion.type == 'mercadopago' ? 'btn btn-primary w-100 mb-2' : (opcion.type == 'paypal' ? 'btn btn-outline-primary w-100 mb-2' : 'btn btn-outline-secondary w-100 mb-2') %}
+                                <a class="{{ btnClass }}" href="{{ opcion.url }}">
+                                    {% if opcion.type == 'mercadopago' %}Pagar con Mercado Pago{% elseif opcion.type == 'paypal' %}Pagar con PayPal{% elseif opcion.type == 'cash' %}Solicitar pago en efectivo{% else %}Continuar{% endif %}
+                                </a>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                 </div>

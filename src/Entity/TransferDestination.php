@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TransferDestinationRepository;
+use App\Entity\Moneda;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -41,6 +42,10 @@ class TransferDestination
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $tarifaBase = '0.00';
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Moneda $moneda = null;
 
     #[ORM\Column]
     private bool $activo = true;
@@ -187,6 +192,18 @@ class TransferDestination
     public function setTarifaBase(string $tarifaBase): self
     {
         $this->tarifaBase = $tarifaBase;
+
+        return $this;
+    }
+
+    public function getMoneda(): ?Moneda
+    {
+        return $this->moneda;
+    }
+
+    public function setMoneda(?Moneda $moneda): self
+    {
+        $this->moneda = $moneda;
 
         return $this;
     }

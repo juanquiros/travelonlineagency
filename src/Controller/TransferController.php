@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Plataforma;
+use App\Entity\Moneda;
 use App\Entity\TransferAssignment;
 use App\Entity\TransferCombo;
 use App\Entity\TransferDestination;
@@ -46,7 +47,7 @@ final class TransferController extends AbstractController
         $vehicleTypes = $this->resolveVehicleTypes();
 
         if ($request->isMethod('POST')) {
-            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled);
+            $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $plataforma);
             if ($solicitud instanceof TransferRequest) {
                 $this->em->persist($solicitud);
                 $this->em->flush();
@@ -151,10 +152,13 @@ final class TransferController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em,$request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
 
-        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
-        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
-            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
-        ]), $opciones);
+        $opciones = array_map(function (array $opcion) {
+            if (($opcion['available'] ?? true) && isset($opcion['route'])) {
+                $opcion['url'] = $this->generateUrl($opcion['route'], $opcion['params'] ?? []);
+            }
+
+            return $opcion;
+        }, $this->paymentOptions->getTransferOptions($solicitud, $plataforma));
         $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
             ['transferRequest' => $solicitud],
             ['createdAt' => 'DESC']
@@ -208,10 +212,13 @@ final class TransferController extends AbstractController
             }
         }
 
-        $opciones = $this->paymentOptions->getTransferOptions($solicitud, $plataforma);
-        $opciones = array_map(fn(array $opcion) => array_merge($opcion, [
-            'url' => $this->generateUrl($opcion['route'], $opcion['params'] ?? []),
-        ]), $opciones);
+        $opciones = array_map(function (array $opcion) {
+            if (($opcion['available'] ?? true) && isset($opcion['route'])) {
+                $opcion['url'] = $this->generateUrl($opcion['route'], $opcion['params'] ?? []);
+            }
+
+            return $opcion;
+        }, $this->paymentOptions->getTransferOptions($solicitud, $plataforma));
         $cashPayment = $this->em->getRepository(CashPayment::class)->findOneBy(
             ['transferRequest' => $solicitud],
             ['createdAt' => 'DESC']
@@ -252,7 +259,7 @@ final class TransferController extends AbstractController
         ]);
     }
 
-    private function crearSolicitud(Request $request, array $campos, bool $customEnabled): ?TransferRequest
+    private function crearSolicitud(Request $request, array $campos, bool $customEnabled, Plataforma $plataforma): ?TransferRequest
     {
         $tipo = $request->request->get('tipo', 'combo');
         $combo = null;
@@ -283,6 +290,43 @@ final class TransferController extends AbstractController
                 if (count($destinosSeleccionados) === 0) {
                     $errores[] = 'Los destinos seleccionados no están disponibles.';
                 }
+            }
+        }
+
+        $defaultCurrencyIso = 'ARS';
+        $defaultCurrency = $plataforma->getMonedaDef();
+        if ($defaultCurrency instanceof Moneda) {
+            $defaultCurrencyIso = $defaultCurrency->getCodigoIso() ?? $defaultCurrency->getSimbolo() ?? $defaultCurrencyIso;
+        }
+
+        $currencyIso = null;
+        if ($combo instanceof TransferCombo) {
+            $comboCurrency = $combo->getMoneda();
+            if ($comboCurrency instanceof Moneda) {
+                $currencyIso = $comboCurrency->getCodigoIso() ?? $comboCurrency->getSimbolo();
+            }
+        } elseif (count($destinosSeleccionados) > 0) {
+            $uniqueCurrencies = [];
+            foreach ($destinosSeleccionados as $destino) {
+                $destCurrency = $destino->getMoneda();
+                if (!$destCurrency instanceof Moneda) {
+                    $errores[] = sprintf('El destino "%s" no tiene una moneda configurada. Consultá al administrador.', $destino->getNombre());
+                    continue;
+                }
+
+                $iso = $destCurrency->getCodigoIso() ?? $destCurrency->getSimbolo();
+                if ($iso === null) {
+                    $errores[] = sprintf('La moneda configurada para "%s" no tiene un código ISO válido.', $destino->getNombre());
+                    continue;
+                }
+
+                $uniqueCurrencies[$iso] = $destCurrency;
+            }
+
+            if (count($uniqueCurrencies) > 1) {
+                $errores[] = 'Los destinos seleccionados utilizan monedas distintas. Elegí destinos con la misma moneda o solicitá asistencia para cotizarlo.';
+            } elseif (count($uniqueCurrencies) === 1) {
+                $currencyIso = array_key_first($uniqueCurrencies);
             }
         }
 
@@ -340,6 +384,10 @@ final class TransferController extends AbstractController
             return null;
         }
 
+        if ($currencyIso === null) {
+            $currencyIso = $defaultCurrencyIso;
+        }
+
         $solicitud = new TransferRequest();
         $solicitud->setNombrePasajero($nombre);
         $solicitud->setEmailPasajero($email);
@@ -356,7 +404,7 @@ final class TransferController extends AbstractController
             $solicitud->setCodigoServicio($this->generarCodigoServicio());
         }
         $solicitud->setNotasCliente($request->request->get('notas'));
-        $solicitud->setMoneda('ARS');
+        $solicitud->setMoneda($currencyIso);
         if ($this->getUser() !== null) {
             $solicitud->setUsuario($this->getUser());
         }

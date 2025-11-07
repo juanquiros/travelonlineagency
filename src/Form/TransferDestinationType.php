@@ -2,6 +2,7 @@
 
 namespace App\Form;
 
+use App\Entity\Moneda;
 use App\Entity\TransferDestination;
 use App\Entity\TransferDestinationCategory;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -30,7 +31,7 @@ class TransferDestinationType extends AbstractType
                 'class' => TransferDestinationCategory::class,
                 'choice_label' => 'nombre',
                 'placeholder' => 'Seleccioná una categoría',
-                'required' => false,
+                'required' => true,
             ])
             ->add('direccion', TextType::class, [
                 'label' => 'Dirección',
@@ -99,9 +100,27 @@ class TransferDestinationType extends AbstractType
                     'placeholder' => 'https://www.ejemplo.com',
                 ],
             ])
+            ->add('moneda', EntityType::class, [
+                'label' => 'Moneda de la tarifa',
+                'class' => Moneda::class,
+                'choices' => $options['currency_choices'],
+                'choice_label' => static function (Moneda $moneda): string {
+                    $iso = $moneda->getCodigoIso() ?? $moneda->getSimbolo() ?? '';
+                    return trim(sprintf('%s (%s)', $moneda->getNombre(), $iso));
+                },
+                'placeholder' => 'Seleccioná una moneda',
+                'required' => false,
+                'group_by' => static function (Moneda $moneda): string {
+                    return match ($moneda->getMetodoPago()) {
+                        Moneda::METODO_MERCADOPAGO => 'Mercado Pago',
+                        Moneda::METODO_PAYPAL => 'PayPal',
+                        default => 'Pago en efectivo',
+                    };
+                },
+            ])
             ->add('tarifaBase', MoneyType::class, [
                 'label' => 'Tarifa base',
-                'currency' => 'ARS',
+                'currency' => $options['default_currency_code'] ?? 'ARS',
                 'divisor' => 1,
                 'scale' => 2,
             ])
@@ -163,8 +182,12 @@ class TransferDestinationType extends AbstractType
             'data_class' => TransferDestination::class,
             'latitude' => null,
             'longitude' => null,
+            'currency_choices' => [],
+            'default_currency_code' => 'ARS',
         ]);
         $resolver->setAllowedTypes('latitude', ['null', 'float', 'string']);
         $resolver->setAllowedTypes('longitude', ['null', 'float', 'string']);
+        $resolver->setAllowedTypes('currency_choices', 'array');
+        $resolver->setAllowedTypes('default_currency_code', ['null', 'string']);
     }
 }

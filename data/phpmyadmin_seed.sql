@@ -74,10 +74,10 @@ DELETE FROM moneda;
 ALTER TABLE moneda AUTO_INCREMENT = 1;
 
 -- Catálogo de monedas disponible en la plataforma
-INSERT INTO moneda (id, nombre, simbolo, habilitada) VALUES
-  (1, 'Dólar estadounidense', 'USD', 1),
-  (2, 'Peso argentino', 'ARS', 1),
-  (3, 'Euro', 'EUR', 1);
+INSERT INTO moneda (id, nombre, simbolo, codigo_iso, metodo_pago, habilitada) VALUES
+  (1, 'Dólar estadounidense', 'USD', 'USD', 'paypal', 1),
+  (2, 'Peso argentino', 'ARS', 'ARS', 'mercadopago', 1),
+  (3, 'Euro', 'EUR', 'EUR', 'cash', 1);
 
 -- Credenciales globales de la plataforma
 INSERT INTO credenciales_pay_pal (

@@ -44,6 +44,7 @@ use App\Form\BookingType;
 use App\Form\CredencialesMercadoPagoType;
 use App\Form\CredencialesPayPalType;
 use App\Form\PlataformaType;
+use App\Form\MonedaType;
 use App\Form\PreguntaFrecuenteType;
 use App\Form\RespuestaMensajeType;
 use App\Form\TransferAssignDriverType;
@@ -107,6 +108,7 @@ class AdministradorController extends AbstractController
         'transfer_combos'=>false,
         'transfer_campos'=>false,
         'transfer_showcase'=>false,
+        'currencies'=>false,
         'drivers'=>false,
     ];
 
@@ -915,6 +917,119 @@ class AdministradorController extends AbstractController
             'formularioPlataforma'=>$formularioPlataforma
         ]);
     }
+
+    #[Route('/administrador/configuraciones/monedas', name: 'app_admin_currencies')]
+    public function manageCurrencies(Request $request): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['configuraciones'] = true;
+        $this->adminMenu['currencies'] = true;
+
+        $moneda = new Moneda();
+        $form = $this->createForm(MonedaType::class, $moneda);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->isCurrencyMethodAvailable($moneda)) {
+                $this->em->persist($moneda);
+                $this->em->flush();
+                $this->addFlash('success', 'Moneda creada correctamente.');
+
+                return $this->redirectToRoute('app_admin_currencies');
+            }
+        }
+
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+
+        return $this->render('administrador/currencies.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'monedas' => $monedas,
+            'form' => $form->createView(),
+            'editing' => false,
+        ]);
+    }
+
+    #[Route('/administrador/configuraciones/monedas/{id<\\d+>}', name: 'app_admin_currency_edit')]
+    public function editCurrency(Request $request, Moneda $moneda): Response
+    {
+        $idiomas = LanguageService::getLenguajes($this->em);
+        $idioma = LanguageService::getLenguaje($this->em,$request);
+        $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
+        $this->adminMenu['configuraciones'] = true;
+        $this->adminMenu['currencies'] = true;
+
+        $form = $this->createForm(MonedaType::class, $moneda);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->isCurrencyMethodAvailable($moneda)) {
+                $this->em->flush();
+                $this->addFlash('success', 'Moneda actualizada correctamente.');
+
+                return $this->redirectToRoute('app_admin_currencies');
+            }
+        }
+
+        $monedas = $this->em->getRepository(Moneda::class)->findBy([], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+
+        return $this->render('administrador/currencies.html.twig', [
+            'plataforma' => $plataforma,
+            'usuario' => $this->getUser(),
+            'menu' => $this->adminMenu,
+            'idiomas' => $idiomas,
+            'idiomaPlataforma' => $idioma,
+            'monedas' => $monedas,
+            'form' => $form->createView(),
+            'editing' => true,
+            'editingCurrency' => $moneda,
+        ]);
+    }
+
+    #[Route('/administrador/configuraciones/monedas/{id<\\d+>}/toggle', name: 'app_admin_currency_toggle', methods: ['POST'])]
+    public function toggleCurrency(Request $request, Moneda $moneda): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('toggle_currency_' . $moneda->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token inválido. Intentalo nuevamente.');
+
+            return $this->redirectToRoute('app_admin_currencies');
+        }
+
+        $moneda->setHabilitada(!$moneda->isHabilitada());
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf(
+            'La moneda %s fue %s.',
+            $moneda->getNombre(),
+            $moneda->isHabilitada() ? 'habilitada' : 'deshabilitada'
+        ));
+
+        return $this->redirectToRoute('app_admin_currencies');
+    }
+
+    private function isCurrencyMethodAvailable(Moneda $moneda): bool
+    {
+        if ($moneda->getMetodoPago() === Moneda::METODO_CASH) {
+            return true;
+        }
+
+        $existing = $this->em->getRepository(Moneda::class)->findOneBy([
+            'metodoPago' => $moneda->getMetodoPago(),
+        ]);
+
+        if ($existing instanceof Moneda && $existing->getId() !== $moneda->getId()) {
+            $this->addFlash('error', 'Ya existe una moneda asignada a este medio de pago. Deshabilitá o modificá la moneda existente antes de continuar.');
+
+            return false;
+        }
+
+        return true;
+    }
     #[Route('/administrador/configuraciones/traduccion/plataforma/{codLenguaje}/{keyValue}', name: 'app_admin_traduccion_plataforma')]
     public function app_admin_traduccion_plataforma(string $codLenguaje,string $keyValue,Request $request): Response
     {
@@ -1148,7 +1263,19 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_destinations'] = true;
 
         $destination = new TransferDestination();
-        $form = $this->createForm(TransferDestinationType::class, $destination);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        if (!$currencyChoices) {
+            $this->addFlash('warning', 'Configurá al menos una moneda activa para poder cargar los precios de los destinos.');
+        }
+        $defaultCurrency = 'ARS';
+        if (!empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
+        }
+        $form = $this->createForm(TransferDestinationType::class, $destination, [
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1185,6 +1312,7 @@ class AdministradorController extends AbstractController
                 'categoria' => $categoriaId,
                 'q' => $busqueda,
             ],
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1196,9 +1324,17 @@ class AdministradorController extends AbstractController
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $this->adminMenu['transfer_destinations'] = true;
 
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $defaultCurrency = $destino->getMoneda()?->getCodigoIso();
+        if ($defaultCurrency === null && !empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
+        }
         $form = $this->createForm(TransferDestinationType::class, $destino, [
             'latitude' => $destino->getLatitude(),
             'longitude' => $destino->getLongitude(),
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
         ]);
         $form->handleRequest($request);
 
@@ -1236,6 +1372,7 @@ class AdministradorController extends AbstractController
                 'categoria' => $categoriaId,
                 'q' => $busqueda,
             ],
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1422,7 +1559,16 @@ class AdministradorController extends AbstractController
         $this->adminMenu['transfer_combos'] = true;
 
         $combo = new TransferCombo();
-        $form = $this->createForm(TransferComboType::class, $combo);
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $defaultCurrency = 'ARS';
+        if (!empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? $defaultCurrency;
+        }
+        $form = $this->createForm(TransferComboType::class, $combo, [
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1447,6 +1593,7 @@ class AdministradorController extends AbstractController
             'form' => $form->createView(),
             'combos' => $combos,
             'editing' => false,
+            'monedas' => $currencyChoices,
         ]);
     }
 
@@ -1463,8 +1610,16 @@ class AdministradorController extends AbstractController
             $selected[] = $destino->getDestino();
         }
 
+        $currencyChoices = $this->em->getRepository(Moneda::class)->findBy(['habilitada' => true], ['metodoPago' => 'ASC', 'nombre' => 'ASC']);
+        $defaultCurrency = $combo->getMoneda()?->getCodigoIso();
+        if ($defaultCurrency === null && !empty($currencyChoices)) {
+            $firstCurrency = $currencyChoices[0];
+            $defaultCurrency = $firstCurrency->getCodigoIso() ?? $firstCurrency->getSimbolo() ?? 'ARS';
+        }
         $form = $this->createForm(TransferComboType::class, $combo, [
             'selected_destinations' => $selected,
+            'currency_choices' => $currencyChoices,
+            'default_currency_code' => $defaultCurrency,
         ]);
         $form->handleRequest($request);
 
@@ -1490,6 +1645,7 @@ class AdministradorController extends AbstractController
             'combos' => $combos,
             'editing' => true,
             'editingCombo' => $combo,
+            'monedas' => $currencyChoices,
         ]);
     }
 
