@@ -35,6 +35,12 @@
                                         <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
                                     {% endfor %}
                                 </div>
+                                {% if totals|length > 1 %}
+                                    {% set monedas = totals|keys %}
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        Este traslado combina diferentes monedas ({{ monedas|join(' + ') }}). El saldo que no esté en {{ solicitud.moneda }} se coordina con pago en efectivo junto al chofer.
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </li>
                         {% if solicitud.codigoServicio %}

@@ -13,6 +13,7 @@ use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\CashPayment;
 use App\Entity\VehicleType;
+use App\Entity\DriverProfile;
 use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
@@ -45,6 +46,7 @@ final class TransferController extends AbstractController
         $campos = $this->em->getRepository(TransferFormField::class)->findForForm();
         $customEnabled = (bool) $plataforma->isTrasladosODLibres();
         $vehicleTypes = $this->resolveVehicleTypes();
+        $vehicleDrivers = $this->resolveVehicleDrivers($vehicleTypes);
 
         if ($request->isMethod('POST')) {
             $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $plataforma);
@@ -74,6 +76,7 @@ final class TransferController extends AbstractController
             'campos' => $campos,
             'customEnabled' => $customEnabled,
             'vehicleTypes' => $vehicleTypes,
+            'vehicleDrivers' => $vehicleDrivers,
         ]);
     }
 
@@ -464,24 +467,16 @@ final class TransferController extends AbstractController
             return [];
         }
 
-        $commonIsos = array_keys(reset($maps));
-        foreach ($maps as $map) {
-            $commonIsos = array_values(array_intersect($commonIsos, array_keys($map)));
-        }
-
-        if ($commonIsos === []) {
-            $errores[] = 'Los destinos seleccionados no comparten una moneda disponible. Configurá tarifas en una moneda común para continuar.';
-
-            return [];
-        }
-
         $totales = [];
-        foreach ($commonIsos as $iso) {
-            $total = 0.0;
-            foreach ($maps as $map) {
-                $total += (float) ($map[$iso] ?? 0.0);
+        foreach ($maps as $map) {
+            foreach ($map as $iso => $valor) {
+                $iso = strtoupper(substr((string) $iso, 0, 3));
+                if ($iso === '') {
+                    continue;
+                }
+
+                $totales[$iso] = ($totales[$iso] ?? 0.0) + (float) $valor;
             }
-            $totales[$iso] = $total;
         }
 
         return $totales;
@@ -493,6 +488,51 @@ final class TransferController extends AbstractController
     private function resolveVehicleTypes(): array
     {
         return $this->em->getRepository(VehicleType::class)->findActiveOrdered();
+    }
+
+    /**
+     * @param VehicleType[] $vehicleTypes
+     * @return array<int, DriverProfile[]>
+     */
+    private function resolveVehicleDrivers(array $vehicleTypes): array
+    {
+        $ids = array_filter(array_map(static function (VehicleType $type): ?int {
+            return $type->getId();
+        }, $vehicleTypes));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $repository = $this->em->getRepository(DriverProfile::class);
+        $drivers = $repository->createQueryBuilder('d')
+            ->select('DISTINCT d', 'vt', 'vf')
+            ->leftJoin('d.vehicleType', 'vt')
+            ->leftJoin('d.vehicleFeatures', 'vf')
+            ->andWhere('d.aprobado = :aprobado')
+            ->setParameter('aprobado', true)
+            ->andWhere('vt.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->orderBy('vt.orden', 'ASC')
+            ->addOrderBy('d.nombreCompleto', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $grouped = [];
+        foreach ($drivers as $driver) {
+            if (!$driver instanceof DriverProfile) {
+                continue;
+            }
+
+            $type = $driver->getVehicleType();
+            if (!$type instanceof VehicleType || $type->getId() === null) {
+                continue;
+            }
+
+            $grouped[$type->getId()][] = $driver;
+        }
+
+        return $grouped;
     }
 
     private function generarCodigoServicio(): string

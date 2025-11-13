@@ -49,6 +49,12 @@
                                     {% endfor %}
                                 </ul>
                             </div>
+                            {% if totals|length > 1 %}
+                                {% set monedas = totals|keys %}
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    Este traslado combina diferentes monedas ({{ monedas|join(' + ') }}). Podrás abonar en línea en {{ solicitud.moneda }} y el saldo restante se coordina con pago en efectivo al chofer.
+                                </div>
+                            {% endif %}
                         {% endif %}
                     </div>
                     <div class="mt-3">
