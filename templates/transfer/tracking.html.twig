@@ -27,20 +27,14 @@
                         <li><strong>Fin del servicio:</strong> {{ solicitud.salida ? solicitud.salida|date('d/m/Y H:i') : 'Sin dato' }}</li>
                         <li><strong>Tipo de vehículo solicitado:</strong> {{ solicitud.tipoVehiculo ?: 'No especificado' }}</li>
                         <li>
-                            <strong>Total principal:</strong> {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
+                            <strong>Importe confirmado:</strong> {{ solicitud.moneda }} {{ solicitud.precioTotal|number_format(2, ',', '.') }}
                             {% set totals = solicitud.totalesPorMoneda %}
                             {% if totals is iterable and totals is not empty %}
                                 <div class="small text-muted mt-1">
                                     {% for iso, amount in totals %}
-                                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (principal){% endif %}</div>
+                                        <div>{{ iso }} {{ amount|number_format(2, ',', '.') }}{% if iso == solicitud.moneda %} (seleccionada){% endif %}</div>
                                     {% endfor %}
                                 </div>
-                                {% if totals|length > 1 %}
-                                    {% set monedas = totals|keys %}
-                                    <div class="alert alert-warning mt-3 mb-0">
-                                        Este traslado combina diferentes monedas ({{ monedas|join(' + ') }}). El saldo que no esté en {{ solicitud.moneda }} se coordina con pago en efectivo junto al chofer.
-                                    </div>
-                                {% endif %}
                             {% endif %}
                         </li>
                         {% if solicitud.codigoServicio %}

@@ -14,12 +14,16 @@ class TransferFormWizard {
         this.customSummary = form.querySelector('[data-custom-summary]');
         this.customError = form.querySelector('[data-custom-error]');
         this.totalDisplay = form.querySelector('[data-total-display]');
-        this.cashWarning = form.querySelector('[data-cash-warning]');
+        this.currencyInput = form.querySelector('[data-currency-input]');
+        this.currencySection = form.querySelector('[data-currency-section]');
+        this.currencyOptions = form.querySelector('[data-currency-options]');
+        this.currencyError = form.querySelector('[data-currency-error]');
         this.comboContainer = form.querySelector('[data-transfer-option="combo"]');
         this.customContainer = form.querySelector('[data-transfer-option="custom"]');
         this.customCheckboxes = Array.from(form.querySelectorAll('[data-destino]'));
         this.transferTypeInputs = Array.from(form.querySelectorAll('input[name="tipo"]'));
         this.currentStep = 0;
+        this.currentTotals = {};
     }
 
     init() {
@@ -117,9 +121,9 @@ class TransferFormWizard {
         }
         if (this.currentStep !== this.steps.length - 1) {
             this.totalDisplay?.classList.add('d-none');
-            this.cashWarning?.classList.add('d-none');
             this.comboSummary?.classList.add('d-none');
             this.customSummary?.classList.add('d-none');
+            this.toggleCurrencySection(false);
         } else {
             this.updateTotals();
         }
@@ -165,6 +169,125 @@ class TransferFormWizard {
         this.vehicleOptions.forEach((option) => {
             option.classList.toggle('border-danger', show && !(this.vehicleInput?.value));
         });
+    }
+
+    toggleCurrencySection(show) {
+        if (this.currencySection) {
+            this.currencySection.classList.toggle('d-none', !show);
+        }
+        if (!show) {
+            this.toggleCurrencyError(false);
+        }
+    }
+
+    toggleCurrencyError(show) {
+        if (this.currencyError) {
+            this.currencyError.classList.toggle('d-none', !show);
+        }
+    }
+
+    validateCurrencySelection() {
+        if (!this.currencyInput) {
+            return true;
+        }
+        if (Object.keys(this.currentTotals).length === 0) {
+            this.toggleCurrencyError(false);
+            return true;
+        }
+        const value = (this.currencyInput.value || '').toUpperCase();
+        if (!value || !(value in this.currentTotals)) {
+            this.toggleCurrencyError(true);
+            return false;
+        }
+        this.toggleCurrencyError(false);
+        return true;
+    }
+
+    setCurrency(iso) {
+        if (!this.currencyInput) {
+            return;
+        }
+        if (!(iso in this.currentTotals)) {
+            this.toggleCurrencyError(true);
+            return;
+        }
+        this.currencyInput.value = iso;
+        this.toggleCurrencyError(false);
+        this.updateTotalDisplay();
+    }
+
+    renderCurrencyOptions(totals) {
+        this.currentTotals = totals ?? {};
+        if (!this.currencySection || !this.currencyOptions || !this.currencyInput) {
+            return;
+        }
+
+        this.currencyOptions.innerHTML = '';
+        const entries = Object.entries(this.currentTotals);
+        if (entries.length === 0) {
+            this.toggleCurrencySection(false);
+            this.currencyInput.value = '';
+            this.updateTotalDisplay();
+            return;
+        }
+
+        this.toggleCurrencySection(true);
+        const currentValue = (this.currencyInput.value || '').toUpperCase();
+        let selectedIso = currentValue && this.currentTotals[currentValue] !== undefined ? currentValue : '';
+        if (!selectedIso) {
+            selectedIso = entries[0][0];
+            this.currencyInput.value = selectedIso;
+        }
+
+        entries.forEach(([iso, amount]) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'currency-option';
+
+            const optionId = `currency_option_${iso.toLowerCase()}`;
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.className = 'btn-check';
+            input.name = 'transfer_currency_selector';
+            input.id = optionId;
+            input.autocomplete = 'off';
+            input.value = iso;
+            input.checked = iso === selectedIso;
+            input.addEventListener('change', () => this.setCurrency(iso));
+
+            const label = document.createElement('label');
+            label.className = 'btn btn-outline-primary';
+            label.setAttribute('for', optionId);
+            label.innerHTML = `<span class="fw-semibold">${iso}</span> ${this.formatAmount(amount)}`;
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(label);
+            this.currencyOptions.appendChild(wrapper);
+        });
+
+        this.updateTotalDisplay();
+    }
+
+    updateTotalDisplay() {
+        if (!this.totalDisplay) {
+            return;
+        }
+        const entries = Object.entries(this.currentTotals);
+        if (entries.length === 0) {
+            this.totalDisplay.classList.add('d-none');
+            this.totalDisplay.textContent = '';
+            return;
+        }
+
+        const iso = (this.currencyInput?.value || '').toUpperCase();
+        if (!iso || !(iso in this.currentTotals)) {
+            this.totalDisplay.textContent = 'Seleccioná una moneda para ver el total estimado del traslado.';
+            this.totalDisplay.classList.remove('d-none');
+            return;
+        }
+
+        const amount = this.currentTotals[iso];
+        this.totalDisplay.textContent = `Total estimado (${iso}): ${iso} ${this.formatAmount(amount)}`;
+        this.totalDisplay.classList.remove('d-none');
     }
 
     updateTransferType() {
@@ -218,6 +341,9 @@ class TransferFormWizard {
                     return false;
                 }
             }
+            if (!this.validateCurrencySelection()) {
+                return false;
+            }
         }
         return true;
     }
@@ -242,8 +368,10 @@ class TransferFormWizard {
 
     updateTotals() {
         const selectedType = this.getSelectedTransferType();
-        const sections = [this.totalDisplay, this.cashWarning, this.comboSummary, this.customSummary];
+        const sections = [this.totalDisplay, this.comboSummary, this.customSummary];
         sections.forEach((section) => section?.classList.add('d-none'));
+        this.renderCurrencyOptions({});
+        this.toggleCurrencyError(false);
 
         if (selectedType === 'combo') {
             const option = this.comboSelect?.selectedOptions?.[0];
@@ -259,13 +387,8 @@ class TransferFormWizard {
                 this.comboSummary.textContent = `Tarifa disponible: ${summary}`;
                 this.comboSummary.classList.remove('d-none');
             }
-            if (this.totalDisplay) {
-                this.totalDisplay.textContent = `Total seleccionado: ${summary}`;
-                this.totalDisplay.classList.remove('d-none');
-            }
-            if (this.cashWarning && Object.keys(prices).length > 1) {
-                this.showCashWarning(Object.keys(prices));
-            }
+            this.renderCurrencyOptions(prices);
+            this.updateTotalDisplay();
         } else if (selectedType === 'custom') {
             const selectedDestinations = this.customCheckboxes.filter((checkbox) => checkbox.checked);
             if (selectedDestinations.length === 0) {
@@ -287,13 +410,8 @@ class TransferFormWizard {
                 this.customSummary.textContent = `Sumatoria por moneda: ${summary}`;
                 this.customSummary.classList.remove('d-none');
             }
-            if (this.totalDisplay) {
-                this.totalDisplay.textContent = `Totales estimados: ${summary}`;
-                this.totalDisplay.classList.remove('d-none');
-            }
-            if (this.cashWarning && Object.keys(totals).length > 1) {
-                this.showCashWarning(Object.keys(totals));
-            }
+            this.renderCurrencyOptions(totals);
+            this.updateTotalDisplay();
         }
     }
 
@@ -343,14 +461,6 @@ class TransferFormWizard {
         }
     }
 
-    showCashWarning(currencies) {
-        if (!this.cashWarning) {
-            return;
-        }
-        const summary = currencies.join(' + ');
-        this.cashWarning.textContent = `Tu traslado combina varias monedas (${summary}). Podrás abonar en línea el monto disponible en la moneda principal y coordinar el resto en efectivo con el chofer.`;
-        this.cashWarning.classList.remove('d-none');
-    }
 }
 
 const transferForm = document.querySelector('[data-transfer-form]');

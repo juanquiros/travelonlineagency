@@ -47,6 +47,7 @@ final class TransferController extends AbstractController
         $customEnabled = (bool) $plataforma->isTrasladosODLibres();
         $vehicleTypes = $this->resolveVehicleTypes();
         $vehicleDrivers = $this->resolveVehicleDrivers($vehicleTypes);
+        [$vehicleTypes, $vehicleDrivers] = $this->filterVehicleTypesWithDrivers($vehicleTypes, $vehicleDrivers);
 
         if ($request->isMethod('POST')) {
             $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $plataforma);
@@ -303,6 +304,7 @@ final class TransferController extends AbstractController
         }
 
         $totalesPorMoneda = [];
+        $currencyIso = strtoupper(substr((string) $request->request->get('moneda', ''), 0, 3));
         if ($combo instanceof TransferCombo) {
             $totalesPorMoneda = $combo->getPreciosDisponibles();
             if (empty($totalesPorMoneda)) {
@@ -310,6 +312,33 @@ final class TransferController extends AbstractController
             }
         } elseif (!empty($destinosSeleccionados)) {
             $totalesPorMoneda = $this->calcularTotalesDestinos($destinosSeleccionados, $errores);
+        }
+
+        if (!empty($totalesPorMoneda)) {
+            $normalizados = [];
+            foreach ($totalesPorMoneda as $iso => $monto) {
+                $clave = strtoupper(substr((string) $iso, 0, 3));
+                if ($clave === '') {
+                    continue;
+                }
+
+                $normalizados[$clave] = (float) $monto;
+            }
+            $totalesPorMoneda = $normalizados;
+
+            $disponibles = array_keys($totalesPorMoneda);
+            if (count($disponibles) === 1) {
+                $currencyIso = $disponibles[0];
+            } elseif ($currencyIso === '' && $defaultCurrencyIso !== '') {
+                $preferida = strtoupper(substr($defaultCurrencyIso, 0, 3));
+                if (isset($totalesPorMoneda[$preferida])) {
+                    $currencyIso = $preferida;
+                }
+            }
+
+            if (count($totalesPorMoneda) > 1 && ($currencyIso === '' || !isset($totalesPorMoneda[$currencyIso]))) {
+                $errores[] = 'Seleccioná la moneda en la que querés pagar tu traslado.';
+            }
         }
 
         $nombre = trim((string) $request->request->get('nombre'));
@@ -372,8 +401,7 @@ final class TransferController extends AbstractController
             return null;
         }
 
-        $currencyIso = strtoupper($defaultCurrencyIso);
-        if (!array_key_exists($currencyIso, $totalesPorMoneda)) {
+        if ($currencyIso === '' || !array_key_exists($currencyIso, $totalesPorMoneda)) {
             $currencyIso = array_key_first($totalesPorMoneda);
         }
 
@@ -533,6 +561,42 @@ final class TransferController extends AbstractController
         }
 
         return $grouped;
+    }
+
+    /**
+     * @param VehicleType[] $vehicleTypes
+     * @param array<int, DriverProfile[]> $vehicleDrivers
+     * @return array{0: VehicleType[], 1: array<int, DriverProfile[]>}
+     */
+    private function filterVehicleTypesWithDrivers(array $vehicleTypes, array $vehicleDrivers): array
+    {
+        if ($vehicleTypes === []) {
+            return [[], []];
+        }
+
+        $filteredTypes = [];
+        $filteredDrivers = [];
+
+        foreach ($vehicleTypes as $type) {
+            if (!$type instanceof VehicleType) {
+                continue;
+            }
+
+            $id = $type->getId();
+            if ($id === null) {
+                continue;
+            }
+
+            $drivers = $vehicleDrivers[$id] ?? [];
+            if (empty($drivers)) {
+                continue;
+            }
+
+            $filteredTypes[] = $type;
+            $filteredDrivers[$id] = $drivers;
+        }
+
+        return [$filteredTypes, $filteredDrivers];
     }
 
     private function generarCodigoServicio(): string

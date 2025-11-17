@@ -83,32 +83,28 @@
                                                 <span class="badge bg-primary-subtle text-primary-emphasis">{{ drivers|length }} chofer{% if drivers|length != 1 %}es{% endif %}</span>
                                             </div>
                                             <div class="mt-3">
-                                                {% if drivers %}
-                                                    <p class="small text-muted mb-2">Choferes habilitados:</p>
-                                                    <div class="row g-2">
-                                                        {% for driver in drivers %}
-                                                            <div class="col-12">
-                                                                <div class="border rounded p-2 bg-body-tertiary">
-                                                                    <div class="fw-semibold">{{ driver.nombreCompleto }}</div>
-                                                                    <div class="small text-muted">Vehículo: {{ driver.modeloVehiculo }} ({{ driver.patente }})</div>
-                                                                    {% set featureNames = [] %}
-                                                                    {% for feature in driver.vehicleFeatures %}
-                                                                        {% set featureNames = featureNames|merge([feature.nombre]) %}
-                                                                    {% endfor %}
-                                                                    {% if featureNames %}
-                                                                        <div class="mt-2">
-                                                                            {% for featureName in featureNames %}
-                                                                                <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ featureName }}</span>
-                                                                            {% endfor %}
-                                                                        </div>
-                                                                    {% endif %}
-                                                                </div>
+                                                <p class="small text-muted mb-2">Choferes habilitados:</p>
+                                                <div class="row g-2">
+                                                    {% for driver in drivers %}
+                                                        <div class="col-12">
+                                                            <div class="border rounded p-2 bg-body-tertiary">
+                                                                <div class="fw-semibold">{{ driver.nombreCompleto }}</div>
+                                                                <div class="small text-muted">Vehículo: {{ driver.modeloVehiculo }} ({{ driver.patente }})</div>
+                                                                {% set featureNames = [] %}
+                                                                {% for feature in driver.vehicleFeatures %}
+                                                                    {% set featureNames = featureNames|merge([feature.nombre]) %}
+                                                                {% endfor %}
+                                                                {% if featureNames %}
+                                                                    <div class="mt-2">
+                                                                        {% for featureName in featureNames %}
+                                                                            <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ featureName }}</span>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                {% endif %}
                                                             </div>
-                                                        {% endfor %}
-                                                    </div>
-                                                {% else %}
-                                                    <p class="small text-muted mb-0">Todavía no hay choferes publicados para este tipo de vehículo.</p>
-                                                {% endif %}
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -140,6 +136,7 @@
                         {% set tipoSeleccionado = app.request.get('tipo') ?: 'combo' %}
                         <h2 class="h5">Tipo de traslado</h2>
                         <p class="small text-muted">Seleccioná si querés usar un combo preestablecido o armar tu propio recorrido.</p>
+                        <input type="hidden" name="moneda" value="{{ app.request.get('moneda') ? app.request.get('moneda')|upper : '' }}" data-currency-input>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="tipo" id="tipo_combo" value="combo" {% if tipoSeleccionado != 'custom' %}checked{% endif %}>
                             <label class="form-check-label" for="tipo_combo">Usar combo preestablecido</label>
@@ -211,8 +208,13 @@
                                 </div>
                             {% endfor %}
                         {% endif %}
-                        <div class="alert alert-info d-none" data-total-display></div>
-                        <div class="alert alert-warning d-none mt-3" data-cash-warning></div>
+                        <div class="mt-4 d-none" data-currency-section>
+                            <h3 class="h6">Moneda de pago</h3>
+                            <p class="small text-muted mb-2">Elegí en qué moneda querés abonar el traslado. Solo se confirmará el importe correspondiente a la moneda seleccionada.</p>
+                            <div class="d-flex flex-wrap gap-2" data-currency-options></div>
+                            <div class="alert alert-danger mt-3 d-none" data-currency-error>Seleccioná una moneda válida para continuar.</div>
+                        </div>
+                        <div class="alert alert-info d-none mt-3" data-total-display></div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mt-4">
