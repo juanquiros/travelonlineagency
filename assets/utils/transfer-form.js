@@ -218,7 +218,7 @@ class TransferFormWizard {
         this.updateTotalDisplay();
     }
 
-    renderCurrencyOptions(totals) {
+    renderCurrencyOptions(totals, preferredIso = '') {
         this.currentTotals = totals ?? {};
         if (!this.currencySection || !this.currencyOptions || !this.currencyInput) {
             return;
@@ -228,18 +228,23 @@ class TransferFormWizard {
         const entries = Object.entries(this.currentTotals);
         if (entries.length === 0) {
             this.toggleCurrencySection(false);
-            this.currencyInput.value = '';
+            this.toggleCurrencyError(false);
             this.updateTotalDisplay();
             return;
         }
 
         this.toggleCurrencySection(true);
+        const normalizedPreferred = (preferredIso || '').toUpperCase();
         const currentValue = (this.currencyInput.value || '').toUpperCase();
-        let selectedIso = currentValue && this.currentTotals[currentValue] !== undefined ? currentValue : '';
-        if (!selectedIso) {
+        let selectedIso = '';
+        if (normalizedPreferred && this.currentTotals[normalizedPreferred] !== undefined) {
+            selectedIso = normalizedPreferred;
+        } else if (currentValue && this.currentTotals[currentValue] !== undefined) {
+            selectedIso = currentValue;
+        } else {
             selectedIso = entries[0][0];
-            this.currencyInput.value = selectedIso;
         }
+        this.currencyInput.value = selectedIso;
 
         entries.forEach(([iso, amount]) => {
             const wrapper = document.createElement('div');
@@ -370,11 +375,8 @@ class TransferFormWizard {
 
     updateTotals() {
         const selectedType = this.getSelectedTransferType();
-        const sections = [this.totalDisplay, this.comboSummary, this.customSummary, this.customBreakdown];
-        sections.forEach((section) => section?.classList.add('d-none'));
-        this.renderCurrencyOptions({});
-        this.toggleCurrencyError(false);
-        this.renderCustomBreakdown([]);
+        const previousCurrency = (this.currencyInput?.value || '').toUpperCase();
+        this.resetTotalsUi();
 
         if (selectedType === 'combo') {
             const option = this.comboSelect?.selectedOptions?.[0];
@@ -386,7 +388,7 @@ class TransferFormWizard {
                 return;
             }
             this.renderTotalsList(this.comboSummary, prices, 'Tarifa disponible');
-            this.renderCurrencyOptions(prices);
+            this.renderCurrencyOptions(prices, previousCurrency);
             this.updateTotalDisplay();
         } else if (selectedType === 'custom') {
             const selectedDestinations = this.customCheckboxes.filter((checkbox) => checkbox.checked);
@@ -412,9 +414,31 @@ class TransferFormWizard {
                 prices: this.parsePrices(checkbox),
             }));
             this.renderCustomBreakdown(breakdownItems);
-            this.renderCurrencyOptions(totals);
+            this.renderCurrencyOptions(totals, previousCurrency);
             this.updateTotalDisplay();
         }
+    }
+
+    resetTotalsUi() {
+        const sections = [this.totalDisplay, this.comboSummary, this.customSummary, this.customBreakdown];
+        sections.forEach((section) => {
+            if (!section) {
+                return;
+            }
+            section.classList.add('d-none');
+            if (section === this.totalDisplay) {
+                section.textContent = '';
+            } else {
+                section.innerHTML = '';
+            }
+        });
+        if (this.currencyOptions) {
+            this.currencyOptions.innerHTML = '';
+        }
+        this.toggleCurrencySection(false);
+        this.toggleCurrencyError(false);
+        this.renderCustomBreakdown([]);
+        this.currentTotals = {};
     }
 
     parsePrices(element) {
