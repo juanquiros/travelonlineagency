@@ -21,7 +21,7 @@ class MercadoPagoPago
     private ?string $preferenceId = null;
 
     #[ORM\ManyToOne(inversedBy: 'mercadoPagoPagos')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?CredencialesMercadoPago $credencialesMercadoPago = null;
 
     #[ORM\Column(length: 255)]
