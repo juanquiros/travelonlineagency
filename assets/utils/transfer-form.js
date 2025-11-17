@@ -12,6 +12,8 @@ class TransferFormWizard {
         this.comboSelect = form.querySelector('[data-combo-select]');
         this.comboSummary = form.querySelector('[data-combo-summary]');
         this.customSummary = form.querySelector('[data-custom-summary]');
+        this.customBreakdown = form.querySelector('[data-custom-breakdown]');
+        this.customBreakdownBody = form.querySelector('[data-custom-breakdown-body]');
         this.customError = form.querySelector('[data-custom-error]');
         this.totalDisplay = form.querySelector('[data-total-display]');
         this.currencyInput = form.querySelector('[data-currency-input]');
@@ -368,10 +370,11 @@ class TransferFormWizard {
 
     updateTotals() {
         const selectedType = this.getSelectedTransferType();
-        const sections = [this.totalDisplay, this.comboSummary, this.customSummary];
+        const sections = [this.totalDisplay, this.comboSummary, this.customSummary, this.customBreakdown];
         sections.forEach((section) => section?.classList.add('d-none'));
         this.renderCurrencyOptions({});
         this.toggleCurrencyError(false);
+        this.renderCustomBreakdown([]);
 
         if (selectedType === 'combo') {
             const option = this.comboSelect?.selectedOptions?.[0];
@@ -382,17 +385,14 @@ class TransferFormWizard {
             if (Object.keys(prices).length === 0) {
                 return;
             }
-            const summary = this.buildSummary(prices);
-            if (this.comboSummary) {
-                this.comboSummary.textContent = `Tarifa disponible: ${summary}`;
-                this.comboSummary.classList.remove('d-none');
-            }
+            this.renderTotalsList(this.comboSummary, prices, 'Tarifa disponible');
             this.renderCurrencyOptions(prices);
             this.updateTotalDisplay();
         } else if (selectedType === 'custom') {
             const selectedDestinations = this.customCheckboxes.filter((checkbox) => checkbox.checked);
             if (selectedDestinations.length === 0) {
                 this.customSummary?.classList.add('d-none');
+                this.customBreakdown?.classList.add('d-none');
                 return;
             }
             const totals = {};
@@ -403,13 +403,15 @@ class TransferFormWizard {
                 });
             });
             if (Object.keys(totals).length === 0) {
+                this.renderCustomBreakdown([]);
                 return;
             }
-            const summary = this.buildSummary(totals);
-            if (this.customSummary) {
-                this.customSummary.textContent = `Sumatoria por moneda: ${summary}`;
-                this.customSummary.classList.remove('d-none');
-            }
+            this.renderTotalsList(this.customSummary, totals, 'Totales estimados por moneda');
+            const breakdownItems = selectedDestinations.map((checkbox) => ({
+                name: checkbox.dataset.destinoName || checkbox.value || 'Destino seleccionado',
+                prices: this.parsePrices(checkbox),
+            }));
+            this.renderCustomBreakdown(breakdownItems);
             this.renderCurrencyOptions(totals);
             this.updateTotalDisplay();
         }
@@ -444,10 +446,63 @@ class TransferFormWizard {
         }
     }
 
+    renderTotalsList(container, totals, titleText = '') {
+        if (!container) {
+            return;
+        }
+        container.innerHTML = '';
+        const entries = Object.entries(totals);
+        if (entries.length === 0) {
+            container.classList.add('d-none');
+            return;
+        }
+        if (titleText) {
+            const title = document.createElement('div');
+            title.className = 'fw-semibold mb-1';
+            title.textContent = titleText;
+            container.appendChild(title);
+        }
+        const list = document.createElement('ul');
+        list.className = 'list-unstyled mb-0';
+        entries.forEach(([iso, amount]) => {
+            const item = document.createElement('li');
+            item.innerHTML = `<span class="fw-semibold">${iso}</span> ${this.formatAmount(amount)}`;
+            list.appendChild(item);
+        });
+        container.appendChild(list);
+        container.classList.remove('d-none');
+    }
+
+    renderCustomBreakdown(items) {
+        if (!this.customBreakdown || !this.customBreakdownBody) {
+            return;
+        }
+        this.customBreakdownBody.innerHTML = '';
+        if (!items || items.length === 0) {
+            this.customBreakdown.classList.add('d-none');
+            return;
+        }
+        items.forEach((item) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mb-3';
+            const title = document.createElement('div');
+            title.className = 'fw-semibold';
+            title.textContent = item.name;
+            const prices = this.buildSummary(item.prices);
+            const details = document.createElement('div');
+            details.className = 'small text-muted';
+            details.textContent = prices || 'Sin tarifas configuradas';
+            wrapper.appendChild(title);
+            wrapper.appendChild(details);
+            this.customBreakdownBody.appendChild(wrapper);
+        });
+        this.customBreakdown.classList.remove('d-none');
+    }
+
     buildSummary(totals) {
         return Object.entries(totals)
             .map(([iso, amount]) => `${iso} ${this.formatAmount(amount)}`)
-            .join(' + ');
+            .join(' · ');
     }
 
     formatAmount(amount) {

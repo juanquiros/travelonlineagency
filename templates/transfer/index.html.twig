@@ -174,13 +174,26 @@
                                             {% set destinoSummary = destinoSummary|merge([iso ~ ' ' ~ amount|number_format(2, '.', '')]) %}
                                         {% endfor %}
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}" data-destino data-prices="{{ destinoPrices|json_encode|e('html_attr') }}"{% if destino.id in destinosSeleccionados %} checked{% endif %}>
-                                            <label class="form-check-label" for="destino_{{ destino.id }}">{{ destino.nombre }}{% if destinoSummary %} – {{ destinoSummary|join(' · ') }}{% endif %}</label>
+                                            <input class="form-check-input" type="checkbox" name="destinos[]" value="{{ destino.id }}" id="destino_{{ destino.id }}" data-destino data-destino-name="{{ destino.nombre }}" data-prices="{{ destinoPrices|json_encode|e('html_attr') }}"{% if destino.id in destinosSeleccionados %} checked{% endif %}>
+                                            <label class="form-check-label" for="destino_{{ destino.id }}">
+                                                <span class="fw-semibold d-block">{{ destino.nombre }}</span>
+                                                {% if destinoSummary %}
+                                                    <small class="text-muted">Tarifas: {{ destinoSummary|join(' · ') }}</small>
+                                                {% else %}
+                                                    <small class="text-muted">Sin tarifas configuradas</small>
+                                                {% endif %}
+                                            </label>
                                         </div>
                                     {% endfor %}
                                 </div>
                                 <div class="alert alert-danger mt-3 d-none" data-custom-error>Seleccioná al menos un destino para continuar.</div>
                                 <div class="alert alert-info mt-3 d-none" data-custom-summary></div>
+                                <div class="card border-info-subtle mt-3 d-none" data-custom-breakdown>
+                                    <div class="card-body py-3">
+                                        <div class="fw-semibold mb-2">Detalle de destinos seleccionados</div>
+                                        <div data-custom-breakdown-body></div>
+                                    </div>
+                                </div>
                             </div>
                         {% else %}
                             <div class="alert alert-info">Los traslados personalizados se encuentran deshabilitados por el administrador. Podés elegir cualquiera de los combos disponibles.</div>
