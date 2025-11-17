@@ -13,6 +13,7 @@ use App\Entity\TransferRequest;
 use App\Entity\Usuario;
 use App\Services\LanguageService;
 use App\Services\MercadoPagoOnboardingService;
+use App\Services\PaymentOptionsResolver;
 use App\Services\mailerServer;
 use Doctrine\ORM\EntityManagerInterface;
 use MercadoPago\Client\Payment\PaymentClient;
@@ -36,6 +37,7 @@ final class MercadoPagoController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly MercadoPagoOnboardingService $mercadoPagoOnboarding,
+        private readonly PaymentOptionsResolver $paymentOptions,
         #[Autowire('%kernel.environment%')] private readonly string $environment
     ) {
         $this->credencialesPlataforma = $this->em->getRepository(Plataforma::class)->find(1)?->getCredencialesMercadoPago();
@@ -85,11 +87,12 @@ final class MercadoPagoController extends AbstractController
             return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
         }
 
-        $currencyIso = strtoupper($solicitud->getMoneda());
-        $totales = $solicitud->getTotalesPorMoneda();
-        $total = $totales[$currencyIso] ?? (float) $solicitud->getPrecioTotal();
-        if ($total <= 0) {
-            $this->addFlash('error', 'El traslado no tiene un monto configurado.');
+        $transferPayment = $this->resolveTransferMercadoPagoOption($solicitud, $plataforma);
+        $currencyIso = strtoupper((string) ($transferPayment['currency'] ?? ''));
+        $total = (float) ($transferPayment['total'] ?? 0);
+
+        if (!$transferPayment || $currencyIso === '' || $total <= 0) {
+            $this->addFlash('error', 'El traslado no tiene un monto configurado para Mercado Pago.');
 
             return $this->redirectToRoute('app_transfer_summary', ['token' => $solicitud->getTokenSeguimiento()]);
         }
@@ -148,17 +151,21 @@ final class MercadoPagoController extends AbstractController
         $idioma = LanguageService::getLenguaje($this->em, $request);
         $plataforma = $this->em->getRepository(Plataforma::class)->find(1);
         $booking = $solicitudReserva->getBooking();
-        $precioBoking = $this->em->getRepository(Precio::class)->findOneBy([
-            'moneda' => 2,
-            'booking' => $booking?->getId(),
-        ]);
-
-        if (!$plataforma instanceof Plataforma || !$plataforma->isEnableMercadoPagoPayments() || !$booking || !$precioBoking) {
+        if (!$plataforma instanceof Plataforma || !$plataforma->isEnableMercadoPagoPayments() || !$booking) {
             return $this->redirectToRoute('app_inicio');
         }
 
-        $adicionales = json_decode($solicitudReserva->getInChargeOf() ?? '[]', true) ?: [];
-        $cantidad = is_countable($adicionales) ? count($adicionales) + 1 : 1;
+        $bookingPayment = $this->resolveBookingMercadoPagoOption($solicitudReserva, $plataforma);
+        $currencyIso = strtoupper((string) ($bookingPayment['currency'] ?? ''));
+        $total = (float) ($bookingPayment['total'] ?? 0);
+
+        if (!$bookingPayment || $currencyIso === '' || $total <= 0) {
+            $this->addFlash('error', 'Este booking no tiene un monto válido para Mercado Pago.');
+
+            return $this->redirectToRoute('app_inicio');
+        }
+
+        $cantidad = max(1, $solicitudReserva->getPassengerCount());
 
         $partner = $booking->getBookingPartner();
         $credencial = $this->resolveCredentialsForPartner($partner);
@@ -182,7 +189,6 @@ final class MercadoPagoController extends AbstractController
 
         $this->configureMercadoPago($credencial);
 
-        $total = (float) $precioBoking->getValor() * $cantidad;
         $comision = $partner?->getComisionPlataforma();
         if ($comision === null) {
             $comision = $plataforma->getComisionBookingPartner();
@@ -200,9 +206,9 @@ final class MercadoPagoController extends AbstractController
                     'id' => $solicitudReserva->getId(),
                     'title' => $booking->getNombre(),
                     'picture_url' => $this->generateUrl('app_inicio', [], UrlGeneratorInterface::ABSOLUTE_URL) . '/img/booking/' . $booking->getImgPortada(),
-                    'quantity' => $cantidad,
-                    'currency_id' => 'ARG',
-                    'unit_price' => (float) $precioBoking->getValor(),
+                    'quantity' => 1,
+                    'currency_id' => $currencyIso,
+                    'unit_price' => $total,
                 ],
             ],
             'payer' => [
@@ -225,6 +231,7 @@ final class MercadoPagoController extends AbstractController
                 'booking_id' => $booking->getId(),
                 'partner_id' => $partner?->getId(),
                 'solicitud_reserva_id' => $solicitudReserva->getId(),
+                'passenger_count' => $cantidad,
             ],
         ]);
         $publicKey = $credencial->getPublicKey() ?: $this->credencialesPlataforma?->getPublicKey();
@@ -399,6 +406,41 @@ final class MercadoPagoController extends AbstractController
         return new JsonResponse(['status'=>'success'],200);
     }
 
+    private function resolveBookingMercadoPagoOption(SolicitudReserva $reserva, Plataforma $plataforma): ?array
+    {
+        return $this->extractMercadoPagoOption(
+            $this->paymentOptions->getBookingOptions($reserva, $plataforma)
+        );
+    }
+
+    private function resolveTransferMercadoPagoOption(TransferRequest $solicitud, Plataforma $plataforma): ?array
+    {
+        return $this->extractMercadoPagoOption(
+            $this->paymentOptions->getTransferOptions($solicitud, $plataforma)
+        );
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $options
+     */
+    private function extractMercadoPagoOption(array $options): ?array
+    {
+        foreach ($options as $option) {
+            if (($option['type'] ?? null) !== 'mercadopago') {
+                continue;
+            }
+            if (($option['available'] ?? false) !== true) {
+                continue;
+            }
+            if (!isset($option['currency'], $option['total'])) {
+                continue;
+            }
+
+            return $option;
+        }
+
+        return null;
+    }
 
     private function resolveCredentialsForPartner(?BookingPartner $partner): ?CredencialesMercadoPago
     {
