@@ -542,8 +542,21 @@ class TransferFormWizard {
 
 }
 
-const transferForm = document.querySelector('[data-transfer-form]');
-if (transferForm) {
+const initializeTransferWizard = () => {
+    const transferForm = document.querySelector('[data-transfer-form]');
+    if (!transferForm || transferForm.dataset.wizardInitialized === 'true') {
+        return;
+    }
+    transferForm.dataset.wizardInitialized = 'true';
     const wizard = new TransferFormWizard(transferForm);
     wizard.init();
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTransferWizard);
+} else {
+    initializeTransferWizard();
 }
+
+document.addEventListener('turbo:load', initializeTransferWizard);
+window.addEventListener('pageshow', initializeTransferWizard);
