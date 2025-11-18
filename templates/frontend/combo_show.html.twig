@@ -41,6 +41,23 @@
                                 {% endif %}
                                 <span class="text-muted">Traslado curado por nuestro equipo local.</span>
                             </div>
+                            {% if comboTarifas is not empty %}
+                                <div class="border rounded p-3">
+                                    <h2 class="h6 text-uppercase text-muted mb-2">Tarifas disponibles</h2>
+                                    <p class="small text-muted mb-3">Elegí cualquiera de estas monedas en tu reserva. Los valores incluyen todos los destinos del combo.</p>
+                                    <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                        {% for tarifa in comboTarifas %}
+                                            <li class="d-flex justify-content-between align-items-center border rounded px-3 py-2">
+                                                <div>
+                                                    <div class="fw-semibold">{{ tarifa.symbol }} {{ tarifa.amount|number_format(2, '.', '') }}</div>
+                                                    <div class="small text-muted text-uppercase">{{ tarifa.iso }}{% if tarifa.label and tarifa.label != tarifa.iso %} · {{ tarifa.label }}{% endif %}</div>
+                                                </div>
+                                                <span class="badge text-bg-light text-uppercase">{{ tarifa.iso }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
                             {% if combo.descripcion %}
                                 <div class="toa-content">{{ combo.descripcion|raw }}</div>
                             {% endif %}

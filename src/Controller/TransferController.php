@@ -18,6 +18,7 @@ use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
 use App\Services\mailerServer;
+use App\Utils\PriceTableBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -128,6 +129,11 @@ final class TransferController extends AbstractController
         );
 
         $shareUrl = $this->generateUrl('app_transfer_combo_show', ['id' => $combo->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $tarifas = PriceTableBuilder::fromPrecios(
+            $combo->getPrecios(),
+            $combo->getMoneda(),
+            (float) $combo->getPrecio()
+        );
 
         return $this->render('frontend/combo_show.html.twig', [
             'combo' => $combo,
@@ -136,6 +142,7 @@ final class TransferController extends AbstractController
             'mapDestinos' => $mapDestinos,
             'mapDefaults' => $mapDefaults,
             'shareUrl' => $shareUrl,
+            'comboTarifas' => $tarifas,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,

@@ -47,6 +47,25 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
+                    {% if destinoTarifas is not empty %}
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <h2 class="h6 text-uppercase text-muted mb-3">Tarifas del destino</h2>
+                                <p class="small text-muted">Valores oficiales definidos por nuestro equipo. Seleccioná una de estas monedas al solicitar tu traslado.</p>
+                                <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                                    {% for tarifa in destinoTarifas %}
+                                        <li class="border rounded px-3 py-2 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold">{{ tarifa.symbol }} {{ tarifa.amount|number_format(2, '.', '') }}</div>
+                                                <div class="small text-muted text-uppercase">{{ tarifa.iso }}{% if tarifa.label and tarifa.label != tarifa.iso %} · {{ tarifa.label }}{% endif %}</div>
+                                            </div>
+                                            <span class="badge text-bg-light text-uppercase">{{ tarifa.iso }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="card shadow-sm mb-4">
                         <div class="card-body">
                             <h2 class="h5 mb-3">Ubicación</h2>
