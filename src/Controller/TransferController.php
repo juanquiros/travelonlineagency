@@ -13,10 +13,12 @@ use App\Entity\TransferRequestDestination;
 use App\Entity\TransferRequestFieldValue;
 use App\Entity\CashPayment;
 use App\Entity\VehicleType;
+use App\Entity\DriverProfile;
 use App\Form\TransferRatingType;
 use App\Services\LanguageService;
 use App\Services\PaymentOptionsResolver;
 use App\Services\mailerServer;
+use App\Utils\PriceTableBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,6 +47,8 @@ final class TransferController extends AbstractController
         $campos = $this->em->getRepository(TransferFormField::class)->findForForm();
         $customEnabled = (bool) $plataforma->isTrasladosODLibres();
         $vehicleTypes = $this->resolveVehicleTypes();
+        $vehicleDrivers = $this->resolveVehicleDrivers($vehicleTypes);
+        [$vehicleTypes, $vehicleDrivers] = $this->filterVehicleTypesWithDrivers($vehicleTypes, $vehicleDrivers);
 
         if ($request->isMethod('POST')) {
             $solicitud = $this->crearSolicitud($request, $campos, $customEnabled, $plataforma);
@@ -74,6 +78,7 @@ final class TransferController extends AbstractController
             'campos' => $campos,
             'customEnabled' => $customEnabled,
             'vehicleTypes' => $vehicleTypes,
+            'vehicleDrivers' => $vehicleDrivers,
         ]);
     }
 
@@ -124,6 +129,11 @@ final class TransferController extends AbstractController
         );
 
         $shareUrl = $this->generateUrl('app_transfer_combo_show', ['id' => $combo->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $tarifas = PriceTableBuilder::fromPrecios(
+            $combo->getPrecios(),
+            $combo->getMoneda(),
+            (float) $combo->getPrecio()
+        );
 
         return $this->render('frontend/combo_show.html.twig', [
             'combo' => $combo,
@@ -132,6 +142,7 @@ final class TransferController extends AbstractController
             'mapDestinos' => $mapDestinos,
             'mapDefaults' => $mapDefaults,
             'shareUrl' => $shareUrl,
+            'comboTarifas' => $tarifas,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
@@ -300,6 +311,7 @@ final class TransferController extends AbstractController
         }
 
         $totalesPorMoneda = [];
+        $currencyIso = strtoupper(substr((string) $request->request->get('moneda', ''), 0, 3));
         if ($combo instanceof TransferCombo) {
             $totalesPorMoneda = $combo->getPreciosDisponibles();
             if (empty($totalesPorMoneda)) {
@@ -307,6 +319,33 @@ final class TransferController extends AbstractController
             }
         } elseif (!empty($destinosSeleccionados)) {
             $totalesPorMoneda = $this->calcularTotalesDestinos($destinosSeleccionados, $errores);
+        }
+
+        if (!empty($totalesPorMoneda)) {
+            $normalizados = [];
+            foreach ($totalesPorMoneda as $iso => $monto) {
+                $clave = strtoupper(substr((string) $iso, 0, 3));
+                if ($clave === '') {
+                    continue;
+                }
+
+                $normalizados[$clave] = (float) $monto;
+            }
+            $totalesPorMoneda = $normalizados;
+
+            $disponibles = array_keys($totalesPorMoneda);
+            if (count($disponibles) === 1) {
+                $currencyIso = $disponibles[0];
+            } elseif ($currencyIso === '' && $defaultCurrencyIso !== '') {
+                $preferida = strtoupper(substr($defaultCurrencyIso, 0, 3));
+                if (isset($totalesPorMoneda[$preferida])) {
+                    $currencyIso = $preferida;
+                }
+            }
+
+            if (count($totalesPorMoneda) > 1 && ($currencyIso === '' || !isset($totalesPorMoneda[$currencyIso]))) {
+                $errores[] = 'Seleccioná la moneda en la que querés pagar tu traslado.';
+            }
         }
 
         $nombre = trim((string) $request->request->get('nombre'));
@@ -369,8 +408,7 @@ final class TransferController extends AbstractController
             return null;
         }
 
-        $currencyIso = strtoupper($defaultCurrencyIso);
-        if (!array_key_exists($currencyIso, $totalesPorMoneda)) {
+        if ($currencyIso === '' || !array_key_exists($currencyIso, $totalesPorMoneda)) {
             $currencyIso = array_key_first($totalesPorMoneda);
         }
 
@@ -464,24 +502,16 @@ final class TransferController extends AbstractController
             return [];
         }
 
-        $commonIsos = array_keys(reset($maps));
-        foreach ($maps as $map) {
-            $commonIsos = array_values(array_intersect($commonIsos, array_keys($map)));
-        }
-
-        if ($commonIsos === []) {
-            $errores[] = 'Los destinos seleccionados no comparten una moneda disponible. Configurá tarifas en una moneda común para continuar.';
-
-            return [];
-        }
-
         $totales = [];
-        foreach ($commonIsos as $iso) {
-            $total = 0.0;
-            foreach ($maps as $map) {
-                $total += (float) ($map[$iso] ?? 0.0);
+        foreach ($maps as $map) {
+            foreach ($map as $iso => $valor) {
+                $iso = strtoupper(substr((string) $iso, 0, 3));
+                if ($iso === '') {
+                    continue;
+                }
+
+                $totales[$iso] = ($totales[$iso] ?? 0.0) + (float) $valor;
             }
-            $totales[$iso] = $total;
         }
 
         return $totales;
@@ -493,6 +523,87 @@ final class TransferController extends AbstractController
     private function resolveVehicleTypes(): array
     {
         return $this->em->getRepository(VehicleType::class)->findActiveOrdered();
+    }
+
+    /**
+     * @param VehicleType[] $vehicleTypes
+     * @return array<int, DriverProfile[]>
+     */
+    private function resolveVehicleDrivers(array $vehicleTypes): array
+    {
+        $ids = array_filter(array_map(static function (VehicleType $type): ?int {
+            return $type->getId();
+        }, $vehicleTypes));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $repository = $this->em->getRepository(DriverProfile::class);
+        $drivers = $repository->createQueryBuilder('d')
+            ->select('DISTINCT d', 'vt', 'vf')
+            ->leftJoin('d.vehicleType', 'vt')
+            ->leftJoin('d.vehicleFeatures', 'vf')
+            ->andWhere('d.aprobado = :aprobado')
+            ->setParameter('aprobado', true)
+            ->andWhere('vt.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->orderBy('vt.orden', 'ASC')
+            ->addOrderBy('d.nombreCompleto', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $grouped = [];
+        foreach ($drivers as $driver) {
+            if (!$driver instanceof DriverProfile) {
+                continue;
+            }
+
+            $type = $driver->getVehicleType();
+            if (!$type instanceof VehicleType || $type->getId() === null) {
+                continue;
+            }
+
+            $grouped[$type->getId()][] = $driver;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @param VehicleType[] $vehicleTypes
+     * @param array<int, DriverProfile[]> $vehicleDrivers
+     * @return array{0: VehicleType[], 1: array<int, DriverProfile[]>}
+     */
+    private function filterVehicleTypesWithDrivers(array $vehicleTypes, array $vehicleDrivers): array
+    {
+        if ($vehicleTypes === []) {
+            return [[], []];
+        }
+
+        $filteredTypes = [];
+        $filteredDrivers = [];
+
+        foreach ($vehicleTypes as $type) {
+            if (!$type instanceof VehicleType) {
+                continue;
+            }
+
+            $id = $type->getId();
+            if ($id === null) {
+                continue;
+            }
+
+            $drivers = $vehicleDrivers[$id] ?? [];
+            if (empty($drivers)) {
+                continue;
+            }
+
+            $filteredTypes[] = $type;
+            $filteredDrivers[$id] = $drivers;
+        }
+
+        return [$filteredTypes, $filteredDrivers];
     }
 
     private function generarCodigoServicio(): string

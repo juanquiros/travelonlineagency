@@ -190,10 +190,11 @@
                                         {% for iso, monto in tarifas %}
                                             {% set simbolo = null %}
                                             {% for precio in destino.precios %}
-                                                {% set precioIso = precio.moneda ? (precio.moneda.codigoIso ?: precio.moneda.simbolo) : null %}
-                                                {% if precioIso and precioIso|upper == iso %}
-                                                    {% set simbolo = precio.moneda.simbolo ?: precio.moneda.codigoIso %}
-                                                    {% break %}
+                                                {% if simbolo is null %}
+                                                    {% set precioIso = precio.moneda ? (precio.moneda.codigoIso ?: precio.moneda.simbolo) : null %}
+                                                    {% if precioIso and precioIso|upper == iso %}
+                                                        {% set simbolo = precio.moneda.simbolo ?: precio.moneda.codigoIso %}
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endfor %}
                                             {% if simbolo is null and destino.moneda and (destino.moneda.codigoIso ?: destino.moneda.simbolo)|upper == iso %}

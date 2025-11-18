@@ -8,6 +8,7 @@ use App\Repository\TransferComboRepository;
 use App\Repository\TransferDestinationCategoryRepository;
 use App\Repository\TransferDestinationRepository;
 use App\Services\LanguageService;
+use App\Utils\PriceTableBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -87,11 +88,17 @@ class DestinoController extends AbstractController
         $combos = $this->comboRepository->findActivosPorDestino($destino);
 
         $shareUrl = $this->generateUrl('app_destino_show', ['id' => $destino->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $tarifas = PriceTableBuilder::fromPrecios(
+            $destino->getPrecios(),
+            $destino->getMoneda(),
+            (float) $destino->getTarifaBase()
+        );
 
         return $this->render('frontend/destino_show.html.twig', [
             'destino' => $destino,
             'destinosRelacionados' => array_values($relacionados),
             'combos' => $combos,
+            'destinoTarifas' => $tarifas,
             'plataforma' => $plataforma,
             'idiomas' => $idiomas,
             'idiomaPlataforma' => $idioma,
